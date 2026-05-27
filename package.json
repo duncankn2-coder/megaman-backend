@@ -19,16 +19,19 @@
     "@payloadcms/next": "3.31.0",
     "@payloadcms/payload-cloud": "3.31.0",
     "@payloadcms/richtext-lexical": "3.31.0",
+    "adm-zip": "^0.5.17",
     "cross-env": "^7.0.3",
     "graphql": "^16.8.1",
     "next": "15.2.3",
     "payload": "3.31.0",
     "react": "19.0.0",
     "react-dom": "19.0.0",
-    "sharp": "0.32.6"
+    "sharp": "0.32.6",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
+    "@types/adm-zip": "^0.5.8",
     "@types/node": "^22.5.4",
     "@types/react": "19.0.12",
     "@types/react-dom": "19.0.4",

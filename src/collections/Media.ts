@@ -4,7 +4,7 @@ export const Media: CollectionConfig = {
   slug: 'media',
   upload: {
     staticDir: 'media',
-    mimeTypes: ['image/*', 'video/*'],
+    mimeTypes: ['image/*', 'video/*', 'application/pdf', 'text/plain', 'application/octet-stream', 'application/zip', 'application/x-zip-compressed'],
   },
   access: {
     read: () => true, // Allow anyone to read products
@@ -24,6 +24,7 @@ export const Media: CollectionConfig = {
       options: [
         { label: 'Image', value: 'image' },
         { label: 'Video', value: 'video' },
+        { label: 'Document', value: 'document' },
       ],
       defaultValue: 'image',
       admin: {

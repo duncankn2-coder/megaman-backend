@@ -57,6 +57,7 @@ async function run() {
           protection_class: luminaire.protection_class,
           ip: luminaire.ip,
           mounting: luminaire.mounting,
+          categories: luminaire.product_type || null,
         };
         
         await productsCollection.updateOne(

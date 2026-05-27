@@ -23,6 +23,13 @@ export const Families: CollectionConfig = {
       required: true,
     },
     {
+      name: 'categories',
+      type: 'relationship',
+      relationTo: 'categories',
+      hasMany: true,
+      required: true,
+    },
+    {
       name: 'media',
       type: 'relationship',
       relationTo: 'media',

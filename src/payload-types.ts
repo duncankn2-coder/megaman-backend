@@ -145,7 +145,7 @@ export interface User {
 export interface Media {
   id: string;
   alt: string;
-  type?: ('image' | 'video') | null;
+  type?: ('image' | 'video' | 'document') | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -166,9 +166,12 @@ export interface Product {
   id: string;
   name: string;
   description?: string | null;
-  categories: (string | Category)[];
   families?: (string | null) | Family;
   images: string | Media;
+  datasheetPdf?: (string | null) | Media;
+  photometryLdt?: (string | null) | Media;
+  photometryIes?: (string | null) | Media;
+  bimRevit?: (string | null) | Media;
   colour?: string | null;
   power?: string | null;
   colourTemperature?: string | null;
@@ -189,25 +192,26 @@ export interface Product {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "categories".
- */
-export interface Category {
-  id: string;
-  name: string;
-  parent?: (string | null) | Category;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "families".
  */
 export interface Family {
   id: string;
   name: string;
   description: string;
+  categories: (string | Category)[];
   media: (string | Media)[];
   products?: (string | Product)[] | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories".
+ */
+export interface Category {
+  id: string;
+  name: string;
+  parent?: (string | null) | Category;
   updatedAt: string;
   createdAt: string;
 }
@@ -338,9 +342,12 @@ export interface MediaSelect<T extends boolean = true> {
 export interface ProductsSelect<T extends boolean = true> {
   name?: T;
   description?: T;
-  categories?: T;
   families?: T;
   images?: T;
+  datasheetPdf?: T;
+  photometryLdt?: T;
+  photometryIes?: T;
+  bimRevit?: T;
   colour?: T;
   power?: T;
   colourTemperature?: T;
@@ -377,6 +384,7 @@ export interface CategoriesSelect<T extends boolean = true> {
 export interface FamiliesSelect<T extends boolean = true> {
   name?: T;
   description?: T;
+  categories?: T;
   media?: T;
   products?: T;
   updatedAt?: T;
