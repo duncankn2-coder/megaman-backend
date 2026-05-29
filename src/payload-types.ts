@@ -92,8 +92,12 @@ export interface Config {
   db: {
     defaultIDType: string;
   };
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    'home-page': HomePage;
+  };
+  globalsSelect: {
+    'home-page': HomePageSelect<false> | HomePageSelect<true>;
+  };
   locale: null;
   user: User & {
     collection: 'users';
@@ -421,6 +425,70 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "home-page".
+ */
+export interface HomePage {
+  id: string;
+  heroSlides?:
+    | {
+        title: string;
+        subtitle: string;
+        description?: string | null;
+        image: string | Media;
+        ctaText?: string | null;
+        ctaLink?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  sections?:
+    | {
+        title: string;
+        subtitle?: string | null;
+        content?: string | null;
+        image?: (string | null) | Media;
+        linkText?: string | null;
+        linkUrl?: string | null;
+        layout?: ('grid' | 'split-left' | 'split-right') | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "home-page_select".
+ */
+export interface HomePageSelect<T extends boolean = true> {
+  heroSlides?:
+    | T
+    | {
+        title?: T;
+        subtitle?: T;
+        description?: T;
+        image?: T;
+        ctaText?: T;
+        ctaLink?: T;
+        id?: T;
+      };
+  sections?:
+    | T
+    | {
+        title?: T;
+        subtitle?: T;
+        content?: T;
+        image?: T;
+        linkText?: T;
+        linkUrl?: T;
+        layout?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

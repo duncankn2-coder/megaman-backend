@@ -13,6 +13,7 @@ import { Products } from './collections/Products'
 import { Projects } from './collections/Projects'
 import { Families } from './collections/Families'
 import { Categories } from './collections/Categories'
+import { HomePage } from './globals/HomePage'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -25,6 +26,7 @@ export default buildConfig({
     },
   },
   collections: [Users, Media, Products, Projects, Categories, Families],
+  globals: [HomePage],
   cors: ['http://localhost:3001'],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
