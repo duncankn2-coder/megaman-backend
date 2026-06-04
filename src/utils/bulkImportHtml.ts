@@ -348,48 +348,40 @@ export const bulkImportHtml = `
 
         <div class="grid">
             <div class="card">
-                <!-- Navigation Tabs -->
-                <div class="tabs">
-                    <button class="tab-btn active" onclick="switchTab('excel')">📊 Excel & ZIP Import</button>
-                    <button class="tab-btn" onclick="switchTab('json')">📋 JSON Fixture Import</button>
-                </div>
+                <h2 class="card-title">📋 JSON Import & XLSX Converter</h2>
                 
                 <form id="importForm" onsubmit="event.preventDefault();">
-                    <div class="dropzone-container">
-                        <!-- Excel & ZIP Content -->
-                        <div id="excelImportContainer" class="tab-content">
-                            <div style="display:flex; flex-direction:column; gap:16px;">
-                                <!-- XLSX Dropzone -->
-                                <div class="dropzone" id="xlsxDropzone" onclick="document.getElementById('xlsxInput').click()">
-                                    <input type="file" id="xlsxInput" name="xlsx" accept=".xlsx" style="display: none;" onchange="handleFileSelect(this, 'xlsx')">
+                    <div style="display:flex; flex-direction:column; gap:28px;">
+                        <!-- Section 1: Converter & Import -->
+                        <div class="import-section">
+                            <h3 style="font-size:14px; font-weight:600; margin-bottom:12px; display:flex; align-items:center; gap:6px;">
+                                <span>🔄</span> Convert & Import XLSX Spreadsheet
+                            </h3>
+                            <div style="display:flex; flex-direction:column; gap:12px;">
+                                <input type="file" id="converterInput" name="converter" accept=".xlsx" style="display: none;">
+                                <div class="dropzone" id="converterDropzone">
                                     <span class="dropzone-icon">📊</span>
-                                    <div class="dropzone-text" id="xlsxText">Select product spreadsheet (.xlsx)</div>
-                                    <div class="dropzone-hint">Excel file containing general data columns and mapping file names</div>
+                                    <div class="dropzone-text" id="converterText">Select general data spreadsheet (.xlsx)</div>
+                                    <div class="dropzone-hint">Convert spreadsheet columns and import immediately into CMS</div>
                                 </div>
-
-                                <!-- ZIP Dropzone -->
-                                <div class="dropzone" id="zipDropzone" onclick="document.getElementById('zipInput').click()">
-                                    <input type="file" id="zipInput" name="zip" accept=".zip" style="display: none;" onchange="handleFileSelect(this, 'zip')">
-                                    <span class="dropzone-icon">📦</span>
-                                    <div class="dropzone-text" id="zipText">Select assets archive (.zip)</div>
-                                    <div class="dropzone-hint">ZIP archive containing images, PDFs, LDT, IES, and Revit BIM files</div>
-                                </div>
-
-                                <button type="button" onclick="triggerExcelImport()" class="btn-submit" id="excelSubmitBtn" disabled>Start Bulk Import</button>
+                                <button type="button" onclick="triggerXlsxConvertAndImport()" class="btn-submit" id="converterSubmitBtn" disabled>Convert & Import JSON</button>
                             </div>
                         </div>
 
-                        <!-- JSON Content -->
-                        <div id="jsonImportContainer" class="tab-content" style="display: none;">
-                            <div style="display:flex; flex-direction:column; gap:16px;">
-                                <!-- JSON Dropzone -->
-                                <div class="dropzone" id="jsonDropzone" onclick="document.getElementById('jsonInput').click()">
-                                    <input type="file" id="jsonInput" name="json" accept=".json" style="display: none;" onchange="handleFileSelect(this, 'json')">
+                        <div style="border-top: 1px dashed var(--border-color);"></div>
+
+                        <!-- Section 2: Direct JSON Import -->
+                        <div class="import-section">
+                            <h3 style="font-size:14px; font-weight:600; margin-bottom:12px; display:flex; align-items:center; gap:6px;">
+                                <span>📋</span> Direct JSON Import
+                            </h3>
+                            <div style="display:flex; flex-direction:column; gap:12px;">
+                                <input type="file" id="jsonInput" name="json" accept=".json" style="display: none;">
+                                <div class="dropzone" id="jsonDropzone">
                                     <span class="dropzone-icon">📋</span>
                                     <div class="dropzone-text" id="jsonText">Select product JSON file (.json)</div>
-                                    <div class="dropzone-hint">JSON file like fixture_data.json containing product technical attributes</div>
+                                    <div class="dropzone-hint">Upload a previously converted JSON or fixture data file</div>
                                 </div>
-
                                 <button type="button" onclick="triggerJsonImport()" class="btn-submit" id="jsonSubmitBtn" disabled>Start JSON Import</button>
                             </div>
                         </div>
@@ -407,28 +399,42 @@ export const bulkImportHtml = `
                 </div>
             </div>
 
-            <!-- Excel Guidelines -->
-            <div class="card guidelines" id="excelGuidelines">
-                <h2 class="card-title">Import Guidelines</h2>
-                <ul>
-                    <li><strong>Required Spreadsheet Fields:</strong> Columns for <code>Model Number</code> (SKU), <code>Category</code>, and <code>Image File</code> are mandatory.</li>
-                    <li><strong>Category/Family Auto-Create:</strong> Unmatched categories or families will be created automatically on the fly.</li>
-                    <li><strong>Duplications:</strong> Existing product SKUs in the database will be elegantly overwritten and their details updated.</li>
-                    <li><strong>ZIP Organization:</strong> Put images and documents anywhere in the ZIP. Sub-folders are searched recursively.</li>
-                    <li><strong>File Mapping:</strong> Use standard columns: <code>Image File</code>, <code>Datasheet PDF File</code>, <code>LDT File</code>, <code>IES File</code>, and <code>BIM Revit File</code> mapping directly to file names in the ZIP.</li>
-                </ul>
-            </div>
-
-            <!-- JSON Guidelines -->
-            <div class="card guidelines" id="jsonGuidelines" style="display: none;">
-                <h2 class="card-title">JSON Guidelines</h2>
-                <ul>
-                    <li><strong>File Structure:</strong> Upload a JSON file containing a list of products (like <code>fixture_data.json</code>).</li>
-                    <li><strong>Required Fields:</strong> The file must contain product entries with <code>customer_model_no_new</code> or <code>yk_model_no</code> acting as the model SKU.</li>
-                    <li><strong>MongoDB Specification Sync:</strong> Specifications are automatically loaded and upserted into the Mongo <code>general_data.luminaire</code> collection for dynamic hook resolving.</li>
-                    <li><strong>Images Fallback:</strong> If a media record with a matching model name does not exist, a default placeholder PNG is assigned automatically.</li>
-                    <li><strong>Dynamic Resolving:</strong> Categories and Families (mapped from <code>product_type</code> and <code>series_name</code>) are looked up and created automatically.</li>
-                </ul>
+            <!-- Consolidated Guidelines -->
+            <div class="card guidelines" id="importGuidelines">
+                <h2 class="card-title">Import & Conversion Guidelines</h2>
+                <div style="display:flex; flex-direction:column; gap:16px;">
+                    <div>
+                        <h3 style="font-size:13px; font-weight:600; margin-bottom:6px; color:var(--primary); display:flex; align-items:center; gap:4px;">
+                            <span>🔄</span> Convert & Import XLSX Spreadsheet
+                        </h3>
+                        <ul style="list-style-type: none; display: flex; flex-direction: column; gap: 8px;">
+                            <li style="font-size: 12px; color: var(--text-muted); position: relative; padding-left: 18px;">
+                                <span style="color: var(--accent); position: absolute; left: 0; font-weight: bold;">✓</span>
+                                <strong>Spreadsheet Layout:</strong> Upload a <code>.xlsx</code> file structured with columns matching general data fields (like <code>Fixture General data - Hagon 2.xlsx</code>).
+                            </li>
+                            <li style="font-size: 12px; color: var(--text-muted); position: relative; padding-left: 18px;">
+                                <span style="color: var(--accent); position: absolute; left: 0; font-weight: bold;">✓</span>
+                                <strong>Auto-Import:</strong> The converter automatically cleans keys, normalizes dates to <code>YYYY-MM-DD</code>, and immediately triggers step 2 to sync records in CMS and MongoDB. No manual download/re-upload needed!
+                            </li>
+                        </ul>
+                    </div>
+                    <hr style="border:0; border-top:1px dashed var(--border-color);" />
+                    <div>
+                        <h3 style="font-size:13px; font-weight:600; margin-bottom:6px; color:var(--primary); display:flex; align-items:center; gap:4px;">
+                            <span>📋</span> Direct JSON Import
+                        </h3>
+                        <ul style="list-style-type: none; display: flex; flex-direction: column; gap: 8px;">
+                            <li style="font-size: 12px; color: var(--text-muted); position: relative; padding-left: 18px;">
+                                <span style="color: var(--accent); position: absolute; left: 0; font-weight: bold;">✓</span>
+                                <strong>JSON Structure:</strong> Upload a JSON array of products (like <code>fixture_data.json</code>) containing product specifications.
+                            </li>
+                            <li style="font-size: 12px; color: var(--text-muted); position: relative; padding-left: 18px;">
+                                <span style="color: var(--accent); position: absolute; left: 0; font-weight: bold;">✓</span>
+                                <strong>Specs Syncing:</strong> Automatically upserts specifications into MongoDB <code>general_data.luminaire</code> collection for dynamic hook resolving.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -454,47 +460,25 @@ export const bulkImportHtml = `
     </div>
 
     <script>
-        const files = { xlsx: null, zip: null, json: null };
-        let activeTab = 'excel';
+        const files = { json: null, converter: null };
 
-        function switchTab(tab) {
-            activeTab = tab;
-            const excelBtn = document.querySelector('.tab-btn[onclick*="excel"]');
-            const jsonBtn = document.querySelector('.tab-btn[onclick*="json"]');
-            const excelContainer = document.getElementById('excelImportContainer');
-            const jsonContainer = document.getElementById('jsonImportContainer');
-            const excelGuidelines = document.getElementById('excelGuidelines');
-            const jsonGuidelines = document.getElementById('jsonGuidelines');
-
-            if (tab === 'excel') {
-                excelBtn.classList.add('active');
-                jsonBtn.classList.remove('active');
-                excelContainer.style.display = 'block';
-                jsonContainer.style.display = 'none';
-                excelGuidelines.style.display = 'block';
-                jsonGuidelines.style.display = 'none';
-            } else {
-                excelBtn.classList.remove('active');
-                jsonBtn.classList.add('active');
-                excelContainer.style.display = 'none';
-                jsonContainer.style.display = 'block';
-                excelGuidelines.style.display = 'none';
-                jsonGuidelines.style.display = 'block';
-            }
-            
-            // Clear status for a fresh view
-            document.getElementById('errorBanner').style.display = 'none';
-            document.getElementById('resultsCard').style.display = 'none';
-            document.getElementById('progressContainer').style.display = 'none';
-        }
-
-        // Handle Drag & Drop
-        ['xlsxDropzone', 'zipDropzone', 'jsonDropzone'].forEach(id => {
-            const dropzone = document.getElementById(id);
-            if (!dropzone) return;
-            const type = id === 'xlsxDropzone' ? 'xlsx' : id === 'zipDropzone' ? 'zip' : 'json';
+        // Handle Click, Change, and Drag & Drop dynamically
+        ['json', 'converter'].forEach(type => {
+            const dropzone = document.getElementById(type + 'Dropzone');
             const input = document.getElementById(type + 'Input');
+            if (!dropzone || !input) return;
 
+            // Trigger file input dialog when dropzone is clicked
+            dropzone.addEventListener('click', () => {
+                input.click();
+            });
+
+            // Handle file input changes
+            input.addEventListener('change', () => {
+                handleFileSelect(input, type);
+            });
+
+            // Drag & Drop
             dropzone.addEventListener('dragover', (e) => {
                 e.preventDefault();
                 dropzone.classList.add('dragover');
@@ -526,14 +510,16 @@ export const bulkImportHtml = `
             } else {
                 files[type] = null;
                 dropzone.classList.remove('file-selected');
-                textElement.innerText = type === 'xlsx' ? 'Select product spreadsheet (.xlsx)' : 
-                                      type === 'zip' ? 'Select assets archive (.zip)' : 
-                                      'Select product JSON file (.json)';
+                textElement.innerText = type === 'json' ? 'Select product JSON file (.json)' :
+                                      'Select general data spreadsheet (.xlsx)';
             }
             
-            // Enable button if conditions met
-            document.getElementById('excelSubmitBtn').disabled = !(files.xlsx && files.zip);
-            document.getElementById('jsonSubmitBtn').disabled = !files.json;
+            // Enable buttons if conditions met
+            const jsonBtn = document.getElementById('jsonSubmitBtn');
+            if (jsonBtn) jsonBtn.disabled = !files.json;
+            
+            const converterBtn = document.getElementById('converterSubmitBtn');
+            if (converterBtn) converterBtn.disabled = !files.converter;
         }
 
         function formatSize(bytes) {
@@ -595,6 +581,11 @@ export const bulkImportHtml = `
                             document.getElementById('statUpdated').innerText = res.updated || 0;
                             document.getElementById('statFailed').innerText = res.warnings ? res.warnings.length : 0;
 
+                            // Restore default labels
+                            document.querySelector('#resultsCard .results-summary div:nth-child(1) .summary-label').innerText = 'Created';
+                            document.querySelector('#resultsCard .results-summary div:nth-child(2) .summary-label').innerText = 'Updated';
+                            document.querySelector('#resultsCard .results-summary div:nth-child(3) .summary-label').innerText = 'Failed/Warnings';
+
                             let logHtml = '=== IMPORT STARTED ===\\n';
                             if (res.logs && res.logs.length) {
                                 logHtml += res.logs.join('\\n') + '\\n';
@@ -628,11 +619,166 @@ export const bulkImportHtml = `
             }
         }
 
-        function triggerExcelImport() {
-            const formData = new FormData();
-            formData.append('xlsx', files.xlsx);
-            formData.append('zip', files.zip);
-            uploadAndProcess('/api/products/bulk-import', formData, 'excelSubmitBtn');
+        async function triggerXlsxConvertAndImport() {
+            const submitBtn = document.getElementById('converterSubmitBtn');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            const progressStatus = document.getElementById('progressStatus');
+            const progressPercent = document.getElementById('progressPercent');
+            const resultsCard = document.getElementById('resultsCard');
+            const errorBanner = document.getElementById('errorBanner');
+            const logBox = document.getElementById('logBox');
+
+            // Reset states
+            errorBanner.style.display = 'none';
+            resultsCard.style.display = 'none';
+            submitBtn.disabled = true;
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+            progressPercent.innerText = '0%';
+            progressStatus.innerText = 'Step 1/2: Uploading spreadsheet...';
+            logBox.innerText = '';
+
+            try {
+                const formData = new FormData();
+                formData.append('xlsx', files.converter);
+
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', '/api/products/xlsx-to-json', true);
+
+                xhr.upload.onprogress = function(e) {
+                    if (e.lengthComputable) {
+                        const pct = Math.round((e.loaded / e.total) * 30); // Conversion is 30% of total
+                        progressBar.style.width = pct + '%';
+                        progressPercent.innerText = pct + '%';
+                    }
+                };
+
+                xhr.onload = async function() {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try {
+                            const res = JSON.parse(xhr.responseText);
+                            let logHtml = '=== STEP 1: XLSX CONVERSION COMPLETED ===\\n';
+                            logHtml += 'Uploaded file: ' + files.converter.name + '\\n';
+                            logHtml += 'Parsed sheet successfully.\\n';
+                            logHtml += 'Found ' + res.length + ' valid product data rows.\\n\\n';
+                            
+                            res.forEach((item, idx) => {
+                                const model = item.customer_model_no_new || item.yk_model_no || 'UNKNOWN';
+                                logHtml += 'Row ' + (idx + 1) + ': Mapped to SKU "' + model + '" successfully.\\n';
+                            });
+                            logBox.innerText = logHtml;
+                            logBox.scrollTop = logBox.scrollHeight;
+
+                            // Update progress for Step 2
+                            progressBar.style.width = '50%';
+                            progressPercent.innerText = '50%';
+                            progressStatus.innerText = 'Step 2/2: Importing converted JSON into CMS...';
+
+                            // Trigger JSON file download in background for convenience
+                            const jsonString = JSON.stringify(res, null, 4);
+                            const blob = new Blob([jsonString], { type: 'application/json' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            const nameParts = files.converter.name.split('.');
+                            const baseName = nameParts.slice(0, -1).join('.') || files.converter.name;
+                            a.download = baseName + '_converted.json';
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+
+                            // Construct file and form data for direct JSON import
+                            const jsonFile = new File([blob], baseName + '_converted.json', { type: 'application/json' });
+                            const importFormData = new FormData();
+                            importFormData.append('json', jsonFile);
+
+                            // Send step 2 import request
+                            const importXhr = new XMLHttpRequest();
+                            importXhr.open('POST', '/api/products/json-import', true);
+
+                            importXhr.upload.onprogress = function(pe) {
+                                if (pe.lengthComputable) {
+                                    const pct = 50 + Math.round((pe.loaded / pe.total) * 40); // 50% to 90%
+                                    progressBar.style.width = pct + '%';
+                                    progressPercent.innerText = pct + '%';
+                                }
+                            };
+
+                            importXhr.onload = function() {
+                                progressContainer.style.display = 'none';
+                                submitBtn.disabled = false;
+
+                                if (importXhr.status >= 200 && importXhr.status < 300) {
+                                    try {
+                                        const importRes = JSON.parse(importXhr.responseText);
+                                        resultsCard.style.display = 'block';
+
+                                        progressBar.style.width = '100%';
+                                        progressPercent.innerText = '100%';
+
+                                        document.getElementById('statCreated').innerText = importRes.created || 0;
+                                        document.getElementById('statUpdated').innerText = importRes.updated || 0;
+                                        document.getElementById('statFailed').innerText = importRes.warnings ? importRes.warnings.length : 0;
+
+                                        // Restore default labels
+                                        document.querySelector('#resultsCard .results-summary div:nth-child(1) .summary-label').innerText = 'Created';
+                                        document.querySelector('#resultsCard .results-summary div:nth-child(2) .summary-label').innerText = 'Updated';
+                                        document.querySelector('#resultsCard .results-summary div:nth-child(3) .summary-label').innerText = 'Failed/Warnings';
+
+                                        logHtml += '\\n=== STEP 2: IMPORT STARTED ===\\n';
+                                        if (importRes.logs && importRes.logs.length) {
+                                            logHtml += importRes.logs.join('\\n') + '\\n';
+                                        }
+                                        if (importRes.warnings && importRes.warnings.length) {
+                                            logHtml += '\\n=== WARNINGS / ERRORS ===\\n' + importRes.warnings.join('\\n') + '\\n';
+                                        }
+                                        logHtml += '\\n=== CONVERSION & IMPORT COMPLETED SUCCESSFULLY ===';
+                                        logBox.innerText = logHtml;
+                                        logBox.scrollTop = logBox.scrollHeight;
+
+                                    } catch (ie) {
+                                        showError('Failed to parse import response: ' + importXhr.responseText);
+                                    }
+                                } else {
+                                    showError('Step 2 Import Error (' + importXhr.status + '): ' + importXhr.responseText);
+                                }
+                            };
+
+                            importXhr.onerror = function() {
+                                progressContainer.style.display = 'none';
+                                submitBtn.disabled = false;
+                                showError('Network error occurred during automatic JSON import step.');
+                            };
+
+                            importXhr.send(importFormData);
+
+                        } catch (e) {
+                            progressContainer.style.display = 'none';
+                            submitBtn.disabled = false;
+                            showError('Failed to parse conversion response: ' + xhr.responseText);
+                        }
+                    } else {
+                        progressContainer.style.display = 'none';
+                        submitBtn.disabled = false;
+                        showError('Step 1 Conversion Error (' + xhr.status + '): ' + xhr.responseText);
+                    }
+                };
+
+                xhr.onerror = function() {
+                    progressContainer.style.display = 'none';
+                    submitBtn.disabled = false;
+                    showError('Network error occurred during conversion step.');
+                };
+
+                xhr.send(formData);
+
+            } catch (error) {
+                progressContainer.style.display = 'none';
+                submitBtn.disabled = false;
+                showError('Error initiating upload: ' + error.message);
+            }
         }
 
         function triggerJsonImport() {

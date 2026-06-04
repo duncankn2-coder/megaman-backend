@@ -176,6 +176,9 @@ export interface Product {
   photometryLdt?: (string | null) | Media;
   photometryIes?: (string | null) | Media;
   bimRevit?: (string | null) | Media;
+  techDocControlGear?: (string | null) | Media;
+  techDocContainingProduct?: (string | null) | Media;
+  techDocLightSource?: (string | null) | Media;
   colour?: string | null;
   power?: string | null;
   colourTemperature?: string | null;
@@ -352,6 +355,9 @@ export interface ProductsSelect<T extends boolean = true> {
   photometryLdt?: T;
   photometryIes?: T;
   bimRevit?: T;
+  techDocControlGear?: T;
+  techDocContainingProduct?: T;
+  techDocLightSource?: T;
   colour?: T;
   power?: T;
   colourTemperature?: T;

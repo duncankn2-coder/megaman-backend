@@ -15,7 +15,10 @@ const headers = [
   'Datasheet PDF File',
   'LDT File',
   'IES File',
-  'BIM Revit File'
+  'BIM Revit File',
+  'Technical Document - Control Gear',
+  'Technical Document - Containing Product',
+  'Technical Document - Light Source'
 ];
 
 const mockRows = [
@@ -31,7 +34,10 @@ const mockRows = [
     'Datasheet PDF File': 'triona_datasheet.pdf',
     'LDT File': 'triona_round_3000k.ldt',
     'IES File': 'triona_round_3000k.ies',
-    'BIM Revit File': 'triona_round.rfa'
+    'BIM Revit File': 'triona_round.rfa',
+    'Technical Document - Control Gear': 'triona_control_gear.pdf',
+    'Technical Document - Containing Product': 'triona_containing_product.pdf',
+    'Technical Document - Light Source': 'triona_light_source.pdf'
   },
   {
     'Model Number': 'F50309RC-Black',
@@ -45,7 +51,10 @@ const mockRows = [
     'Datasheet PDF File': 'triona_datasheet.pdf',
     'LDT File': 'triona_round_4000k.ldt',
     'IES File': 'triona_round_4000k.ies',
-    'BIM Revit File': 'triona_round.rfa'
+    'BIM Revit File': 'triona_round.rfa',
+    'Technical Document - Control Gear': 'triona_control_gear.pdf',
+    'Technical Document - Containing Product': 'triona_containing_product.pdf',
+    'Technical Document - Light Source': 'triona_light_source.pdf'
   }
 ];
 
@@ -65,7 +74,10 @@ ws['!cols'] = [
   { wch: 22 }, // Datasheet PDF File
   { wch: 22 }, // LDT File
   { wch: 22 }, // IES File
-  { wch: 22 }  // BIM Revit File
+  { wch: 22 }, // BIM Revit File
+  { wch: 35 }, // Technical Document - Control Gear
+  { wch: 35 }, // Technical Document - Containing Product
+  { wch: 35 }  // Technical Document - Light Source
 ];
 
 xlsx.utils.book_append_sheet(wb, ws, 'Template');

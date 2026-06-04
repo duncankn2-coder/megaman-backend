@@ -97,6 +97,9 @@ export async function processBulkImport(
     const ldtFile = getField(row, ['LDT File', 'LDTFile', 'LDT', 'ldt_file', 'ldt']);
     const iesFile = getField(row, ['IES File', 'IESFile', 'IES', 'ies_file', 'ies']);
     const bimFile = getField(row, ['BIM Revit File', 'BIMRevitFile', 'BIM', 'bim_file', 'bim', 'revit']);
+    const techDocControlGearFile = getField(row, ['Technical Document - Control Gear', 'Technical Document Control Gear', 'TechnicalDocumentControlGear', 'tech_doc_control_gear', 'control_gear_doc']);
+    const techDocContainingProductFile = getField(row, ['Technical Document - Containing Product', 'Technical Document Containing Product', 'TechnicalDocumentContainingProduct', 'tech_doc_containing_product', 'containing_product_doc']);
+    const techDocLightSourceFile = getField(row, ['Technical Document - Light Source', 'Technical Document Light Source', 'TechnicalDocumentLightSource', 'tech_doc_light_source', 'light_source_doc']);
 
     if (!modelNumber) {
       warnings.push(`Row ${rowNum}: Skipped because "Model Number" is missing.`);
@@ -220,6 +223,27 @@ export async function processBulkImport(
       'document'
     );
 
+    const techDocControlGearId = await uploadAssetFromZip(
+      techDocControlGearFile,
+      [`${modelNumber}_control_gear.pdf`, `${modelNumber}_cg.pdf`],
+      `Technical Document - Control Gear for ${modelNumber}`,
+      'document'
+    );
+
+    const techDocContainingProductId = await uploadAssetFromZip(
+      techDocContainingProductFile,
+      [`${modelNumber}_containing_product.pdf`, `${modelNumber}_cp.pdf`],
+      `Technical Document - Containing Product for ${modelNumber}`,
+      'document'
+    );
+
+    const techDocLightSourceId = await uploadAssetFromZip(
+      techDocLightSourceFile,
+      [`${modelNumber}_light_source.pdf`, `${modelNumber}_ls.pdf`],
+      `Technical Document - Light Source for ${modelNumber}`,
+      'document'
+    );
+
     // 3. Resolve Category (Match or Create)
     const finalCategoryIds: string[] = [];
     const catNames = categoryName.split(',').map(s => s.trim()).filter(Boolean);
@@ -336,6 +360,15 @@ export async function processBulkImport(
       }
       if (bimId) {
         productData.bimRevit = bimId;
+      }
+      if (techDocControlGearId) {
+        productData.techDocControlGear = techDocControlGearId;
+      }
+      if (techDocContainingProductId) {
+        productData.techDocContainingProduct = techDocContainingProductId;
+      }
+      if (techDocLightSourceId) {
+        productData.techDocLightSource = techDocLightSourceId;
       }
 
       if (existingProducts.docs.length > 0) {

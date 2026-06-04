@@ -24,6 +24,11 @@ export default buildConfig({
     importMap: {
       baseDir: path.resolve(dirname),
     },
+    components: {
+      afterNavLinks: [
+        '/components/BulkImportLink#BulkImportLink'
+      ],
+    },
   },
   collections: [Users, Media, Products, Projects, Categories, Families],
   globals: [HomePage],
