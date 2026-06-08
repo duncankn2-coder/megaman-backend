@@ -3,7 +3,7 @@ import type { CollectionConfig } from 'payload'
 export const Media: CollectionConfig = {
   slug: 'media',
   upload: {
-    staticDir: process.env.VERCEL ? '/tmp' : 'public/media',
+    staticDir: 'public/media',
     mimeTypes: ['image/*', 'video/*', 'application/pdf', 'text/plain', 'application/octet-stream', 'application/zip', 'application/x-zip-compressed'],
   },
   access: {
