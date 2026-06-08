@@ -31,9 +31,14 @@ export default buildConfig({
       ],
     },
   },
+  serverURL: process.env.PAYLOAD_PUBLIC_SERVER_URL || 'http://localhost:3000',
   collections: [Users, Media, Products, Projects, Categories, Families, News],
   globals: [HomePage],
-  cors: ['http://localhost:3001'],
+  cors: [
+    'http://localhost:3001',
+    'https://megaman-frontend.vercel.app',
+    process.env.PAYLOAD_PUBLIC_FRONTEND_URL || '',
+  ].filter(Boolean),
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
