@@ -73,6 +73,7 @@ export interface Config {
     projects: Project;
     categories: Category;
     families: Family;
+    news: News;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -85,6 +86,7 @@ export interface Config {
     projects: ProjectsSelect<false> | ProjectsSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     families: FamiliesSelect<false> | FamiliesSelect<true>;
+    news: NewsSelect<false> | NewsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -237,6 +239,40 @@ export interface Project {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "news".
+ */
+export interface News {
+  id: string;
+  title: string;
+  /**
+   * e.g. MATTER SMART HOME, ECO SYSTEM, NEW ARRIVALS
+   */
+  category: string;
+  publishDate: string;
+  summary: string;
+  content?: {
+    root: {
+      type: string;
+      children: {
+        type: string;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  image: string | Media;
+  linkText?: string | null;
+  linkUrl?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -265,6 +301,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'families';
         value: string | Family;
+      } | null)
+    | ({
+        relationTo: 'news';
+        value: string | News;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -402,6 +442,22 @@ export interface FamiliesSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "news_select".
+ */
+export interface NewsSelect<T extends boolean = true> {
+  title?: T;
+  category?: T;
+  publishDate?: T;
+  summary?: T;
+  content?: T;
+  image?: T;
+  linkText?: T;
+  linkUrl?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents_select".
  */
 export interface PayloadLockedDocumentsSelect<T extends boolean = true> {
@@ -438,28 +494,81 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
  */
 export interface HomePage {
   id: string;
-  heroSlides?:
-    | {
-        title: string;
-        subtitle: string;
-        description?: string | null;
-        image: string | Media;
-        ctaText?: string | null;
-        ctaLink?: string | null;
-        id?: string | null;
-      }[]
-    | null;
-  sections?:
-    | {
-        title: string;
-        subtitle?: string | null;
-        content?: string | null;
-        image?: (string | null) | Media;
-        linkText?: string | null;
-        linkUrl?: string | null;
-        layout?: ('grid' | 'split-left' | 'split-right') | null;
-        id?: string | null;
-      }[]
+  layout?:
+    | (
+        | {
+            slides?:
+              | {
+                  title: string;
+                  subtitle: string;
+                  description?: string | null;
+                  image: string | Media;
+                  ctaText?: string | null;
+                  ctaLink?: string | null;
+                  id?: string | null;
+                }[]
+              | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'hero';
+          }
+        | {
+            title: string;
+            subtitle?: string | null;
+            categories?:
+              | {
+                  number: string;
+                  title: string;
+                  description?: string | null;
+                  parameterLabel?: string | null;
+                  parameterValue: string;
+                  linkUrl: string;
+                  linkText?: string | null;
+                  id?: string | null;
+                }[]
+              | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'categoriesGrid';
+          }
+        | {
+            title: string;
+            subtitle?: string | null;
+            content?: string | null;
+            image?: (string | null) | Media;
+            linkText?: string | null;
+            linkUrl?: string | null;
+            layout?: ('grid' | 'split-left' | 'split-right') | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'editorial';
+          }
+        | {
+            title: string;
+            subtitle?: string | null;
+            products: (string | Product)[];
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'highlightProducts';
+          }
+        | {
+            title: string;
+            subtitle?: string | null;
+            projects: (string | Project)[];
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'inspiration';
+          }
+        | {
+            title: string;
+            subtitle?: string | null;
+            source?: ('latest' | 'custom') | null;
+            featuredNews?: (string | News)[] | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'news';
+          }
+      )[]
     | null;
   updatedAt?: string | null;
   createdAt?: string | null;
@@ -469,28 +578,87 @@ export interface HomePage {
  * via the `definition` "home-page_select".
  */
 export interface HomePageSelect<T extends boolean = true> {
-  heroSlides?:
+  layout?:
     | T
     | {
-        title?: T;
-        subtitle?: T;
-        description?: T;
-        image?: T;
-        ctaText?: T;
-        ctaLink?: T;
-        id?: T;
-      };
-  sections?:
-    | T
-    | {
-        title?: T;
-        subtitle?: T;
-        content?: T;
-        image?: T;
-        linkText?: T;
-        linkUrl?: T;
-        layout?: T;
-        id?: T;
+        hero?:
+          | T
+          | {
+              slides?:
+                | T
+                | {
+                    title?: T;
+                    subtitle?: T;
+                    description?: T;
+                    image?: T;
+                    ctaText?: T;
+                    ctaLink?: T;
+                    id?: T;
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        categoriesGrid?:
+          | T
+          | {
+              title?: T;
+              subtitle?: T;
+              categories?:
+                | T
+                | {
+                    number?: T;
+                    title?: T;
+                    description?: T;
+                    parameterLabel?: T;
+                    parameterValue?: T;
+                    linkUrl?: T;
+                    linkText?: T;
+                    id?: T;
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        editorial?:
+          | T
+          | {
+              title?: T;
+              subtitle?: T;
+              content?: T;
+              image?: T;
+              linkText?: T;
+              linkUrl?: T;
+              layout?: T;
+              id?: T;
+              blockName?: T;
+            };
+        highlightProducts?:
+          | T
+          | {
+              title?: T;
+              subtitle?: T;
+              products?: T;
+              id?: T;
+              blockName?: T;
+            };
+        inspiration?:
+          | T
+          | {
+              title?: T;
+              subtitle?: T;
+              projects?: T;
+              id?: T;
+              blockName?: T;
+            };
+        news?:
+          | T
+          | {
+              title?: T;
+              subtitle?: T;
+              source?: T;
+              featuredNews?: T;
+              id?: T;
+              blockName?: T;
+            };
       };
   updatedAt?: T;
   createdAt?: T;

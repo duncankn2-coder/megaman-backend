@@ -13,6 +13,7 @@ import { Products } from './collections/Products'
 import { Projects } from './collections/Projects'
 import { Families } from './collections/Families'
 import { Categories } from './collections/Categories'
+import { News } from './collections/News'
 import { HomePage } from './globals/HomePage'
 
 const filename = fileURLToPath(import.meta.url)
@@ -30,7 +31,7 @@ export default buildConfig({
       ],
     },
   },
-  collections: [Users, Media, Products, Projects, Categories, Families],
+  collections: [Users, Media, Products, Projects, Categories, Families, News],
   globals: [HomePage],
   cors: ['http://localhost:3001'],
   editor: lexicalEditor(),
