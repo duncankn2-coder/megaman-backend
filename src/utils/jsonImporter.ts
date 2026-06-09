@@ -203,14 +203,27 @@ export async function processJsonImport(
     // 4. Resolve Product Image
     let imageId = placeholderImageId;
     try {
-      // Find a media record that matches modelNumber
+      // Find a media record that matches modelNumber (supporting slashes replaced by dashes/spaces/underscores)
+      const candidates = [
+        modelNumber,
+        modelNumber.replace(/\//g, '-'),
+        modelNumber.replace(/\//g, '_'),
+        modelNumber.replace(/\//g, ' '),
+        modelNumber.replace(/-/g, ' '),
+        modelNumber.replace(/\//g, '-').replace(/-/g, ' '),
+      ];
+      const uniqueCandidates = Array.from(new Set(candidates)).filter(Boolean);
+      
+      const orConditions = uniqueCandidates.map(cand => ({
+        filename: {
+          like: cand
+        }
+      }));
+
       const mediaQuery = await payload.find({
         collection: 'media',
         where: {
-          filename: {
-            // Check if filename contains modelNumber (case-insensitive)
-            like: modelNumber
-          }
+          or: orConditions
         },
         limit: 1,
       });
@@ -219,24 +232,7 @@ export async function processJsonImport(
         imageId = mediaQuery.docs[0].id as string;
         logs.push(`- Found matching media record for "${modelNumber}" (ID: ${imageId}).`);
       } else {
-        // Double check by filename fuzzy search (sometimes filename uses spaces instead of dashes)
-        const spaceModel = modelNumber.replace(/-/g, ' ');
-        const mediaQuerySpace = await payload.find({
-          collection: 'media',
-          where: {
-            filename: {
-              like: spaceModel
-            }
-          },
-          limit: 1,
-        });
-        
-        if (mediaQuerySpace.docs.length > 0) {
-          imageId = mediaQuerySpace.docs[0].id as string;
-          logs.push(`- Found matching media record (spaced) for "${modelNumber}" (ID: ${imageId}).`);
-        } else {
-          logs.push(`- No custom media record found for "${modelNumber}". Falling back to default placeholder image.`);
-        }
+        logs.push(`- No custom media record found for "${modelNumber}". Falling back to default placeholder image.`);
       }
     } catch (err: any) {
       warnings.push(`Item ${itemIndex} (${modelNumber}): Error searching media collection: ${err.message}`);

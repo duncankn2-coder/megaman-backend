@@ -182,10 +182,59 @@ export async function processBulkImport(
       }
     };
 
+    // Generate normalized variations of the model number to handle slashes converted to other characters in filenames
+    const normalizedModels = Array.from(new Set([
+      modelNumber,
+      modelNumber.replace(/\//g, '-'),
+      modelNumber.replace(/\//g, '_'),
+      modelNumber.replace(/\//g, ' '),
+      modelNumber.replace(/\//g, '-').replace(/-/g, ' '),
+    ])).filter(Boolean);
+
+    const fallbackImages: string[] = [];
+    for (const m of normalizedModels) {
+      fallbackImages.push(`${m}.png`, `${m}.jpg`, `${m}.jpeg`, `${m}.gif`);
+    }
+
+    const fallbackDatasheets: string[] = [];
+    for (const m of normalizedModels) {
+      fallbackDatasheets.push(`${m}.pdf`, `${m}_datasheet.pdf`, `${m}_spec.pdf`, `${m}_leaflet.pdf`);
+    }
+
+    const fallbackLdts: string[] = [];
+    for (const m of normalizedModels) {
+      fallbackLdts.push(`${m}.ldt`);
+    }
+
+    const fallbackIess: string[] = [];
+    for (const m of normalizedModels) {
+      fallbackIess.push(`${m}.ies`);
+    }
+
+    const fallbackBims: string[] = [];
+    for (const m of normalizedModels) {
+      fallbackBims.push(`${m}.rfa`);
+    }
+
+    const fallbackControlGears: string[] = [];
+    for (const m of normalizedModels) {
+      fallbackControlGears.push(`${m}_control_gear.pdf`, `${m}_cg.pdf`);
+    }
+
+    const fallbackContainingProducts: string[] = [];
+    for (const m of normalizedModels) {
+      fallbackContainingProducts.push(`${m}_containing_product.pdf`, `${m}_cp.pdf`);
+    }
+
+    const fallbackLightSources: string[] = [];
+    for (const m of normalizedModels) {
+      fallbackLightSources.push(`${m}_light_source.pdf`, `${m}_ls.pdf`);
+    }
+
     // 1. Upload Primary Image (Required)
     const imageId = await uploadAssetFromZip(
       imageFile,
-      [`${modelNumber}.png`, `${modelNumber}.jpg`, `${modelNumber}.jpeg`, `${modelNumber}.gif`],
+      fallbackImages,
       `Image for ${modelNumber}`,
       'image'
     );
@@ -197,49 +246,49 @@ export async function processBulkImport(
     // 2. Upload Optional Assets
     const datasheetId = await uploadAssetFromZip(
       datasheetPdfFile,
-      [`${modelNumber}.pdf`, `${modelNumber}_datasheet.pdf`, `${modelNumber}_spec.pdf`, `${modelNumber}_leaflet.pdf`],
+      fallbackDatasheets,
       `Datasheet for ${modelNumber}`,
       'document'
     );
 
     const ldtId = await uploadAssetFromZip(
       ldtFile,
-      [`${modelNumber}.ldt`],
+      fallbackLdts,
       `LDT Photometrics for ${modelNumber}`,
       'document'
     );
 
     const iesId = await uploadAssetFromZip(
       iesFile,
-      [`${modelNumber}.ies`],
+      fallbackIess,
       `IES Photometrics for ${modelNumber}`,
       'document'
     );
 
     const bimId = await uploadAssetFromZip(
       bimFile,
-      [`${modelNumber}.rfa`],
+      fallbackBims,
       `BIM Revit Object for ${modelNumber}`,
       'document'
     );
 
     const techDocControlGearId = await uploadAssetFromZip(
       techDocControlGearFile,
-      [`${modelNumber}_control_gear.pdf`, `${modelNumber}_cg.pdf`],
+      fallbackControlGears,
       `Technical Document - Control Gear for ${modelNumber}`,
       'document'
     );
 
     const techDocContainingProductId = await uploadAssetFromZip(
       techDocContainingProductFile,
-      [`${modelNumber}_containing_product.pdf`, `${modelNumber}_cp.pdf`],
+      fallbackContainingProducts,
       `Technical Document - Containing Product for ${modelNumber}`,
       'document'
     );
 
     const techDocLightSourceId = await uploadAssetFromZip(
       techDocLightSourceFile,
-      [`${modelNumber}_light_source.pdf`, `${modelNumber}_ls.pdf`],
+      fallbackLightSources,
       `Technical Document - Light Source for ${modelNumber}`,
       'document'
     );
