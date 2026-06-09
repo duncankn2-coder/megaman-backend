@@ -1,7 +1,4 @@
-import * as xlsxModule from 'xlsx';
-
-// Handle different ESM vs CommonJS import resolution for 'xlsx'
-const xlsx = (xlsxModule as any).default || xlsxModule;
+import * as xlsx from 'xlsx';
 
 export const LUMINAIRE_KEYS = [
   "product_manager",
