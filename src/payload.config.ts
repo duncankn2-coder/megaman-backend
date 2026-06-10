@@ -14,6 +14,7 @@ import { Projects } from './collections/Projects'
 import { Families } from './collections/Families'
 import { Categories } from './collections/Categories'
 import { News } from './collections/News'
+import { Symbols } from './collections/Symbols'
 import { HomePage } from './globals/HomePage'
 
 const filename = fileURLToPath(import.meta.url)
@@ -32,7 +33,7 @@ export default buildConfig({
     },
   },
   serverURL: process.env.PAYLOAD_PUBLIC_SERVER_URL || 'http://localhost:3000',
-  collections: [Users, Media, Products, Projects, Categories, Families, News],
+  collections: [Users, Media, Products, Projects, Categories, Families, News, Symbols],
   globals: [HomePage],
   cors: [
     'http://localhost:3001',

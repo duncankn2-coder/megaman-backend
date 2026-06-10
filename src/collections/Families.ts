@@ -1,4 +1,5 @@
 import { CollectionConfig } from 'payload'
+import { EditorialBlock, HighlightProductsBlock, InspirationBlock } from '../blocks/layoutBlocks'
 
 export const Families: CollectionConfig = {
   slug: 'families',
@@ -41,6 +42,36 @@ export const Families: CollectionConfig = {
       type: 'relationship',
       relationTo: 'products',
       hasMany: true,
+    },
+    {
+      name: 'features',
+      type: 'array',
+      label: 'Key Features',
+      fields: [
+        {
+          name: 'feature',
+          type: 'text',
+          required: true,
+          label: 'Feature Description',
+        }
+      ]
+    },
+    {
+      name: 'symbols',
+      type: 'relationship',
+      relationTo: 'symbols',
+      hasMany: true,
+      label: 'Symbols / Certifications',
+    },
+    {
+      name: 'layout',
+      type: 'blocks',
+      label: 'Page Layout Sections (Rendered above Technical Configurations)',
+      blocks: [
+        EditorialBlock,
+        HighlightProductsBlock,
+        InspirationBlock,
+      ],
     },
   ],
 }

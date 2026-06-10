@@ -74,6 +74,7 @@ export interface Config {
     categories: Category;
     families: Family;
     news: News;
+    symbols: Symbol;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -87,6 +88,7 @@ export interface Config {
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     families: FamiliesSelect<false> | FamiliesSelect<true>;
     news: NewsSelect<false> | NewsSelect<true>;
+    symbols: SymbolsSelect<false> | SymbolsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -210,6 +212,45 @@ export interface Family {
   categories: (string | Category)[];
   media: (string | Media)[];
   products?: (string | Product)[] | null;
+  features?:
+    | {
+        feature: string;
+        id?: string | null;
+      }[]
+    | null;
+  symbols?: (string | Symbol)[] | null;
+  layout?:
+    | (
+        | {
+            title: string;
+            subtitle?: string | null;
+            content?: string | null;
+            image?: (string | null) | Media;
+            linkText?: string | null;
+            linkUrl?: string | null;
+            layout?: ('grid' | 'split-left' | 'split-right') | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'editorial';
+          }
+        | {
+            title: string;
+            subtitle?: string | null;
+            products: (string | Product)[];
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'highlightProducts';
+          }
+        | {
+            title: string;
+            subtitle?: string | null;
+            projects: (string | Project)[];
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'inspiration';
+          }
+      )[]
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -221,6 +262,18 @@ export interface Category {
   id: string;
   name: string;
   parent?: (string | null) | Category;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "symbols".
+ */
+export interface Symbol {
+  id: string;
+  name: string;
+  icon?: (string | null) | Media;
+  isHighlighted?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -305,6 +358,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'news';
         value: string | News;
+      } | null)
+    | ({
+        relationTo: 'symbols';
+        value: string | Symbol;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -437,6 +494,48 @@ export interface FamiliesSelect<T extends boolean = true> {
   categories?: T;
   media?: T;
   products?: T;
+  features?:
+    | T
+    | {
+        feature?: T;
+        id?: T;
+      };
+  symbols?: T;
+  layout?:
+    | T
+    | {
+        editorial?:
+          | T
+          | {
+              title?: T;
+              subtitle?: T;
+              content?: T;
+              image?: T;
+              linkText?: T;
+              linkUrl?: T;
+              layout?: T;
+              id?: T;
+              blockName?: T;
+            };
+        highlightProducts?:
+          | T
+          | {
+              title?: T;
+              subtitle?: T;
+              products?: T;
+              id?: T;
+              blockName?: T;
+            };
+        inspiration?:
+          | T
+          | {
+              title?: T;
+              subtitle?: T;
+              projects?: T;
+              id?: T;
+              blockName?: T;
+            };
+      };
   updatedAt?: T;
   createdAt?: T;
 }
@@ -453,6 +552,17 @@ export interface NewsSelect<T extends boolean = true> {
   image?: T;
   linkText?: T;
   linkUrl?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "symbols_select".
+ */
+export interface SymbolsSelect<T extends boolean = true> {
+  name?: T;
+  icon?: T;
+  isHighlighted?: T;
   updatedAt?: T;
   createdAt?: T;
 }
