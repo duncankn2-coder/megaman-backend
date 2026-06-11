@@ -218,6 +218,12 @@ export interface Family {
         id?: string | null;
       }[]
     | null;
+  applications?:
+    | {
+        application: string;
+        id?: string | null;
+      }[]
+    | null;
   symbols?: (string | Symbol)[] | null;
   layout?:
     | (
@@ -498,6 +504,12 @@ export interface FamiliesSelect<T extends boolean = true> {
     | T
     | {
         feature?: T;
+        id?: T;
+      };
+  applications?:
+    | T
+    | {
+        application?: T;
         id?: T;
       };
   symbols?: T;

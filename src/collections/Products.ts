@@ -214,31 +214,35 @@ export const Products: CollectionConfig = {
     },
   ],
   hooks: {
-    afterChange: [
-      async ({ doc }) => {
+    beforeChange: [
+      async ({ data, originalDoc }) => {
+        // If specifications are already defined in the incoming data (i.e. manually pasted in UI),
+        // do not overwrite them with MongoDB values.
+        if (data.specifications !== undefined) {
+          return data;
+        }
 
-        //if (operation !== 'create') {
-        //  return doc;
-        //}
-        const modelNumber = doc.name;
+        const modelNumber = data.name || originalDoc?.name;
+        if (!modelNumber) {
+          return data;
+        }
 
         try {
           // Fetch specifications from general_data.luminaire
           const specs = await fetchSpecifications(modelNumber);
 
           if (specs) {
-            // Update the product with the fetched specifications
-            doc.specifications = specs;
-            console.log(`Set specifications for new product with model ${modelNumber}:`, specs);
-            console.log( `specifications: `, doc.specifications );
+            // Update the incoming data with the fetched specifications
+            data.specifications = specs;
+            console.log(`Set specifications for product with model ${modelNumber}:`, specs);
           } else {
             console.warn(`No specifications found for model number: ${modelNumber}`);
           }
         } catch (error) {
-          console.error(`Error in afterChange hook for product ${doc.id}:`, error);
+          console.error(`Error in beforeChange hook for product:`, error);
         }
 
-        return doc;
+        return data;
       },
     ],
   },

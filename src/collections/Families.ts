@@ -57,6 +57,19 @@ export const Families: CollectionConfig = {
       ]
     },
     {
+      name: 'applications',
+      type: 'array',
+      label: 'Applications',
+      fields: [
+        {
+          name: 'application',
+          type: 'text',
+          required: true,
+          label: 'Application Item',
+        }
+      ]
+    },
+    {
       name: 'symbols',
       type: 'relationship',
       relationTo: 'symbols',
