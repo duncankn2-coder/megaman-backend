@@ -128,6 +128,55 @@ export const Products: CollectionConfig = {
       },
     },
     {
+      path: '/sku-bulk-import',
+      method: 'post',
+      handler: async (req) => {
+        if (!req.user) {
+          return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+
+        try {
+          const { processSkuBulkImport } = await import('../utils/skuBulkImporter');
+
+          const formData = await (req as any).formData();
+          const generalXlsxFile = formData.get('generalXlsx');
+          const skuXlsxFile = formData.get('skuXlsx');
+          const zipFile = formData.get('zip');
+
+          if (!generalXlsxFile || !skuXlsxFile || !zipFile) {
+            return new Response(JSON.stringify({ error: 'General data XLSX, SKU MM Code XLSX, and Media ZIP files are all required.' }), {
+              status: 400,
+              headers: { 'Content-Type': 'application/json' },
+            });
+          }
+
+          const generalXlsxBlob = generalXlsxFile as Blob;
+          const skuXlsxBlob = skuXlsxFile as Blob;
+          const zipBlob = zipFile as Blob;
+
+          const generalXlsxBuffer = Buffer.from(await generalXlsxBlob.arrayBuffer());
+          const skuXlsxBuffer = Buffer.from(await skuXlsxBlob.arrayBuffer());
+          const zipBuffer = Buffer.from(await zipBlob.arrayBuffer());
+
+          const result = await processSkuBulkImport(req.payload, generalXlsxBuffer, skuXlsxBuffer, zipBuffer);
+
+          return new Response(JSON.stringify(result), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        } catch (error: any) {
+          console.error('Error in sku-bulk-import POST handler:', error);
+          return new Response(JSON.stringify({ error: error.message || 'An error occurred during import' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+      },
+    },
+    {
       path: '/json-import',
       method: 'post',
       handler: async (req) => {

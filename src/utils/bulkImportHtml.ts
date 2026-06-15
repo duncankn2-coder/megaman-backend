@@ -41,7 +41,7 @@ export const bulkImportHtml = `
             min-height: 100vh;
         }
         .container {
-            max-width: 900px;
+            max-width: 1000px;
             width: 100%;
             display: flex;
             flex-direction: column;
@@ -105,7 +105,7 @@ export const bulkImportHtml = `
         }
         @media (min-width: 768px) {
             .grid {
-                grid-template-columns: 1.5fr 1fr;
+                grid-template-columns: 1.6fr 1fr;
             }
         }
         .card {
@@ -162,6 +162,13 @@ export const bulkImportHtml = `
             border-bottom: 2px solid var(--accent);
         }
 
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
         .dropzone-container {
             display: flex;
             flex-direction: column;
@@ -170,7 +177,7 @@ export const bulkImportHtml = `
         .dropzone {
             border: 2px dashed rgba(203, 213, 225, 1);
             border-radius: var(--radius);
-            padding: 30px 20px;
+            padding: 24px 20px;
             text-align: center;
             cursor: pointer;
             transition: var(--transition);
@@ -182,17 +189,17 @@ export const bulkImportHtml = `
             background-color: rgba(37, 99, 235, 0.02);
         }
         .dropzone-icon {
-            font-size: 32px;
-            margin-bottom: 12px;
+            font-size: 28px;
+            margin-bottom: 8px;
             display: block;
         }
         .dropzone-text {
-            font-size: 14px;
-            font-weight: 500;
+            font-size: 13px;
+            font-weight: 600;
             color: var(--text-main);
         }
         .dropzone-hint {
-            font-size: 12px;
+            font-size: 11px;
             color: var(--text-muted);
             margin-top: 4px;
         }
@@ -309,7 +316,7 @@ export const bulkImportHtml = `
             font-size: 12px;
             padding: 16px;
             border-radius: 8px;
-            max-height: 250px;
+            max-height: 300px;
             overflow-y: auto;
             white-space: pre-wrap;
             border: 1px solid #1e293b;
@@ -334,7 +341,7 @@ export const bulkImportHtml = `
                     <span class="logo-dot"></span>
                     <h1>Bulk Product Importer</h1>
                 </div>
-                <p class="subtitle">Import product SKUs and their technical details into Megaman CMS in one step</p>
+                <p class="subtitle">Import product models, SKUs, specifications, and media files in one action</p>
             </div>
             <a href="/api/products/bulk-import/template" class="btn-template">
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -348,45 +355,90 @@ export const bulkImportHtml = `
 
         <div class="grid">
             <div class="card">
-                <h2 class="card-title">📋 JSON Import & XLSX Converter</h2>
+                <div class="tabs">
+                    <button class="tab-btn active" id="tabSkuBtn" onclick="switchTab('sku')">📦 Product & SKU Split</button>
+                    <button class="tab-btn" id="tabLegacyBtn" onclick="switchTab('legacy')">🔄 Legacy JSON/XLSX</button>
+                </div>
                 
-                <form id="importForm" onsubmit="event.preventDefault();">
-                    <div style="display:flex; flex-direction:column; gap:28px;">
-                        <!-- Section 1: Converter & Import -->
-                        <div class="import-section">
-                            <h3 style="font-size:14px; font-weight:600; margin-bottom:12px; display:flex; align-items:center; gap:6px;">
-                                <span>🔄</span> Convert & Import XLSX Spreadsheet
-                            </h3>
-                            <div style="display:flex; flex-direction:column; gap:12px;">
-                                <input type="file" id="converterInput" name="converter" accept=".xlsx" style="display: none;">
-                                <div class="dropzone" id="converterDropzone">
+                <!-- Tab 1: Product & SKU Split Importer (New) -->
+                <div class="tab-content active" id="skuTabContent">
+                    <form id="skuImportForm" onsubmit="event.preventDefault();">
+                        <div class="dropzone-container">
+                            <!-- Input 1: General Data Excel -->
+                            <div class="dropzone-wrapper">
+                                <input type="file" id="generalXlsxInput" name="generalXlsx" accept=".xlsx" style="display: none;">
+                                <div class="dropzone" id="generalXlsxDropzone">
                                     <span class="dropzone-icon">📊</span>
-                                    <div class="dropzone-text" id="converterText">Select general data spreadsheet (.xlsx)</div>
-                                    <div class="dropzone-hint">Convert spreadsheet columns and import immediately into CMS</div>
+                                    <div class="dropzone-text" id="generalXlsxText">1. General Data Spreadsheet (.xlsx)</div>
+                                    <div class="dropzone-hint">Upload General Data sheet (e.g. Fixture General data - Berto backlit.xlsx)</div>
                                 </div>
-                                <button type="button" onclick="triggerXlsxConvertAndImport()" class="btn-submit" id="converterSubmitBtn" disabled>Convert & Import JSON</button>
                             </div>
-                        </div>
 
-                        <div style="border-top: 1px dashed var(--border-color);"></div>
-
-                        <!-- Section 2: Direct JSON Import -->
-                        <div class="import-section">
-                            <h3 style="font-size:14px; font-weight:600; margin-bottom:12px; display:flex; align-items:center; gap:6px;">
-                                <span>📋</span> Direct JSON Import
-                            </h3>
-                            <div style="display:flex; flex-direction:column; gap:12px;">
-                                <input type="file" id="jsonInput" name="json" accept=".json" style="display: none;">
-                                <div class="dropzone" id="jsonDropzone">
+                            <!-- Input 2: SKU MM Code Excel -->
+                            <div class="dropzone-wrapper">
+                                <input type="file" id="skuXlsxInput" name="skuXlsx" accept=".xlsx" style="display: none;">
+                                <div class="dropzone" id="skuXlsxDropzone">
                                     <span class="dropzone-icon">📋</span>
-                                    <div class="dropzone-text" id="jsonText">Select product JSON file (.json)</div>
-                                    <div class="dropzone-hint">Upload a previously converted JSON or fixture data file</div>
+                                    <div class="dropzone-text" id="skuXlsxText">2. SKU MM Code Spreadsheet (.xlsx)</div>
+                                    <div class="dropzone-hint">Upload SKU variation mappings sheet (e.g. product mm code_berto_backlit.xlsx)</div>
                                 </div>
-                                <button type="button" onclick="triggerJsonImport()" class="btn-submit" id="jsonSubmitBtn" disabled>Start JSON Import</button>
+                            </div>
+
+                            <!-- Input 3: Zip containing photometrics and images -->
+                            <div class="dropzone-wrapper">
+                                <input type="file" id="zipInput" name="zip" accept=".zip" style="display: none;">
+                                <div class="dropzone" id="zipDropzone">
+                                    <span class="dropzone-icon">📦</span>
+                                    <div class="dropzone-text" id="zipText">3. Media Assets Archive (.zip)</div>
+                                    <div class="dropzone-hint">Upload ZIP containing primary images (.jpg/.png) and photometry files (.ldt/.ies)</div>
+                                </div>
+                            </div>
+
+                            <button type="button" onclick="triggerSkuBulkImport()" class="btn-submit" id="skuSubmitBtn" disabled>Start SKU Bulk Import</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Tab 2: Legacy JSON/XLSX Importer -->
+                <div class="tab-content" id="legacyTabContent">
+                    <form id="legacyImportForm" onsubmit="event.preventDefault();">
+                        <div style="display:flex; flex-direction:column; gap:28px;">
+                            <!-- Section 1: Converter & Import -->
+                            <div class="import-section">
+                                <h3 style="font-size:14px; font-weight:600; margin-bottom:12px; display:flex; align-items:center; gap:6px;">
+                                    <span>🔄</span> Convert & Import XLSX Spreadsheet
+                                </h3>
+                                <div style="display:flex; flex-direction:column; gap:12px;">
+                                    <input type="file" id="converterInput" name="converter" accept=".xlsx" style="display: none;">
+                                    <div class="dropzone" id="converterDropzone">
+                                        <span class="dropzone-icon">📊</span>
+                                        <div class="dropzone-text" id="converterText">Select general data spreadsheet (.xlsx)</div>
+                                        <div class="dropzone-hint">Convert spreadsheet columns and import immediately into CMS</div>
+                                    </div>
+                                    <button type="button" onclick="triggerXlsxConvertAndImport()" class="btn-submit" id="converterSubmitBtn" disabled>Convert & Import JSON</button>
+                                </div>
+                            </div>
+
+                            <div style="border-top: 1px dashed var(--border-color);"></div>
+
+                            <!-- Section 2: Direct JSON Import -->
+                            <div class="import-section">
+                                <h3 style="font-size:14px; font-weight:600; margin-bottom:12px; display:flex; align-items:center; gap:6px;">
+                                    <span>📋</span> Direct JSON Import
+                                </h3>
+                                <div style="display:flex; flex-direction:column; gap:12px;">
+                                    <input type="file" id="jsonInput" name="json" accept=".json" style="display: none;">
+                                    <div class="dropzone" id="jsonDropzone">
+                                        <span class="dropzone-icon">📋</span>
+                                        <div class="dropzone-text" id="jsonText">Select product JSON file (.json)</div>
+                                        <div class="dropzone-hint">Upload a previously converted JSON file</div>
+                                    </div>
+                                    <button type="button" onclick="triggerJsonImport()" class="btn-submit" id="jsonSubmitBtn" disabled>Start JSON Import</button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </form>
+                    </form>
+                </div>
 
                 <div class="progress-container" id="progressContainer">
                     <div class="progress-bar-wrapper">
@@ -399,40 +451,33 @@ export const bulkImportHtml = `
                 </div>
             </div>
 
-            <!-- Consolidated Guidelines -->
+            <!-- Guidelines Card -->
             <div class="card guidelines" id="importGuidelines">
-                <h2 class="card-title">Import & Conversion Guidelines</h2>
-                <div style="display:flex; flex-direction:column; gap:16px;">
-                    <div>
-                        <h3 style="font-size:13px; font-weight:600; margin-bottom:6px; color:var(--primary); display:flex; align-items:center; gap:4px;">
-                            <span>🔄</span> Convert & Import XLSX Spreadsheet
-                        </h3>
-                        <ul style="list-style-type: none; display: flex; flex-direction: column; gap: 8px;">
-                            <li style="font-size: 12px; color: var(--text-muted); position: relative; padding-left: 18px;">
-                                <span style="color: var(--accent); position: absolute; left: 0; font-weight: bold;">✓</span>
-                                <strong>Spreadsheet Layout:</strong> Upload a <code>.xlsx</code> file structured with columns matching general data fields (like <code>Fixture General data - Hagon 2.xlsx</code>).
-                            </li>
-                            <li style="font-size: 12px; color: var(--text-muted); position: relative; padding-left: 18px;">
-                                <span style="color: var(--accent); position: absolute; left: 0; font-weight: bold;">✓</span>
-                                <strong>Auto-Import:</strong> The converter automatically cleans keys, normalizes dates to <code>YYYY-MM-DD</code>, and immediately triggers step 2 to sync records in CMS and MongoDB. No manual download/re-upload needed!
-                            </li>
-                        </ul>
+                <h2 class="card-title">Importer Guidelines</h2>
+                
+                <div id="skuGuidelines" class="tab-guideline">
+                    <div style="display:flex; flex-direction:column; gap:16px;">
+                        <div>
+                            <h3 style="font-size:13px; font-weight:600; margin-bottom:6px; color:var(--primary);">📦 Product & SKU Import</h3>
+                            <ul style="list-style-type: none; display: flex; flex-direction: column; gap: 8px;">
+                                <li><strong>General Data:</strong> Upload the Excel sheet defining product dimensions, housing, shape, and wattage.</li>
+                                <li><strong>SKU MM Codes:</strong> Upload the Excel sheet listing individual ordering codes (MM CODE), color temps (CCT), casing colors, EAN barcodes, and packaging logistics.</li>
+                                <li><strong>Linking:</strong> The importer automatically links variants (SKUs) to parent product pages using the Model No column in both sheets.</li>
+                                <li><strong>Media Upload:</strong> Place primary images and photometrics files (.ldt, .ies) inside a flat ZIP archive. They will be uploaded and mapped dynamically.</li>
+                            </ul>
+                        </div>
                     </div>
-                    <hr style="border:0; border-top:1px dashed var(--border-color);" />
-                    <div>
-                        <h3 style="font-size:13px; font-weight:600; margin-bottom:6px; color:var(--primary); display:flex; align-items:center; gap:4px;">
-                            <span>📋</span> Direct JSON Import
-                        </h3>
-                        <ul style="list-style-type: none; display: flex; flex-direction: column; gap: 8px;">
-                            <li style="font-size: 12px; color: var(--text-muted); position: relative; padding-left: 18px;">
-                                <span style="color: var(--accent); position: absolute; left: 0; font-weight: bold;">✓</span>
-                                <strong>JSON Structure:</strong> Upload a JSON array of products (like <code>fixture_data.json</code>) containing product specifications.
-                            </li>
-                            <li style="font-size: 12px; color: var(--text-muted); position: relative; padding-left: 18px;">
-                                <span style="color: var(--accent); position: absolute; left: 0; font-weight: bold;">✓</span>
-                                <strong>Specs Syncing:</strong> Automatically upserts specifications into MongoDB <code>general_data.luminaire</code> collection for dynamic hook resolving.
-                            </li>
-                        </ul>
+                </div>
+
+                <div id="legacyGuidelines" class="tab-guideline" style="display: none;">
+                    <div style="display:flex; flex-direction:column; gap:16px;">
+                        <div>
+                            <h3 style="font-size:13px; font-weight:600; margin-bottom:6px; color:var(--primary);">🔄 Legacy XLSX / JSON Importer</h3>
+                            <ul style="list-style-type: none; display: flex; flex-direction: column; gap: 8px;">
+                                <li><strong>Single Sheet XLSX:</strong> Standard spreadsheet mapped directly to mongodb <code>general_data.luminaire</code>.</li>
+                                <li><strong>JSON Spec Import:</strong> Batch upload JSON array data file of product specifications.</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -443,11 +488,11 @@ export const bulkImportHtml = `
             <div class="results-summary">
                 <div class="summary-stat">
                     <div class="summary-num" id="statCreated">0</div>
-                    <div class="summary-label">Created</div>
+                    <div class="summary-label" id="labelCreated">Products Created</div>
                 </div>
                 <div class="summary-stat">
                     <div class="summary-num" id="statUpdated">0</div>
-                    <div class="summary-label">Updated</div>
+                    <div class="summary-label" id="labelUpdated">Products Updated</div>
                 </div>
                 <div class="summary-stat">
                     <div class="summary-num" id="statFailed">0</div>
@@ -460,25 +505,33 @@ export const bulkImportHtml = `
     </div>
 
     <script>
-        const files = { json: null, converter: null };
+        const files = { json: null, converter: null, generalXlsx: null, skuXlsx: null, zip: null };
 
-        // Handle Click, Change, and Drag & Drop dynamically
-        ['json', 'converter'].forEach(type => {
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.querySelectorAll('.tab-guideline').forEach(gl => gl.style.display = 'none');
+
+            if (tab === 'sku') {
+                document.getElementById('tabSkuBtn').classList.add('active');
+                document.getElementById('skuTabContent').classList.add('active');
+                document.getElementById('skuGuidelines').style.display = 'block';
+            } else {
+                document.getElementById('tabLegacyBtn').classList.add('active');
+                document.getElementById('legacyTabContent').classList.add('active');
+                document.getElementById('legacyGuidelines').style.display = 'block';
+            }
+        }
+
+        // Initialize drag and drop events for all dropzones
+        ['json', 'converter', 'generalXlsx', 'skuXlsx', 'zip'].forEach(type => {
             const dropzone = document.getElementById(type + 'Dropzone');
             const input = document.getElementById(type + 'Input');
             if (!dropzone || !input) return;
 
-            // Trigger file input dialog when dropzone is clicked
-            dropzone.addEventListener('click', () => {
-                input.click();
-            });
+            dropzone.addEventListener('click', () => input.click());
+            input.addEventListener('change', () => handleFileSelect(input, type));
 
-            // Handle file input changes
-            input.addEventListener('change', () => {
-                handleFileSelect(input, type);
-            });
-
-            // Drag & Drop
             dropzone.addEventListener('dragover', (e) => {
                 e.preventDefault();
                 dropzone.classList.add('dragover');
@@ -510,16 +563,26 @@ export const bulkImportHtml = `
             } else {
                 files[type] = null;
                 dropzone.classList.remove('file-selected');
-                textElement.innerText = type === 'json' ? 'Select product JSON file (.json)' :
-                                      'Select general data spreadsheet (.xlsx)';
+                textElement.innerText = getPlaceholderText(type);
             }
             
-            // Enable buttons if conditions met
-            const jsonBtn = document.getElementById('jsonSubmitBtn');
-            if (jsonBtn) jsonBtn.disabled = !files.json;
-            
-            const converterBtn = document.getElementById('converterSubmitBtn');
-            if (converterBtn) converterBtn.disabled = !files.converter;
+            // Validate Sku import button
+            const skuBtn = document.getElementById('skuSubmitBtn');
+            skuBtn.disabled = !(files.generalXlsx && files.skuXlsx && files.zip);
+
+            // Validate Legacy buttons
+            document.getElementById('jsonSubmitBtn').disabled = !files.json;
+            document.getElementById('converterSubmitBtn').disabled = !files.converter;
+        }
+
+        function getPlaceholderText(type) {
+            switch(type) {
+                case 'json': return 'Select product JSON file (.json)';
+                case 'converter': return 'Select general data spreadsheet (.xlsx)';
+                case 'generalXlsx': return '1. General Data Spreadsheet (.xlsx)';
+                case 'skuXlsx': return '2. SKU MM Code Spreadsheet (.xlsx)';
+                case 'zip': return '3. Media Assets Archive (.zip)';
+            }
         }
 
         function formatSize(bytes) {
@@ -530,7 +593,7 @@ export const bulkImportHtml = `
             return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
         }
 
-        async function uploadAndProcess(url, formData, submitBtnId) {
+        async function uploadAndProcess(url, formData, submitBtnId, isSkuImport = false) {
             const submitBtn = document.getElementById(submitBtnId);
             const progressContainer = document.getElementById('progressContainer');
             const progressBar = document.getElementById('progressBar');
@@ -540,7 +603,6 @@ export const bulkImportHtml = `
             const errorBanner = document.getElementById('errorBanner');
             const logBox = document.getElementById('logBox');
 
-            // Reset states
             errorBanner.style.display = 'none';
             resultsCard.style.display = 'none';
             submitBtn.disabled = true;
@@ -556,11 +618,11 @@ export const bulkImportHtml = `
 
                 xhr.upload.onprogress = function(e) {
                     if (e.lengthComputable) {
-                        const pct = Math.round((e.loaded / e.total) * 50); // Upload is 50%
+                        const pct = Math.round((e.loaded / e.total) * 45); // Upload is 45%
                         progressBar.style.width = pct + '%';
                         progressPercent.innerText = pct + '%';
-                        if (pct === 50) {
-                            progressStatus.innerText = 'Processing file and syncing records (this can take a moment)...';
+                        if (pct === 45) {
+                            progressStatus.innerText = 'Processing Excel sheets, creating/linking base Products and SKU variations...';
                         }
                     }
                 };
@@ -577,14 +639,19 @@ export const bulkImportHtml = `
                             progressBar.style.width = '100%';
                             progressPercent.innerText = '100%';
 
-                            document.getElementById('statCreated').innerText = res.created || 0;
-                            document.getElementById('statUpdated').innerText = res.updated || 0;
+                            if (isSkuImport) {
+                                document.getElementById('statCreated').innerText = (res.productsCreated || 0) + ' / ' + (res.skusCreated || 0);
+                                document.getElementById('statUpdated').innerText = (res.productsUpdated || 0) + ' / ' + (res.skusUpdated || 0);
+                                document.getElementById('labelCreated').innerText = 'Created (Products / SKUs)';
+                                document.getElementById('labelUpdated').innerText = 'Updated (Products / SKUs)';
+                            } else {
+                                document.getElementById('statCreated').innerText = res.created || 0;
+                                document.getElementById('statUpdated').innerText = res.updated || 0;
+                                document.getElementById('labelCreated').innerText = 'Created';
+                                document.getElementById('labelUpdated').innerText = 'Updated';
+                            }
+                            
                             document.getElementById('statFailed').innerText = res.warnings ? res.warnings.length : 0;
-
-                            // Restore default labels
-                            document.querySelector('#resultsCard .results-summary div:nth-child(1) .summary-label').innerText = 'Created';
-                            document.querySelector('#resultsCard .results-summary div:nth-child(2) .summary-label').innerText = 'Updated';
-                            document.querySelector('#resultsCard .results-summary div:nth-child(3) .summary-label').innerText = 'Failed/Warnings';
 
                             let logHtml = '=== IMPORT STARTED ===\\n';
                             if (res.logs && res.logs.length) {
@@ -619,6 +686,20 @@ export const bulkImportHtml = `
             }
         }
 
+        function triggerSkuBulkImport() {
+            const formData = new FormData();
+            formData.append('generalXlsx', files.generalXlsx);
+            formData.append('skuXlsx', files.skuXlsx);
+            formData.append('zip', files.zip);
+            uploadAndProcess('/api/products/sku-bulk-import', formData, 'skuSubmitBtn', true);
+        }
+
+        function triggerJsonImport() {
+            const formData = new FormData();
+            formData.append('json', files.json);
+            uploadAndProcess('/api/products/json-import', formData, 'jsonSubmitBtn', false);
+        }
+
         async function triggerXlsxConvertAndImport() {
             const submitBtn = document.getElementById('converterSubmitBtn');
             const progressContainer = document.getElementById('progressContainer');
@@ -629,7 +710,6 @@ export const bulkImportHtml = `
             const errorBanner = document.getElementById('errorBanner');
             const logBox = document.getElementById('logBox');
 
-            // Reset states
             errorBanner.style.display = 'none';
             resultsCard.style.display = 'none';
             submitBtn.disabled = true;
@@ -648,7 +728,7 @@ export const bulkImportHtml = `
 
                 xhr.upload.onprogress = function(e) {
                     if (e.lengthComputable) {
-                        const pct = Math.round((e.loaded / e.total) * 30); // Conversion is 30% of total
+                        const pct = Math.round((e.loaded / e.total) * 30);
                         progressBar.style.width = pct + '%';
                         progressPercent.innerText = pct + '%';
                     }
@@ -670,12 +750,10 @@ export const bulkImportHtml = `
                             logBox.innerText = logHtml;
                             logBox.scrollTop = logBox.scrollHeight;
 
-                            // Update progress for Step 2
                             progressBar.style.width = '50%';
                             progressPercent.innerText = '50%';
                             progressStatus.innerText = 'Step 2/2: Importing converted JSON into CMS...';
 
-                            // Trigger JSON file download in background for convenience
                             const jsonString = JSON.stringify(res, null, 4);
                             const blob = new Blob([jsonString], { type: 'application/json' });
                             const url = URL.createObjectURL(blob);
@@ -689,18 +767,16 @@ export const bulkImportHtml = `
                             document.body.removeChild(a);
                             URL.revokeObjectURL(url);
 
-                            // Construct file and form data for direct JSON import
                             const jsonFile = new File([blob], baseName + '_converted.json', { type: 'application/json' });
                             const importFormData = new FormData();
                             importFormData.append('json', jsonFile);
 
-                            // Send step 2 import request
                             const importXhr = new XMLHttpRequest();
                             importXhr.open('POST', '/api/products/json-import', true);
 
                             importXhr.upload.onprogress = function(pe) {
                                 if (pe.lengthComputable) {
-                                    const pct = 50 + Math.round((pe.loaded / pe.total) * 40); // 50% to 90%
+                                    const pct = 50 + Math.round((pe.loaded / pe.total) * 40);
                                     progressBar.style.width = pct + '%';
                                     progressPercent.innerText = pct + '%';
                                 }
@@ -721,11 +797,8 @@ export const bulkImportHtml = `
                                         document.getElementById('statCreated').innerText = importRes.created || 0;
                                         document.getElementById('statUpdated').innerText = importRes.updated || 0;
                                         document.getElementById('statFailed').innerText = importRes.warnings ? importRes.warnings.length : 0;
-
-                                        // Restore default labels
-                                        document.querySelector('#resultsCard .results-summary div:nth-child(1) .summary-label').innerText = 'Created';
-                                        document.querySelector('#resultsCard .results-summary div:nth-child(2) .summary-label').innerText = 'Updated';
-                                        document.querySelector('#resultsCard .results-summary div:nth-child(3) .summary-label').innerText = 'Failed/Warnings';
+                                        document.getElementById('labelCreated').innerText = 'Created';
+                                        document.getElementById('labelUpdated').innerText = 'Updated';
 
                                         logHtml += '\\n=== STEP 2: IMPORT STARTED ===\\n';
                                         if (importRes.logs && importRes.logs.length) {
@@ -779,12 +852,6 @@ export const bulkImportHtml = `
                 submitBtn.disabled = false;
                 showError('Error initiating upload: ' + error.message);
             }
-        }
-
-        function triggerJsonImport() {
-            const formData = new FormData();
-            formData.append('json', files.json);
-            uploadAndProcess('/api/products/json-import', formData, 'jsonSubmitBtn');
         }
 
         function showError(msg) {

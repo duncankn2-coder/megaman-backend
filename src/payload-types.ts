@@ -75,6 +75,7 @@ export interface Config {
     families: Family;
     news: News;
     symbols: Symbol;
+    skus: Skus;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -89,6 +90,7 @@ export interface Config {
     families: FamiliesSelect<false> | FamiliesSelect<true>;
     news: NewsSelect<false> | NewsSelect<true>;
     symbols: SymbolsSelect<false> | SymbolsSelect<true>;
+    skus: SkusSelect<false> | SkusSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -346,6 +348,42 @@ export interface News {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "skus".
+ */
+export interface Skus {
+  id: string;
+  name: string;
+  product: string | Product;
+  modelNumber?: string | null;
+  colour?: string | null;
+  specialFeatures?: string | null;
+  wattage?: string | null;
+  lampBase?: string | null;
+  colourTemperature?: string | null;
+  voltage?: string | null;
+  connector?: string | null;
+  ip?: string | null;
+  eanBarcode?: string | null;
+  innerBoxItf?: string | null;
+  outerBoxItf?: string | null;
+  packingMethod?: string | null;
+  remark?: string | null;
+  photometryLdt?: (string | null) | Media;
+  photometryIes?: (string | null) | Media;
+  specifications?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -382,6 +420,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'symbols';
         value: string | Symbol;
+      } | null)
+    | ({
+        relationTo: 'skus';
+        value: string | Skus;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -600,6 +642,33 @@ export interface SymbolsSelect<T extends boolean = true> {
   name?: T;
   icon?: T;
   isHighlighted?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "skus_select".
+ */
+export interface SkusSelect<T extends boolean = true> {
+  name?: T;
+  product?: T;
+  modelNumber?: T;
+  colour?: T;
+  specialFeatures?: T;
+  wattage?: T;
+  lampBase?: T;
+  colourTemperature?: T;
+  voltage?: T;
+  connector?: T;
+  ip?: T;
+  eanBarcode?: T;
+  innerBoxItf?: T;
+  outerBoxItf?: T;
+  packingMethod?: T;
+  remark?: T;
+  photometryLdt?: T;
+  photometryIes?: T;
+  specifications?: T;
   updatedAt?: T;
   createdAt?: T;
 }
