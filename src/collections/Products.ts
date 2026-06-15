@@ -217,8 +217,9 @@ export const Products: CollectionConfig = {
     beforeChange: [
       async ({ data, originalDoc }) => {
         // If specifications are already defined in the incoming data (i.e. manually pasted in UI),
-        // do not overwrite them with MongoDB values.
-        if (data.specifications !== undefined) {
+        // do not overwrite them with MongoDB values unless the product name/SKU is changed.
+        const nameChanged = originalDoc && data.name !== undefined && data.name !== originalDoc.name;
+        if (data.specifications !== undefined && !nameChanged) {
           return data;
         }
 

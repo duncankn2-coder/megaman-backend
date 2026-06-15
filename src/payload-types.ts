@@ -290,9 +290,23 @@ export interface Symbol {
 export interface Project {
   id: string;
   title: string;
+  /**
+   * URL-friendly identifier (auto-generated from title if left blank)
+   */
+  slug: string;
   description?: string | null;
-  location?: string | null;
-  images: string | Media;
+  location: string;
+  applicationType: 'hospitality' | 'retail' | 'residential' | 'commercial';
+  listImage: string | Media;
+  bannerImage: string | Media;
+  contentRows?:
+    | {
+        layoutType: 'full' | 'one-third-two-thirds' | 'two-thirds-one-third' | 'half-half';
+        leftImage: string | Media;
+        rightImage?: (string | null) | Media;
+        id?: string | null;
+      }[]
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -474,9 +488,20 @@ export interface ProductsSelect<T extends boolean = true> {
  */
 export interface ProjectsSelect<T extends boolean = true> {
   title?: T;
+  slug?: T;
   description?: T;
   location?: T;
-  images?: T;
+  applicationType?: T;
+  listImage?: T;
+  bannerImage?: T;
+  contentRows?:
+    | T
+    | {
+        layoutType?: T;
+        leftImage?: T;
+        rightImage?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }
