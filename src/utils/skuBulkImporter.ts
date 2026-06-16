@@ -301,7 +301,7 @@ export async function processSkuBulkImport(
       };
 
       if (imageId) productData.images = imageId;
-      if (familyId) productData.family = familyId;
+      if (familyId) productData.families = familyId;
 
       if (query.docs.length > 0) {
         const existing = query.docs[0];
