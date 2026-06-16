@@ -78,6 +78,18 @@ export async function processSkuBulkImport(
     }
 
     if (!zipEntry) {
+      for (const pattern of fallbackPatterns) {
+        const tryName = pattern.toLowerCase();
+        const entry = filesMap.get(tryName);
+        if (entry) {
+          zipEntry = entry;
+          cleanName = path.basename(entry.entryName);
+          break;
+        }
+      }
+    }
+
+    if (!zipEntry) {
       return null;
     }
 
