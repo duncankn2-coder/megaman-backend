@@ -177,6 +177,53 @@ export const Products: CollectionConfig = {
       },
     },
     {
+      path: '/light-source-bulk-import',
+      method: 'post',
+      handler: async (req) => {
+        if (!req.user) {
+          return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+
+        try {
+          const { processLightSourceBulkImport } = await import('../utils/lightSourceBulkImporter');
+
+          const formData = await (req as any).formData();
+          const xlsxFile = formData.get('xlsx');
+          const zipFile = formData.get('zip');
+
+          if (!xlsxFile || !zipFile) {
+            return new Response(JSON.stringify({ error: 'Both xlsx and zip files are required.' }), {
+              status: 400,
+              headers: { 'Content-Type': 'application/json' },
+            });
+          }
+
+          const xlsxBlob = xlsxFile as Blob;
+          const zipBlob = zipFile as Blob;
+
+          const xlsxBuffer = Buffer.from(await xlsxBlob.arrayBuffer());
+          const zipBuffer = Buffer.from(await zipBlob.arrayBuffer());
+
+          const result = await processLightSourceBulkImport(req.payload, xlsxBuffer, zipBuffer);
+
+          return new Response(JSON.stringify(result), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        } catch (error: any) {
+          console.error('Error in light-source-bulk-import POST handler:', error);
+          return new Response(JSON.stringify({ error: error.message || 'An error occurred during import' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+      },
+    },
+
+    {
       path: '/json-import',
       method: 'post',
       handler: async (req) => {

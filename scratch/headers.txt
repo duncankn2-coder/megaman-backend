@@ -1,0 +1,144 @@
+0: 产品编码
+1: Img
+2: Product Code
+3: Series
+4: Category1
+5: Category2
+6: Customer
+7: MM Code
+8: Old Model No.
+9: New ErP Model No.
+10: Supplementary Code
+11: Old ErP Supplier Model
+12: New ErP Supplier Model
+13: Supplier Description
+14: CE Certificate Type Num
+15: Shape
+16: Sub-Category
+17: Group
+18: Lighting Technology Used
+19: Non-directional lamp or Directional lamp
+20: Mains or Non-mains
+21: Connected light source (CLS)
+22: Colour-tuneable light source
+23: High luminance light source
+24: Anti-glare shield
+25: Cover Design
+26: Material
+27: Dimmable
+28: Dimmability
+29: On-Mode Power
+30: Cap Base
+31: Correlated Colour Temperature
+32: Equivalent Power
+33: Beam Angle
+34: Beam Angle Correspondence
+35: Useful Luminous Flux
+36: Useful Luminous Flux 90° Cone
+37: Useful Luminous Flux in 120° Cone
+38: Luminous Efficacy
+39: Energy Class
+40: Input Current
+41: Frequency
+42: Input Voltage
+43: Indicative Lifetime L80B50
+44: Indicative Lifetime L70B50
+45: Number of Switching Cycles
+46: Warm Up Time 60% of Full Light
+47: Mercury content in X，X mg
+48: Power Factor
+49: Displacement Factor (cos φ1)
+50: LLMF
+51: Starting Time
+52: Colour Rendering Index
+53: Colour Consistency
+54: Peak Luminous Intensity
+55: Spectral power distribution in the range 180nm-800nm
+56: Height (H)
+57: Width (W)
+58: Depth (D)
+59: Weight
+60: Illumination Angle
+61: Wide Voltage Range[V]
+62: DC230V
+63: Surge Protection
+64: CO2
+65: Weighted Energy Consumption
+66: Working Temperature
+67: Maximum Case Temperature
+68: Inrush Current
+69: Inrush Duration
+70: Max. No. of Lamp Connection on MCB (B10)
+71: Max. No. of Lamp Connection on MCB (B16)
+72: Max. No. of Lamp Connection on MCB (C10)
+73: Max. No. of Lamp Connection on MCB (C16)
+74: EEI
+75: Housing Colour 
+76: Color of Plastic Component
+77: Cover Finish
+78: Flammability of Plastic Component
+79: Lamp Cap Twist Safe
+80: Stroboscopic Effect Metric (SVM)
+81: Flicker Metric (PstLM)
+82: Chromaticity Coordinates (x and y)
+83: Supplier Flicker Percentage
+84: Supplier Flicker Percentage (%) Actual testing data #1
+85: Supplier Flicker Percentage (%) Actual testing data #2
+86: Flicker Percentage
+87: Total Harmonic Distortion
+88: Photobiological Safety Group
+89: Standby Power
+90: Networked Standby Power
+91: R9 Colour Rendering Index Value
+92: Survival Factor
+93: Lumen Maintenance Factor
+94: Claims that an LED light source replaces a fluorescent light source without integrated ballast of a particular wattage
+95: Replacement Claim
+96: Photon Flux
+97: Photon Flux per Watt
+98: Approvals
+99: Standards Compliance
+100: 調光器兼容報告
+101: 變壓器兼容報告
+102: 配光報告
+103: 光電色報告
+104: 溫度報告
+105: IES檔
+106: 辦公室金樣樣品
+107: 頻閃報告
+108: 壽命報告
+109: RA + Color temp
+110: Voltage map
+111: Beam
+112: Description
+113: LED
+Qty
+114: SVM data
+115: Pst LM data
+116: Category+Sub-Category
+117: PRODUCT FAMILY FEATURES
+118: APPLICATIONS 
+119: Line Drawing Name
+120: Photo Name
+121: Packaging Unit
+122: Gift Box Dimensions
+(Folding carton box)
+125: Gross Weight per Gift Box
+126: Packaging Unit
+127: Outer Box Dimensions
+(Shipping carton box)
+130: Gross Weight per Outer Box
+131: 彩盒外尺寸
+134: 彩盒展开尺寸
+136: 彩盒平方克重
+137: 彩盒重量
+138: tary/箱数量
+139: 托盘展开尺寸(m)
+141: 托盘平方克重
+142: 托盘重量
+143: 外箱装箱数量
+144: 外箱尺寸(mm)
+147: 外箱尺寸(m)
+150: 箱子平方克重
+151: 箱子重量
+152: 灯重(kg)

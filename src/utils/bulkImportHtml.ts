@@ -357,6 +357,7 @@ export const bulkImportHtml = `
             <div class="card">
                 <div class="tabs">
                     <button class="tab-btn active" id="tabSkuBtn" onclick="switchTab('sku')">📦 Product & SKU Split</button>
+                    <button class="tab-btn" id="tabLightSourceBtn" onclick="switchTab('lightSource')">💡 Light Source</button>
                     <button class="tab-btn" id="tabLegacyBtn" onclick="switchTab('legacy')">🔄 Legacy JSON/XLSX</button>
                 </div>
                 
@@ -395,6 +396,35 @@ export const bulkImportHtml = `
                             </div>
 
                             <button type="button" onclick="triggerSkuBulkImport()" class="btn-submit" id="skuSubmitBtn" disabled>Start SKU Bulk Import</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Tab 3: Light Source Importer -->
+                <div class="tab-content" id="lightSourceTabContent">
+                    <form id="lightSourceImportForm" onsubmit="event.preventDefault();">
+                        <div class="dropzone-container">
+                            <!-- Input 1: Light Source XLSX -->
+                            <div class="dropzone-wrapper">
+                                <input type="file" id="lightSourceXlsxInput" name="xlsx" accept=".xlsx" style="display: none;">
+                                <div class="dropzone" id="lightSourceXlsxDropzone">
+                                    <span class="dropzone-icon">💡</span>
+                                    <div class="dropzone-text" id="lightSourceXlsxText">1. Light Source General Data (.xlsx)</div>
+                                    <div class="dropzone-hint">Upload Light Source/Lamps spec sheet (e.g. Lamps - General Data - test.xlsx)</div>
+                                </div>
+                            </div>
+
+                            <!-- Input 2: Zip containing photometrics and images -->
+                            <div class="dropzone-wrapper">
+                                <input type="file" id="lightSourceZipInput" name="zip" accept=".zip" style="display: none;">
+                                <div class="dropzone" id="lightSourceZipDropzone">
+                                    <span class="dropzone-icon">📦</span>
+                                    <div class="dropzone-text" id="lightSourceZipText">2. Media Assets Archive (.zip)</div>
+                                    <div class="dropzone-hint">Upload ZIP containing primary images (.jpg/.png) and photometry files (.ldt/.ies)</div>
+                                </div>
+                            </div>
+
+                            <button type="button" onclick="triggerLightSourceBulkImport()" class="btn-submit" id="lightSourceSubmitBtn" disabled>Start Light Source Bulk Import</button>
                         </div>
                     </form>
                 </div>
@@ -469,6 +499,19 @@ export const bulkImportHtml = `
                     </div>
                 </div>
 
+                <div id="lightSourceGuidelines" class="tab-guideline" style="display: none;">
+                    <div style="display:flex; flex-direction:column; gap:16px;">
+                        <div>
+                            <h3 style="font-size:13px; font-weight:600; margin-bottom:6px; color:var(--primary);">💡 Light Source Import</h3>
+                            <ul style="list-style-type: none; display: flex; flex-direction: column; gap: 8px;">
+                                <li><strong>Excel Spreadsheet:</strong> Upload the single light source / lamp spreadsheet. It parses and maps up to 153 columns of specs dynamically.</li>
+                                <li><strong>Linking & SKUs:</strong> The importer maps each row to a unique SKU using the <code>MM Code</code> and creates/groups them under base Products using <code>New ErP Model No.</code>.</li>
+                                <li><strong>Media Upload:</strong> Place primary images and photometrics files (.ldt, .ies) inside a flat ZIP archive. They will be uploaded and mapped dynamically.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="legacyGuidelines" class="tab-guideline" style="display: none;">
                     <div style="display:flex; flex-direction:column; gap:16px;">
                         <div>
@@ -505,7 +548,7 @@ export const bulkImportHtml = `
     </div>
 
     <script>
-        const files = { json: null, converter: null, generalXlsx: null, skuXlsx: null, zip: null };
+        const files = { json: null, converter: null, generalXlsx: null, skuXlsx: null, zip: null, lightSourceXlsx: null, lightSourceZip: null };
 
         function switchTab(tab) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -516,6 +559,10 @@ export const bulkImportHtml = `
                 document.getElementById('tabSkuBtn').classList.add('active');
                 document.getElementById('skuTabContent').classList.add('active');
                 document.getElementById('skuGuidelines').style.display = 'block';
+            } else if (tab === 'lightSource') {
+                document.getElementById('tabLightSourceBtn').classList.add('active');
+                document.getElementById('lightSourceTabContent').classList.add('active');
+                document.getElementById('lightSourceGuidelines').style.display = 'block';
             } else {
                 document.getElementById('tabLegacyBtn').classList.add('active');
                 document.getElementById('legacyTabContent').classList.add('active');
@@ -524,7 +571,7 @@ export const bulkImportHtml = `
         }
 
         // Initialize drag and drop events for all dropzones
-        ['json', 'converter', 'generalXlsx', 'skuXlsx', 'zip'].forEach(type => {
+        ['json', 'converter', 'generalXlsx', 'skuXlsx', 'zip', 'lightSourceXlsx', 'lightSourceZip'].forEach(type => {
             const dropzone = document.getElementById(type + 'Dropzone');
             const input = document.getElementById(type + 'Input');
             if (!dropzone || !input) return;
@@ -570,6 +617,10 @@ export const bulkImportHtml = `
             const skuBtn = document.getElementById('skuSubmitBtn');
             skuBtn.disabled = !(files.generalXlsx && files.skuXlsx && files.zip);
 
+            // Validate Light Source import button
+            const lsBtn = document.getElementById('lightSourceSubmitBtn');
+            lsBtn.disabled = !(files.lightSourceXlsx && files.lightSourceZip);
+
             // Validate Legacy buttons
             document.getElementById('jsonSubmitBtn').disabled = !files.json;
             document.getElementById('converterSubmitBtn').disabled = !files.converter;
@@ -582,6 +633,8 @@ export const bulkImportHtml = `
                 case 'generalXlsx': return '1. General Data Spreadsheet (.xlsx)';
                 case 'skuXlsx': return '2. SKU MM Code Spreadsheet (.xlsx)';
                 case 'zip': return '3. Media Assets Archive (.zip)';
+                case 'lightSourceXlsx': return '1. Light Source General Data (.xlsx)';
+                case 'lightSourceZip': return '2. Media Assets Archive (.zip)';
             }
         }
 
@@ -692,6 +745,13 @@ export const bulkImportHtml = `
             formData.append('skuXlsx', files.skuXlsx);
             formData.append('zip', files.zip);
             uploadAndProcess('/api/products/sku-bulk-import', formData, 'skuSubmitBtn', true);
+        }
+
+        function triggerLightSourceBulkImport() {
+            const formData = new FormData();
+            formData.append('xlsx', files.lightSourceXlsx);
+            formData.append('zip', files.lightSourceZip);
+            uploadAndProcess('/api/products/light-source-bulk-import', formData, 'lightSourceSubmitBtn', true);
         }
 
         function triggerJsonImport() {

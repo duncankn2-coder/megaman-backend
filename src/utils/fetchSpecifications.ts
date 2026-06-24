@@ -4,20 +4,35 @@ export async function fetchSpecifications(modelNumber: string) {
   const client = await getMongoClient();
   try {
     const db = client.db('general_data');
+    
+    // 1. Try to find in luminaire collection
     const luminaireCollection = db.collection('luminaire');
-    const luminaire = await luminaireCollection.findOne({ customer_model_no_new: modelNumber });
+    let specDoc = await luminaireCollection.findOne({ customer_model_no_new: modelNumber });
 
-    if (!luminaire) {
-      console.warn(`No luminaire found for model number: ${modelNumber}`);
+    // 2. Fallback: Try to find in light_source collection
+    if (!specDoc) {
+      const lightSourceCollection = db.collection('light_source');
+      specDoc = await lightSourceCollection.findOne({ new_erp_model_no: modelNumber });
+      
+      if (!specDoc) {
+        // Try exact match on 'model_identifier' or other key model number fields if available
+        specDoc = await lightSourceCollection.findOne({ yk_model_no: modelNumber });
+      }
+    }
+
+    if (!specDoc) {
+      console.warn(`No specifications found in luminaire or light_source for model number: ${modelNumber}`);
       return null;
     }
 
     // Extract all specifications, removing MongoDB internal fields
-    const { _id, __v, ...specs } = luminaire;
+    const { _id, __v, ...specs } = specDoc;
 
-    // Map product_type to categories for backward compatibility
-    if (luminaire.product_type !== undefined) {
-      specs.categories = luminaire.product_type;
+    // Map product_type or Category/Subcategory to categories for backward compatibility
+    if (specDoc.product_type !== undefined) {
+      specs.categories = specDoc.product_type;
+    } else if (specDoc.category1 !== undefined) {
+      specs.categories = specDoc.category1;
     }
 
     return specs;
@@ -25,4 +40,4 @@ export async function fetchSpecifications(modelNumber: string) {
     console.error('Error fetching specifications:', error);
     return null;
   }
-}
+}

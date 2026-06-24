@@ -35,6 +35,45 @@ export async function processSkuBulkImport(
   let skusCreated = 0;
   let skusUpdated = 0;
 
+  // Find or create default placeholder image in Media collection
+  let placeholderImageId: string | null = null;
+  try {
+    const existingPlaceholder = await payload.find({
+      collection: 'media',
+      where: {
+        alt: { equals: 'Placeholder Image' },
+      },
+      limit: 1,
+    });
+
+    if (existingPlaceholder.docs.length > 0) {
+      placeholderImageId = existingPlaceholder.docs[0].id as string;
+      logs.push(`Found existing default placeholder image (ID: ${placeholderImageId}).`);
+    } else {
+      const base64Png = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+      const buffer = Buffer.from(base64Png, 'base64');
+      
+      const newMedia = await payload.create({
+        collection: 'media',
+        data: {
+          alt: 'Placeholder Image',
+          type: 'image',
+        },
+        file: {
+          data: buffer,
+          name: 'placeholder.png',
+          size: buffer.length,
+          mimetype: 'image/png',
+        },
+      });
+      placeholderImageId = newMedia.id as string;
+      logs.push(`Created a new default placeholder media document (ID: ${placeholderImageId}).`);
+    }
+  } catch (e: any) {
+    warnings.push(`Could not check or create placeholder media: ${e.message}`);
+  }
+
+
   logs.push('Initializing ZIP archive parser...');
   let zip: AdmZip;
   try {
@@ -270,24 +309,29 @@ export async function processSkuBulkImport(
     // Family match
     let familyId: string | null = null;
     if (familyName) {
-      const query = await payload.find({
-        collection: 'families',
-        where: { name: { equals: familyName } },
-        limit: 1,
-      });
-      if (query.docs.length > 0) {
-        familyId = query.docs[0].id;
-      } else {
-        const newFam = await payload.create({
+      try {
+        const query = await payload.find({
           collection: 'families',
-          data: {
-            name: familyName,
-            description: `A collection of premium Megaman ${familyName} products.`,
-            media: imageId ? [imageId] : [],
-            categories: categoryIds,
-          },
+          where: { name: { equals: familyName } },
+          limit: 1,
         });
-        familyId = newFam.id;
+        if (query.docs.length > 0) {
+          familyId = query.docs[0].id;
+        } else {
+          const familyImageId = imageId || placeholderImageId;
+          const newFam = await payload.create({
+            collection: 'families',
+            data: {
+              name: familyName,
+              description: `A collection of premium Megaman ${familyName} products.`,
+              media: familyImageId ? [familyImageId] : [],
+              categories: categoryIds,
+            },
+          });
+          familyId = newFam.id;
+        }
+      } catch (err: any) {
+        warnings.push(`Failed to resolve or create family "${familyName}": ${err.message}`);
       }
     }
 
@@ -312,7 +356,8 @@ export async function processSkuBulkImport(
         dimmingType: dimming || undefined,
       };
 
-      if (imageId) productData.images = imageId;
+      const finalProductImage = imageId || placeholderImageId;
+      if (finalProductImage) productData.images = finalProductImage;
       if (familyId) productData.families = familyId;
 
       if (query.docs.length > 0) {
