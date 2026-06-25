@@ -57,7 +57,7 @@ async function main() {
     const mediaArray = Array.isArray(media) ? media : [];
     
     // Check if media is missing, null, or empty
-    if (!media || mediaArray.length === 0 || mediaArray.includes(null) || mediaArray.includes(undefined)) {
+    if (!media || mediaArray.length === 0 || (mediaArray as any[]).includes(null) || (mediaArray as any[]).includes(undefined)) {
       console.log(`Family "${fam.name}" (ID: ${fam.id}) has invalid media:`, media);
       if (placeholderImageId) {
         console.log(`Fixing family "${fam.name}" by assigning placeholder image...`);
