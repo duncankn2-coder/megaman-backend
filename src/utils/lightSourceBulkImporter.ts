@@ -39,7 +39,7 @@ export interface ImportResult {
 export async function processLightSourceBulkImport(
   payload: Payload,
   xlsxBuffer: Buffer,
-  zipBuffer: Buffer
+  zipBuffer?: Buffer
 ): Promise<ImportResult> {
   const warnings: string[] = [];
   const logs: string[] = [];
@@ -87,23 +87,26 @@ export async function processLightSourceBulkImport(
   }
 
 
-  logs.push('Initializing ZIP archive parser...');
-  let zip: AdmZip;
-  try {
-    zip = new AdmZip(zipBuffer);
-  } catch (error: any) {
-    throw new Error(`Failed to parse ZIP file: ${error.message}`);
-  }
-
-  const zipEntries = zip.getEntries();
-  logs.push(`Found ${zipEntries.length} file entries in the ZIP archive.`);
-
-  // Create a map of filename (lowercase) to ZIP entry
   const filesMap = new Map<string, AdmZip.IZipEntry>();
-  for (const entry of zipEntries) {
-    if (entry.isDirectory) continue;
-    const filename = path.basename(entry.entryName).toLowerCase();
-    filesMap.set(filename, entry);
+  if (zipBuffer) {
+    logs.push('Initializing ZIP archive parser...');
+    let zip: AdmZip;
+    try {
+      zip = new AdmZip(zipBuffer);
+    } catch (error: any) {
+      throw new Error(`Failed to parse ZIP file: ${error.message}`);
+    }
+
+    const zipEntries = zip.getEntries();
+    logs.push(`Found ${zipEntries.length} file entries in the ZIP archive.`);
+
+    for (const entry of zipEntries) {
+      if (entry.isDirectory) continue;
+      const filename = path.basename(entry.entryName).toLowerCase();
+      filesMap.set(filename, entry);
+    }
+  } else {
+    logs.push('No Media Assets Archive provided. Media/Photometry import will be skipped.');
   }
 
   // Connect to MongoDB to upsert general_data.light_source

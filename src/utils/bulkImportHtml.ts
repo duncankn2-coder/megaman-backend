@@ -385,16 +385,6 @@ export const bulkImportHtml = `
                                 </div>
                             </div>
 
-                            <!-- Input 3: Zip containing photometrics and images -->
-                            <div class="dropzone-wrapper">
-                                <input type="file" id="zipInput" name="zip" accept=".zip" style="display: none;">
-                                <div class="dropzone" id="zipDropzone">
-                                    <span class="dropzone-icon">📦</span>
-                                    <div class="dropzone-text" id="zipText">3. Media Assets Archive (.zip)</div>
-                                    <div class="dropzone-hint">Upload ZIP containing primary images (.jpg/.png) and photometry files (.ldt/.ies)</div>
-                                </div>
-                            </div>
-
                             <button type="button" onclick="triggerSkuBulkImport()" class="btn-submit" id="skuSubmitBtn" disabled>Start SKU Bulk Import</button>
                         </div>
                     </form>
@@ -411,16 +401,6 @@ export const bulkImportHtml = `
                                     <span class="dropzone-icon">💡</span>
                                     <div class="dropzone-text" id="lightSourceXlsxText">1. Light Source General Data (.xlsx)</div>
                                     <div class="dropzone-hint">Upload Light Source/Lamps spec sheet (e.g. Lamps - General Data - test.xlsx)</div>
-                                </div>
-                            </div>
-
-                            <!-- Input 2: Zip containing photometrics and images -->
-                            <div class="dropzone-wrapper">
-                                <input type="file" id="lightSourceZipInput" name="zip" accept=".zip" style="display: none;">
-                                <div class="dropzone" id="lightSourceZipDropzone">
-                                    <span class="dropzone-icon">📦</span>
-                                    <div class="dropzone-text" id="lightSourceZipText">2. Media Assets Archive (.zip)</div>
-                                    <div class="dropzone-hint">Upload ZIP containing primary images (.jpg/.png) and photometry files (.ldt/.ies)</div>
                                 </div>
                             </div>
 
@@ -493,7 +473,6 @@ export const bulkImportHtml = `
                                 <li><strong>General Data:</strong> Upload the Excel sheet defining product dimensions, housing, shape, and wattage.</li>
                                 <li><strong>SKU MM Codes:</strong> Upload the Excel sheet listing individual ordering codes (MM CODE), color temps (CCT), casing colors, EAN barcodes, and packaging logistics.</li>
                                 <li><strong>Linking:</strong> The importer automatically links variants (SKUs) to parent product pages using the Model No column in both sheets.</li>
-                                <li><strong>Media Upload:</strong> Place primary images and photometrics files (.ldt, .ies) inside a flat ZIP archive. They will be uploaded and mapped dynamically.</li>
                             </ul>
                         </div>
                     </div>
@@ -506,7 +485,6 @@ export const bulkImportHtml = `
                             <ul style="list-style-type: none; display: flex; flex-direction: column; gap: 8px;">
                                 <li><strong>Excel Spreadsheet:</strong> Upload the single light source / lamp spreadsheet. It parses and maps up to 153 columns of specs dynamically.</li>
                                 <li><strong>Linking & SKUs:</strong> The importer maps each row to a unique SKU using the <code>MM Code</code> and creates/groups them under base Products using <code>New ErP Model No.</code>.</li>
-                                <li><strong>Media Upload:</strong> Place primary images and photometrics files (.ldt, .ies) inside a flat ZIP archive. They will be uploaded and mapped dynamically.</li>
                             </ul>
                         </div>
                     </div>
@@ -548,7 +526,25 @@ export const bulkImportHtml = `
     </div>
 
     <script>
-        const files = { json: null, converter: null, generalXlsx: null, skuXlsx: null, zip: null, lightSourceXlsx: null, lightSourceZip: null };
+        const files = { json: null, converter: null, generalXlsx: null, skuXlsx: null, lightSourceXlsx: null };
+
+        function resetFiles() {
+            for (const key in files) {
+                files[key] = null;
+            }
+            ['json', 'converter', 'generalXlsx', 'skuXlsx', 'lightSourceXlsx'].forEach(type => {
+                const input = document.getElementById(type + 'Input');
+                if (input) input.value = '';
+                const dropzone = document.getElementById(type + 'Dropzone');
+                if (dropzone) dropzone.classList.remove('file-selected');
+                const textElement = document.getElementById(type + 'Text');
+                if (textElement) textElement.innerText = getPlaceholderText(type);
+            });
+            document.getElementById('skuSubmitBtn').disabled = true;
+            document.getElementById('lightSourceSubmitBtn').disabled = true;
+            document.getElementById('jsonSubmitBtn').disabled = true;
+            document.getElementById('converterSubmitBtn').disabled = true;
+        }
 
         function switchTab(tab) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -571,7 +567,7 @@ export const bulkImportHtml = `
         }
 
         // Initialize drag and drop events for all dropzones
-        ['json', 'converter', 'generalXlsx', 'skuXlsx', 'zip', 'lightSourceXlsx', 'lightSourceZip'].forEach(type => {
+        ['json', 'converter', 'generalXlsx', 'skuXlsx', 'lightSourceXlsx'].forEach(type => {
             const dropzone = document.getElementById(type + 'Dropzone');
             const input = document.getElementById(type + 'Input');
             if (!dropzone || !input) return;
@@ -615,11 +611,11 @@ export const bulkImportHtml = `
             
             // Validate Sku import button
             const skuBtn = document.getElementById('skuSubmitBtn');
-            skuBtn.disabled = !(files.generalXlsx && files.skuXlsx && files.zip);
+            skuBtn.disabled = !(files.generalXlsx && files.skuXlsx);
 
             // Validate Light Source import button
             const lsBtn = document.getElementById('lightSourceSubmitBtn');
-            lsBtn.disabled = !(files.lightSourceXlsx && files.lightSourceZip);
+            lsBtn.disabled = !files.lightSourceXlsx;
 
             // Validate Legacy buttons
             document.getElementById('jsonSubmitBtn').disabled = !files.json;
@@ -632,9 +628,7 @@ export const bulkImportHtml = `
                 case 'converter': return 'Select general data spreadsheet (.xlsx)';
                 case 'generalXlsx': return '1. General Data Spreadsheet (.xlsx)';
                 case 'skuXlsx': return '2. SKU MM Code Spreadsheet (.xlsx)';
-                case 'zip': return '3. Media Assets Archive (.zip)';
                 case 'lightSourceXlsx': return '1. Light Source General Data (.xlsx)';
-                case 'lightSourceZip': return '2. Media Assets Archive (.zip)';
             }
         }
 
@@ -716,6 +710,10 @@ export const bulkImportHtml = `
                             logHtml += '\\n=== IMPORT COMPLETED SUCCESSFULLY ===';
                             logBox.innerText = logHtml;
                             logBox.scrollTop = logBox.scrollHeight;
+                            setTimeout(() => {
+                                alert('Upload completed successfully!');
+                                resetFiles();
+                            }, 100);
                         } catch (e) {
                             showError('Failed to parse importer response: ' + xhr.responseText);
                         }
@@ -743,14 +741,12 @@ export const bulkImportHtml = `
             const formData = new FormData();
             formData.append('generalXlsx', files.generalXlsx);
             formData.append('skuXlsx', files.skuXlsx);
-            formData.append('zip', files.zip);
             uploadAndProcess('/api/products/sku-bulk-import', formData, 'skuSubmitBtn', true);
         }
 
         function triggerLightSourceBulkImport() {
             const formData = new FormData();
             formData.append('xlsx', files.lightSourceXlsx);
-            formData.append('zip', files.lightSourceZip);
             uploadAndProcess('/api/products/light-source-bulk-import', formData, 'lightSourceSubmitBtn', true);
         }
 
@@ -867,13 +863,16 @@ export const bulkImportHtml = `
                                         if (importRes.warnings && importRes.warnings.length) {
                                             logHtml += '\\n=== WARNINGS / ERRORS ===\\n' + importRes.warnings.join('\\n') + '\\n';
                                         }
-                                        logHtml += '\\n=== CONVERSION & IMPORT COMPLETED SUCCESSFULLY ===';
-                                        logBox.innerText = logHtml;
-                                        logBox.scrollTop = logBox.scrollHeight;
-
-                                    } catch (ie) {
-                                        showError('Failed to parse import response: ' + importXhr.responseText);
-                                    }
+                                         logHtml += '\\n=== CONVERSION & IMPORT COMPLETED SUCCESSFULLY ===';
+                                         logBox.innerText = logHtml;
+                                         logBox.scrollTop = logBox.scrollHeight;
+                                         setTimeout(() => {
+                                             alert('Conversion and Import completed successfully!');
+                                             resetFiles();
+                                         }, 100);
+                                     } catch (ie) {
+                                         showError('Failed to parse import response: ' + importXhr.responseText);
+                                     }
                                 } else {
                                     showError('Step 2 Import Error (' + importXhr.status + '): ' + importXhr.responseText);
                                 }

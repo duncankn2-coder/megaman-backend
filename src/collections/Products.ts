@@ -146,8 +146,8 @@ export const Products: CollectionConfig = {
           const skuXlsxFile = formData.get('skuXlsx');
           const zipFile = formData.get('zip');
 
-          if (!generalXlsxFile || !skuXlsxFile || !zipFile) {
-            return new Response(JSON.stringify({ error: 'General data XLSX, SKU MM Code XLSX, and Media ZIP files are all required.' }), {
+          if (!generalXlsxFile || !skuXlsxFile) {
+            return new Response(JSON.stringify({ error: 'General data XLSX and SKU MM Code XLSX files are required.' }), {
               status: 400,
               headers: { 'Content-Type': 'application/json' },
             });
@@ -155,11 +155,14 @@ export const Products: CollectionConfig = {
 
           const generalXlsxBlob = generalXlsxFile as Blob;
           const skuXlsxBlob = skuXlsxFile as Blob;
-          const zipBlob = zipFile as Blob;
-
           const generalXlsxBuffer = Buffer.from(await generalXlsxBlob.arrayBuffer());
           const skuXlsxBuffer = Buffer.from(await skuXlsxBlob.arrayBuffer());
-          const zipBuffer = Buffer.from(await zipBlob.arrayBuffer());
+
+          let zipBuffer: Buffer | undefined = undefined;
+          if (zipFile) {
+            const zipBlob = zipFile as Blob;
+            zipBuffer = Buffer.from(await zipBlob.arrayBuffer());
+          }
 
           const result = await processSkuBulkImport(req.payload, generalXlsxBuffer, skuXlsxBuffer, zipBuffer);
 
@@ -194,18 +197,21 @@ export const Products: CollectionConfig = {
           const xlsxFile = formData.get('xlsx');
           const zipFile = formData.get('zip');
 
-          if (!xlsxFile || !zipFile) {
-            return new Response(JSON.stringify({ error: 'Both xlsx and zip files are required.' }), {
+          if (!xlsxFile) {
+            return new Response(JSON.stringify({ error: 'xlsx file is required.' }), {
               status: 400,
               headers: { 'Content-Type': 'application/json' },
             });
           }
 
           const xlsxBlob = xlsxFile as Blob;
-          const zipBlob = zipFile as Blob;
-
           const xlsxBuffer = Buffer.from(await xlsxBlob.arrayBuffer());
-          const zipBuffer = Buffer.from(await zipBlob.arrayBuffer());
+
+          let zipBuffer: Buffer | undefined = undefined;
+          if (zipFile) {
+            const zipBlob = zipFile as Blob;
+            zipBuffer = Buffer.from(await zipBlob.arrayBuffer());
+          }
 
           const result = await processLightSourceBulkImport(req.payload, xlsxBuffer, zipBuffer);
 
