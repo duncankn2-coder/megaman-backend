@@ -277,6 +277,66 @@ export function cleanValue(val: any, key: string): any {
   return typeof val === 'string' ? val.trim() : val;
 }
 
+export function findHeadersRowIndex(rawRows: any[][]): number {
+  const candidates = [
+    'model number', 'model_number', 'customer model no', 'product code', 'mm code',
+    'series', 'category', 'power', 'wattage', 'voltage', 'description'
+  ];
+  
+  let bestRowIdx = 1; // Default to index 1 (original behavior)
+  let maxMatches = -1;
+  
+  // Search the first 4 rows to find the one with the most header matches
+  const searchLimit = Math.min(4, rawRows.length);
+  for (let r = 0; r < searchLimit; r++) {
+    const row = rawRows[r];
+    if (!row) continue;
+    let matches = 0;
+    for (const val of row) {
+      if (!val) continue;
+      const cleanVal = String(val).toLowerCase();
+      if (candidates.some(cand => cleanVal.includes(cand))) {
+        matches++;
+      }
+    }
+    if (matches > maxMatches && matches > 0) {
+      maxMatches = matches;
+      bestRowIdx = r;
+    }
+  }
+  
+  return bestRowIdx;
+}
+
+export const COLUMN_SYNONYMS: Record<string, string[]> = {
+  product_type: ['product type', 'category1', 'category2', 'category', '产品类型'],
+  series_name: ['series name', 'series', 'family', '系列名'],
+  customer: ['customer', '客户'],
+  customer_model_no_old: ['customer model no.(old)', 'customer model no old', 'old model no', 'old model number'],
+  customer_model_no_new: ['customer model no.  (new erp)', 'customer model no. (new)', 'customer model no new', 'new erp model no', 'new erp model number', 'product code', 'model number'],
+  yk_product_code: ['yk product code', 'yk product_code', 'yk code', 'product code'],
+  yk_model_no: ['yk model no', 'yk model_no', 'yk model', 'factory model', '工厂型号'],
+  description: ['description', 'desc', '描述'],
+  rated_voltage_v: ['rated voltage', 'input voltage', 'voltage', 'voltage map', '额定电压'],
+  frequency_hz: ['frequency', '频率'],
+  input_current_ma: ['input current', 'current', '输入电流'],
+  on_mode_power_w: ['on-mode power', 'on mode power', 'power', 'wattage', 'watt', '工作功率'],
+  total_luminous_flux_lm: ['total luminous flux', 'luminous flux', 'lumen', 'useful luminous flux', '光通量'],
+  cct_k: ['correlated colour temperature', 'colour temperature', 'color temp', 'cct', '色温'],
+  ra: ['colour rendering index', 'cri', 'ra'],
+  beam_angle: ['beam angle', 'beam', '光束角'],
+  dimmable: ['dimmable', 'dim'],
+  dimming_type: ['dimming type', 'dimming_type', 'dimming'],
+  power_factor: ['power factor', 'pf'],
+  diameter_mm: ['diameter', 'width', 'diameter_mm'],
+  height_mm: ['height', 'height_mm'],
+  width_mm: ['width', 'width_mm'],
+  shape: ['shape', '形状'],
+  housing_material: ['housing material', 'material', '外壳材质'],
+  diffuser_material: ['diffuser material', 'cover material', 'diffuser', 'cover finish', '透光罩材质'],
+  ip: ['ip', 'ipxx', 'ip rating', '防护等级'],
+};
+
 export async function processXlsxToJson(xlsxBuffer: Buffer): Promise<any[]> {
   let workbook: any;
   try {
@@ -298,27 +358,57 @@ export async function processXlsxToJson(xlsxBuffer: Buffer): Promise<any[]> {
     throw new Error('Spreadsheet structure invalid. Expected at least 4 header rows and 1 data row.');
   }
 
-  // Row 1 (index 1) contains English headers, Row 4 (index 4) onwards contain product data rows
+  // Detect header row dynamically
+  const headersRowIdx = findHeadersRowIndex(rawRows);
+  const rawHeaders = rawRows[headersRowIdx] || [];
+  const headers: string[] = [];
+  for (let i = 0; i < rawHeaders.length; i++) {
+    headers.push(String(rawHeaders[i] || '').trim().toLowerCase());
+  }
+
+  // Dynamically map LUMINAIRE_KEYS to sheet columns
+  const keyToExcelIndexMap = new Map<string, number>();
+  for (let i = 0; i < LUMINAIRE_KEYS.length; i++) {
+    const key = LUMINAIRE_KEYS[i];
+    let defaultIndex = i;
+    if (i >= 167) {
+      defaultIndex = i + 1;
+    }
+
+    let matchedIndex = -1;
+    const synonyms = COLUMN_SYNONYMS[key] || [];
+    for (const syn of synonyms) {
+      matchedIndex = headers.findIndex(h => h === syn || h.includes(syn));
+      if (matchedIndex !== -1) break;
+    }
+
+    if (matchedIndex === -1) {
+      const cleanKey = key.replace(/_/g, ' ');
+      matchedIndex = headers.findIndex(h => h === cleanKey || h.includes(cleanKey));
+    }
+
+    keyToExcelIndexMap.set(key, matchedIndex !== -1 ? matchedIndex : defaultIndex);
+  }
+
+  // Row 4 (index 4) onwards contain product data rows
   const dataRows = rawRows.slice(4);
   const convertedList: any[] = [];
+
+  const idxModelNew = keyToExcelIndexMap.get('customer_model_no_new') ?? 8;
+  const idxModelYk = keyToExcelIndexMap.get('yk_model_no') ?? 10;
 
   for (const row of dataRows) {
     if (row.length === 0) continue;
     
     // Check if the row contains a valid Model Name SKU
-    const modelNew = row[8]; // customer_model_no_new
-    const modelYk = row[10]; // yk_model_no
+    const modelNew = row[idxModelNew];
+    const modelYk = row[idxModelYk];
     if (!modelNew && !modelYk) continue;
 
     const obj: any = {};
     for (let i = 0; i < LUMINAIRE_KEYS.length; i++) {
       const key = LUMINAIRE_KEYS[i];
-      let excelIndex = i;
-      
-      // Index 167 empty column skip in Excel structure
-      if (i >= 167) {
-        excelIndex = i + 1;
-      }
+      const excelIndex = keyToExcelIndexMap.get(key) ?? (i >= 167 ? i + 1 : i);
       
       const rawVal = row[excelIndex];
       obj[key] = cleanValue(rawVal, key);

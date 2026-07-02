@@ -2,7 +2,7 @@ import { Payload } from 'payload';
 import * as xlsx from 'xlsx';
 import AdmZip from 'adm-zip';
 import path from 'path';
-import { processXlsxToJson } from './xlsxToJsonConverter';
+import { processXlsxToJson, findHeadersRowIndex } from './xlsxToJsonConverter';
 
 function normalizeModelNumber(model: string): string {
   if (!model) return '';
@@ -219,8 +219,9 @@ export async function processSkuBulkImport(
     throw new Error('General Data Spreadsheet structure invalid. Expected at least 4 header rows.');
   }
 
-  // Index 1 contains English column headers. Find indices dynamically.
-  const genHeaders = rawGeneralRows[1].map(h => String(h || '').trim());
+  // Dynamically detect headers row index
+  const genHeadersRowIdx = findHeadersRowIndex(rawGeneralRows);
+  const genHeaders = rawGeneralRows[genHeadersRowIdx].map(h => String(h || '').trim());
   const findColIndex = (headers: string[], candidates: string[]): number => {
     for (const cand of candidates) {
       const idx = headers.findIndex(h => h && h.toLowerCase() === cand.toLowerCase());
@@ -234,18 +235,30 @@ export async function processSkuBulkImport(
     return -1;
   };
 
-  const idxModelNo = findColIndex(genHeaders, ['model_number', 'Model Number', 'Customer Model No.(new)', 'customer_model_no_new']);
-  const idxDescription = findColIndex(genHeaders, ['description', 'desc']);
-  const idxFamily = findColIndex(genHeaders, ['family', 'series_name', '系列名']);
-  const idxCategory = findColIndex(genHeaders, ['category', 'product_type', '产品类型']);
-  const idxShape = findColIndex(genHeaders, ['shape']);
-  const idxDimensions = findColIndex(genHeaders, ['dimensions', 'height_mm', 'diameter_mm']);
-  const idxHousingMaterial = findColIndex(genHeaders, ['housing_material', 'housing material']);
-  const idxCoverMaterial = findColIndex(genHeaders, ['diffuser_material', 'cover_material', 'cover material']);
-  const idxBeamAngle = findColIndex(genHeaders, ['beam_angle', 'beam angle']);
-  const idxWattage = findColIndex(genHeaders, ['on_mode_power_w', 'wattage', 'power']);
-  const idxInputVoltage = findColIndex(genHeaders, ['rated_voltage_v', 'input_voltage', 'voltage']);
-  const idxDimmingType = findColIndex(genHeaders, ['dimming_type', 'dimming type']);
+  const idxModelNo = findColIndex(genHeaders, [
+    'customer_model_no_new',
+    'Customer Model No.  (NEW ErP)',
+    'Customer Model No.(NEW ErP)',
+    'New ErP Model No.',
+    'New ErP Model No',
+    'model_number',
+    'Model Number',
+    'Customer Model No.(new)',
+    'customer_model_no_new',
+    'Product Code',
+    'MM Code'
+  ]);
+  const idxDescription = findColIndex(genHeaders, ['description', 'desc', '描述']);
+  const idxFamily = findColIndex(genHeaders, ['series name', 'series_name', 'series', 'family', '系列名']);
+  const idxCategory = findColIndex(genHeaders, ['product_type', 'product type', 'category1', 'category2', 'category', '产品类型']);
+  const idxShape = findColIndex(genHeaders, ['shape', '形状']);
+  const idxDimensions = findColIndex(genHeaders, ['dimensions', 'height (h)', 'width (w)', 'depth (d)', 'diameter_mm']);
+  const idxHousingMaterial = findColIndex(genHeaders, ['housing_material', 'housing material', 'material', '外壳材质']);
+  const idxCoverMaterial = findColIndex(genHeaders, ['diffuser_material', 'cover_material', 'cover material', 'cover finish', 'cover design', '透光罩材质']);
+  const idxBeamAngle = findColIndex(genHeaders, ['beam_angle', 'beam angle', 'beam', '光束角']);
+  const idxWattage = findColIndex(genHeaders, ['on_mode_power_w', 'on mode power', 'on-mode power', 'wattage', 'watt', 'power', '工作功率']);
+  const idxInputVoltage = findColIndex(genHeaders, ['rated_voltage_v', 'input_voltage', 'voltage', 'voltage map', '额定电压']);
+  const idxDimmingType = findColIndex(genHeaders, ['dimming_type', 'dimming type', 'dimming', 'dimmable']);
 
   if (idxModelNo === -1) {
     throw new Error('Could not find Model Number column in General Data Excel.');
