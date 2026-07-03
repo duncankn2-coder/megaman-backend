@@ -146,17 +146,19 @@ export const Products: CollectionConfig = {
           const skuXlsxFile = formData.get('skuXlsx');
           const zipFile = formData.get('zip');
 
-          if (!generalXlsxFile || !skuXlsxFile) {
-            return new Response(JSON.stringify({ error: 'General data XLSX and SKU MM Code XLSX files are required.' }), {
+          if (!generalXlsxFile && !skuXlsxFile) {
+            return new Response(JSON.stringify({ error: 'At least one General data XLSX or SKU MM Code XLSX file is required.' }), {
               status: 400,
               headers: { 'Content-Type': 'application/json' },
             });
           }
 
-          const generalXlsxBlob = generalXlsxFile as Blob;
-          const skuXlsxBlob = skuXlsxFile as Blob;
-          const generalXlsxBuffer = Buffer.from(await generalXlsxBlob.arrayBuffer());
-          const skuXlsxBuffer = Buffer.from(await skuXlsxBlob.arrayBuffer());
+          const generalXlsxBuffer = generalXlsxFile 
+            ? Buffer.from(await (generalXlsxFile as Blob).arrayBuffer())
+            : undefined;
+          const skuXlsxBuffer = skuXlsxFile 
+            ? Buffer.from(await (skuXlsxFile as Blob).arrayBuffer())
+            : undefined;
 
           let zipBuffer: Buffer | undefined = undefined;
           if (zipFile) {

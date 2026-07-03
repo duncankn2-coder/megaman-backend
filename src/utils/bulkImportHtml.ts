@@ -207,6 +207,33 @@ export const bulkImportHtml = `
             border-color: var(--success);
             background-color: rgba(16, 185, 129, 0.02);
         }
+        .dropzone-clear-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.05);
+            border: none;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            transition: var(--transition);
+            z-index: 10;
+        }
+        .dropzone-clear-btn:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error);
+        }
+        .file-selected .dropzone-clear-btn {
+            display: flex;
+        }
         .btn-submit {
             background-color: var(--primary);
             color: white;
@@ -356,12 +383,12 @@ export const bulkImportHtml = `
         <div class="grid">
             <div class="card">
                 <div class="tabs">
-                    <button class="tab-btn active" id="tabSkuBtn" onclick="switchTab('sku')">📦 Product & SKU Split</button>
+                    <button class="tab-btn active" id="tabSkuBtn" onclick="switchTab('sku')">📦 Luminaire</button>
                     <button class="tab-btn" id="tabLightSourceBtn" onclick="switchTab('lightSource')">💡 Light Source</button>
                     <button class="tab-btn" id="tabLegacyBtn" onclick="switchTab('legacy')">🔄 Legacy JSON/XLSX</button>
                 </div>
                 
-                <!-- Tab 1: Product & SKU Split Importer (New) -->
+                <!-- Tab 1: Luminaire Importer (New) -->
                 <div class="tab-content active" id="skuTabContent">
                     <form id="skuImportForm" onsubmit="event.preventDefault();">
                         <div class="dropzone-container">
@@ -369,6 +396,7 @@ export const bulkImportHtml = `
                             <div class="dropzone-wrapper">
                                 <input type="file" id="generalXlsxInput" name="generalXlsx" accept=".xlsx" style="display: none;">
                                 <div class="dropzone" id="generalXlsxDropzone">
+                                    <button type="button" class="dropzone-clear-btn" id="generalXlsxClearBtn" onclick="clearFile(event, 'generalXlsx')">&times;</button>
                                     <span class="dropzone-icon">📊</span>
                                     <div class="dropzone-text" id="generalXlsxText">1. General Data Spreadsheet (.xlsx)</div>
                                     <div class="dropzone-hint">Upload General Data sheet (e.g. Fixture General data - Berto backlit.xlsx)</div>
@@ -379,13 +407,14 @@ export const bulkImportHtml = `
                             <div class="dropzone-wrapper">
                                 <input type="file" id="skuXlsxInput" name="skuXlsx" accept=".xlsx" style="display: none;">
                                 <div class="dropzone" id="skuXlsxDropzone">
+                                    <button type="button" class="dropzone-clear-btn" id="skuXlsxClearBtn" onclick="clearFile(event, 'skuXlsx')">&times;</button>
                                     <span class="dropzone-icon">📋</span>
                                     <div class="dropzone-text" id="skuXlsxText">2. SKU MM Code Spreadsheet (.xlsx)</div>
                                     <div class="dropzone-hint">Upload SKU variation mappings sheet (e.g. product mm code_berto_backlit.xlsx)</div>
                                 </div>
                             </div>
 
-                            <button type="button" onclick="triggerSkuBulkImport()" class="btn-submit" id="skuSubmitBtn" disabled>Start SKU Bulk Import</button>
+                            <button type="button" onclick="triggerSkuBulkImport()" class="btn-submit" id="skuSubmitBtn" disabled>Start Luminaire Bulk Import</button>
                         </div>
                     </form>
                 </div>
@@ -398,6 +427,7 @@ export const bulkImportHtml = `
                             <div class="dropzone-wrapper">
                                 <input type="file" id="lightSourceXlsxInput" name="xlsx" accept=".xlsx" style="display: none;">
                                 <div class="dropzone" id="lightSourceXlsxDropzone">
+                                    <button type="button" class="dropzone-clear-btn" id="lightSourceXlsxClearBtn" onclick="clearFile(event, 'lightSourceXlsx')">&times;</button>
                                     <span class="dropzone-icon">💡</span>
                                     <div class="dropzone-text" id="lightSourceXlsxText">1. Light Source General Data (.xlsx)</div>
                                     <div class="dropzone-hint">Upload Light Source/Lamps spec sheet (e.g. Lamps - General Data - test.xlsx)</div>
@@ -421,6 +451,7 @@ export const bulkImportHtml = `
                                 <div style="display:flex; flex-direction:column; gap:12px;">
                                     <input type="file" id="converterInput" name="converter" accept=".xlsx" style="display: none;">
                                     <div class="dropzone" id="converterDropzone">
+                                        <button type="button" class="dropzone-clear-btn" id="converterClearBtn" onclick="clearFile(event, 'converter')">&times;</button>
                                         <span class="dropzone-icon">📊</span>
                                         <div class="dropzone-text" id="converterText">Select general data spreadsheet (.xlsx)</div>
                                         <div class="dropzone-hint">Convert spreadsheet columns and import immediately into CMS</div>
@@ -439,6 +470,7 @@ export const bulkImportHtml = `
                                 <div style="display:flex; flex-direction:column; gap:12px;">
                                     <input type="file" id="jsonInput" name="json" accept=".json" style="display: none;">
                                     <div class="dropzone" id="jsonDropzone">
+                                        <button type="button" class="dropzone-clear-btn" id="jsonClearBtn" onclick="clearFile(event, 'json')">&times;</button>
                                         <span class="dropzone-icon">📋</span>
                                         <div class="dropzone-text" id="jsonText">Select product JSON file (.json)</div>
                                         <div class="dropzone-hint">Upload a previously converted JSON file</div>
@@ -611,7 +643,33 @@ export const bulkImportHtml = `
             
             // Validate Sku import button
             const skuBtn = document.getElementById('skuSubmitBtn');
-            skuBtn.disabled = !(files.generalXlsx && files.skuXlsx);
+            skuBtn.disabled = !(files.generalXlsx || files.skuXlsx);
+
+            // Validate Light Source import button
+            const lsBtn = document.getElementById('lightSourceSubmitBtn');
+            lsBtn.disabled = !files.lightSourceXlsx;
+
+            // Validate Legacy buttons
+            document.getElementById('jsonSubmitBtn').disabled = !files.json;
+            document.getElementById('converterSubmitBtn').disabled = !files.converter;
+        }
+
+        function clearFile(event, type) {
+            if (event) event.stopPropagation();
+            
+            files[type] = null;
+            const input = document.getElementById(type + 'Input');
+            if (input) input.value = '';
+            
+            const dropzone = document.getElementById(type + 'Dropzone');
+            if (dropzone) dropzone.classList.remove('file-selected');
+            
+            const textElement = document.getElementById(type + 'Text');
+            if (textElement) textElement.innerText = getPlaceholderText(type);
+            
+            // Validate Sku import button
+            const skuBtn = document.getElementById('skuSubmitBtn');
+            skuBtn.disabled = !(files.generalXlsx || files.skuXlsx);
 
             // Validate Light Source import button
             const lsBtn = document.getElementById('lightSourceSubmitBtn');
