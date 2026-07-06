@@ -146,25 +146,26 @@ export const Products: CollectionConfig = {
           const skuXlsxFile = formData.get('skuXlsx');
           const zipFile = formData.get('zip');
 
-          if (!generalXlsxFile && !skuXlsxFile) {
+          const hasGeneral = generalXlsxFile instanceof Blob && generalXlsxFile.size > 0;
+          const hasSku = skuXlsxFile instanceof Blob && skuXlsxFile.size > 0;
+          const hasZip = zipFile instanceof Blob && zipFile.size > 0;
+
+          if (!hasGeneral && !hasSku) {
             return new Response(JSON.stringify({ error: 'At least one General data XLSX or SKU MM Code XLSX file is required.' }), {
               status: 400,
               headers: { 'Content-Type': 'application/json' },
             });
           }
 
-          const generalXlsxBuffer = generalXlsxFile 
+          const generalXlsxBuffer = hasGeneral 
             ? Buffer.from(await (generalXlsxFile as Blob).arrayBuffer())
             : undefined;
-          const skuXlsxBuffer = skuXlsxFile 
+          const skuXlsxBuffer = hasSku 
             ? Buffer.from(await (skuXlsxFile as Blob).arrayBuffer())
             : undefined;
-
-          let zipBuffer: Buffer | undefined = undefined;
-          if (zipFile) {
-            const zipBlob = zipFile as Blob;
-            zipBuffer = Buffer.from(await zipBlob.arrayBuffer());
-          }
+          const zipBuffer = hasZip
+            ? Buffer.from(await (zipFile as Blob).arrayBuffer())
+            : undefined;
 
           const result = await processSkuBulkImport(req.payload, generalXlsxBuffer, skuXlsxBuffer, zipBuffer);
 
@@ -199,21 +200,20 @@ export const Products: CollectionConfig = {
           const xlsxFile = formData.get('xlsx');
           const zipFile = formData.get('zip');
 
-          if (!xlsxFile) {
+          const hasXlsx = xlsxFile instanceof Blob && xlsxFile.size > 0;
+          const hasZip = zipFile instanceof Blob && zipFile.size > 0;
+
+          if (!hasXlsx) {
             return new Response(JSON.stringify({ error: 'xlsx file is required.' }), {
               status: 400,
               headers: { 'Content-Type': 'application/json' },
             });
           }
 
-          const xlsxBlob = xlsxFile as Blob;
-          const xlsxBuffer = Buffer.from(await xlsxBlob.arrayBuffer());
-
-          let zipBuffer: Buffer | undefined = undefined;
-          if (zipFile) {
-            const zipBlob = zipFile as Blob;
-            zipBuffer = Buffer.from(await zipBlob.arrayBuffer());
-          }
+          const xlsxBuffer = Buffer.from(await (xlsxFile as Blob).arrayBuffer());
+          const zipBuffer = hasZip
+            ? Buffer.from(await (zipFile as Blob).arrayBuffer())
+            : undefined;
 
           const result = await processLightSourceBulkImport(req.payload, xlsxBuffer, zipBuffer);
 
