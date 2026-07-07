@@ -350,6 +350,53 @@ export const Products: CollectionConfig = {
         return data;
       },
     ],
+    afterDelete: [
+      async ({ req, id }) => {
+        // 1. Delete all SKUs referencing this product
+        try {
+          const deleteResult = await req.payload.delete({
+            collection: 'skus',
+            where: {
+              product: {
+                equals: id,
+              },
+            },
+          });
+          console.log(`Deleted all SKUs referencing product ID: ${id}`);
+        } catch (error) {
+          console.error(`Error deleting SKUs for product ${id}:`, error);
+        }
+
+        // 2. Remove product ID from any family relationship arrays
+        try {
+          const families = await req.payload.find({
+            collection: 'families',
+            where: {
+              products: {
+                equals: id,
+              },
+            },
+          });
+
+          for (const family of families.docs) {
+            const updatedProducts = (family.products || [])
+              .map((p: any) => (typeof p === 'object' && p !== null) ? p.id : p)
+              .filter((pId: any) => pId !== id);
+
+            await req.payload.update({
+              collection: 'families',
+              id: family.id,
+              data: {
+                products: updatedProducts,
+              },
+            });
+            console.log(`Removed product ID ${id} from family: ${family.id}`);
+          }
+        } catch (error) {
+          console.error(`Error removing product ID ${id} from family relationships:`, error);
+        }
+      },
+    ],
   },
   fields: [
     {
