@@ -406,6 +406,22 @@ export const Products: CollectionConfig = {
       label: 'Model Number',
     },
     {
+      name: 'sites',
+      type: 'select',
+      hasMany: true,
+      label: 'Display on Sites',
+      required: true,
+      defaultValue: ['international', 'hk'],
+      options: [
+        { label: 'International Website (megaman.cc)', value: 'international' },
+        { label: 'Hong Kong Website (hk.megaman.cc)', value: 'hk' },
+      ],
+      admin: {
+        position: 'sidebar',
+        description: 'Select which site(s) this product should be displayed on.',
+      },
+    },
+    {
       name: 'description',
       type: 'textarea',
     },

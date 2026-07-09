@@ -17,16 +17,43 @@ export const HomePage: GlobalConfig = {
   },
   fields: [
     {
-      name: 'layout',
-      type: 'blocks',
-      label: 'Page Layout Sections',
-      blocks: [
-        HeroBlock,
-        CategoriesGridBlock,
-        EditorialBlock,
-        HighlightProductsBlock,
-        InspirationBlock,
-        NewsBlock,
+      name: 'international',
+      type: 'group',
+      label: 'International Site (megaman.cc)',
+      fields: [
+        {
+          name: 'layout',
+          type: 'blocks',
+          label: 'Page Layout Sections',
+          blocks: [
+            HeroBlock,
+            CategoriesGridBlock,
+            EditorialBlock,
+            HighlightProductsBlock,
+            InspirationBlock,
+            NewsBlock,
+          ],
+        },
+      ],
+    },
+    {
+      name: 'hk',
+      type: 'group',
+      label: 'Hong Kong Site (hk.megaman.cc)',
+      fields: [
+        {
+          name: 'layout',
+          type: 'blocks',
+          label: 'Page Layout Sections',
+          blocks: [
+            HeroBlock,
+            CategoriesGridBlock,
+            EditorialBlock,
+            HighlightProductsBlock,
+            InspirationBlock,
+            NewsBlock,
+          ],
+        },
       ],
     },
   ],

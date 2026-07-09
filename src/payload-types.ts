@@ -175,6 +175,10 @@ export interface Media {
 export interface Product {
   id: string;
   name: string;
+  /**
+   * Select which site(s) this product should be displayed on.
+   */
+  sites: ('international' | 'hk')[];
   description?: string | null;
   families?: (string | null) | Family;
   images: string | Media;
@@ -507,6 +511,7 @@ export interface MediaSelect<T extends boolean = true> {
  */
 export interface ProductsSelect<T extends boolean = true> {
   name?: T;
+  sites?: T;
   description?: T;
   families?: T;
   images?: T;
@@ -710,82 +715,162 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
  */
 export interface HomePage {
   id: string;
-  layout?:
-    | (
-        | {
-            slides?:
-              | {
-                  title: string;
-                  subtitle: string;
-                  description?: string | null;
-                  image: string | Media;
-                  ctaText?: string | null;
-                  ctaLink?: string | null;
-                  id?: string | null;
-                }[]
-              | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'hero';
-          }
-        | {
-            title: string;
-            subtitle?: string | null;
-            categories?:
-              | {
-                  number: string;
-                  title: string;
-                  description?: string | null;
-                  parameterLabel?: string | null;
-                  parameterValue: string;
-                  linkUrl: string;
-                  linkText?: string | null;
-                  id?: string | null;
-                }[]
-              | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'categoriesGrid';
-          }
-        | {
-            title: string;
-            subtitle?: string | null;
-            content?: string | null;
-            image?: (string | null) | Media;
-            linkText?: string | null;
-            linkUrl?: string | null;
-            layout?: ('grid' | 'split-left' | 'split-right') | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'editorial';
-          }
-        | {
-            title: string;
-            subtitle?: string | null;
-            products: (string | Product)[];
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'highlightProducts';
-          }
-        | {
-            title: string;
-            subtitle?: string | null;
-            projects: (string | Project)[];
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'inspiration';
-          }
-        | {
-            title: string;
-            subtitle?: string | null;
-            source?: ('latest' | 'custom') | null;
-            featuredNews?: (string | News)[] | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'news';
-          }
-      )[]
-    | null;
+  international?: {
+    layout?:
+      | (
+          | {
+              slides?:
+                | {
+                    title: string;
+                    subtitle: string;
+                    description?: string | null;
+                    image: string | Media;
+                    ctaText?: string | null;
+                    ctaLink?: string | null;
+                    id?: string | null;
+                  }[]
+                | null;
+              id?: string | null;
+              blockName?: string | null;
+              blockType: 'hero';
+            }
+          | {
+              title: string;
+              subtitle?: string | null;
+              categories?:
+                | {
+                    number: string;
+                    title: string;
+                    description?: string | null;
+                    parameterLabel?: string | null;
+                    parameterValue: string;
+                    linkUrl: string;
+                    linkText?: string | null;
+                    id?: string | null;
+                  }[]
+                | null;
+              id?: string | null;
+              blockName?: string | null;
+              blockType: 'categoriesGrid';
+            }
+          | {
+              title: string;
+              subtitle?: string | null;
+              content?: string | null;
+              image?: (string | null) | Media;
+              linkText?: string | null;
+              linkUrl?: string | null;
+              layout?: ('grid' | 'split-left' | 'split-right') | null;
+              id?: string | null;
+              blockName?: string | null;
+              blockType: 'editorial';
+            }
+          | {
+              title: string;
+              subtitle?: string | null;
+              products: (string | Product)[];
+              id?: string | null;
+              blockName?: string | null;
+              blockType: 'highlightProducts';
+            }
+          | {
+              title: string;
+              subtitle?: string | null;
+              projects: (string | Project)[];
+              id?: string | null;
+              blockName?: string | null;
+              blockType: 'inspiration';
+            }
+          | {
+              title: string;
+              subtitle?: string | null;
+              source?: ('latest' | 'custom') | null;
+              featuredNews?: (string | News)[] | null;
+              id?: string | null;
+              blockName?: string | null;
+              blockType: 'news';
+            }
+        )[]
+      | null;
+  };
+  hk?: {
+    layout?:
+      | (
+          | {
+              slides?:
+                | {
+                    title: string;
+                    subtitle: string;
+                    description?: string | null;
+                    image: string | Media;
+                    ctaText?: string | null;
+                    ctaLink?: string | null;
+                    id?: string | null;
+                  }[]
+                | null;
+              id?: string | null;
+              blockName?: string | null;
+              blockType: 'hero';
+            }
+          | {
+              title: string;
+              subtitle?: string | null;
+              categories?:
+                | {
+                    number: string;
+                    title: string;
+                    description?: string | null;
+                    parameterLabel?: string | null;
+                    parameterValue: string;
+                    linkUrl: string;
+                    linkText?: string | null;
+                    id?: string | null;
+                  }[]
+                | null;
+              id?: string | null;
+              blockName?: string | null;
+              blockType: 'categoriesGrid';
+            }
+          | {
+              title: string;
+              subtitle?: string | null;
+              content?: string | null;
+              image?: (string | null) | Media;
+              linkText?: string | null;
+              linkUrl?: string | null;
+              layout?: ('grid' | 'split-left' | 'split-right') | null;
+              id?: string | null;
+              blockName?: string | null;
+              blockType: 'editorial';
+            }
+          | {
+              title: string;
+              subtitle?: string | null;
+              products: (string | Product)[];
+              id?: string | null;
+              blockName?: string | null;
+              blockType: 'highlightProducts';
+            }
+          | {
+              title: string;
+              subtitle?: string | null;
+              projects: (string | Project)[];
+              id?: string | null;
+              blockName?: string | null;
+              blockType: 'inspiration';
+            }
+          | {
+              title: string;
+              subtitle?: string | null;
+              source?: ('latest' | 'custom') | null;
+              featuredNews?: (string | News)[] | null;
+              id?: string | null;
+              blockName?: string | null;
+              blockType: 'news';
+            }
+        )[]
+      | null;
+  };
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -794,86 +879,176 @@ export interface HomePage {
  * via the `definition` "home-page_select".
  */
 export interface HomePageSelect<T extends boolean = true> {
-  layout?:
+  international?:
     | T
     | {
-        hero?:
+        layout?:
           | T
           | {
-              slides?:
+              hero?:
+                | T
+                | {
+                    slides?:
+                      | T
+                      | {
+                          title?: T;
+                          subtitle?: T;
+                          description?: T;
+                          image?: T;
+                          ctaText?: T;
+                          ctaLink?: T;
+                          id?: T;
+                        };
+                    id?: T;
+                    blockName?: T;
+                  };
+              categoriesGrid?:
                 | T
                 | {
                     title?: T;
                     subtitle?: T;
-                    description?: T;
-                    image?: T;
-                    ctaText?: T;
-                    ctaLink?: T;
+                    categories?:
+                      | T
+                      | {
+                          number?: T;
+                          title?: T;
+                          description?: T;
+                          parameterLabel?: T;
+                          parameterValue?: T;
+                          linkUrl?: T;
+                          linkText?: T;
+                          id?: T;
+                        };
                     id?: T;
+                    blockName?: T;
                   };
-              id?: T;
-              blockName?: T;
-            };
-        categoriesGrid?:
-          | T
-          | {
-              title?: T;
-              subtitle?: T;
-              categories?:
+              editorial?:
                 | T
                 | {
-                    number?: T;
                     title?: T;
-                    description?: T;
-                    parameterLabel?: T;
-                    parameterValue?: T;
-                    linkUrl?: T;
+                    subtitle?: T;
+                    content?: T;
+                    image?: T;
                     linkText?: T;
+                    linkUrl?: T;
+                    layout?: T;
                     id?: T;
+                    blockName?: T;
                   };
-              id?: T;
-              blockName?: T;
+              highlightProducts?:
+                | T
+                | {
+                    title?: T;
+                    subtitle?: T;
+                    products?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+              inspiration?:
+                | T
+                | {
+                    title?: T;
+                    subtitle?: T;
+                    projects?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+              news?:
+                | T
+                | {
+                    title?: T;
+                    subtitle?: T;
+                    source?: T;
+                    featuredNews?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
             };
-        editorial?:
+      };
+  hk?:
+    | T
+    | {
+        layout?:
           | T
           | {
-              title?: T;
-              subtitle?: T;
-              content?: T;
-              image?: T;
-              linkText?: T;
-              linkUrl?: T;
-              layout?: T;
-              id?: T;
-              blockName?: T;
-            };
-        highlightProducts?:
-          | T
-          | {
-              title?: T;
-              subtitle?: T;
-              products?: T;
-              id?: T;
-              blockName?: T;
-            };
-        inspiration?:
-          | T
-          | {
-              title?: T;
-              subtitle?: T;
-              projects?: T;
-              id?: T;
-              blockName?: T;
-            };
-        news?:
-          | T
-          | {
-              title?: T;
-              subtitle?: T;
-              source?: T;
-              featuredNews?: T;
-              id?: T;
-              blockName?: T;
+              hero?:
+                | T
+                | {
+                    slides?:
+                      | T
+                      | {
+                          title?: T;
+                          subtitle?: T;
+                          description?: T;
+                          image?: T;
+                          ctaText?: T;
+                          ctaLink?: T;
+                          id?: T;
+                        };
+                    id?: T;
+                    blockName?: T;
+                  };
+              categoriesGrid?:
+                | T
+                | {
+                    title?: T;
+                    subtitle?: T;
+                    categories?:
+                      | T
+                      | {
+                          number?: T;
+                          title?: T;
+                          description?: T;
+                          parameterLabel?: T;
+                          parameterValue?: T;
+                          linkUrl?: T;
+                          linkText?: T;
+                          id?: T;
+                        };
+                    id?: T;
+                    blockName?: T;
+                  };
+              editorial?:
+                | T
+                | {
+                    title?: T;
+                    subtitle?: T;
+                    content?: T;
+                    image?: T;
+                    linkText?: T;
+                    linkUrl?: T;
+                    layout?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+              highlightProducts?:
+                | T
+                | {
+                    title?: T;
+                    subtitle?: T;
+                    products?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+              inspiration?:
+                | T
+                | {
+                    title?: T;
+                    subtitle?: T;
+                    projects?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+              news?:
+                | T
+                | {
+                    title?: T;
+                    subtitle?: T;
+                    source?: T;
+                    featuredNews?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
             };
       };
   updatedAt?: T;
