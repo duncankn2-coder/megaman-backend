@@ -83,33 +83,21 @@ export const CategoriesGridBlock: Block = {
       maxRows: 8,
       fields: [
         {
-          name: 'number',
-          type: 'text',
-          label: 'Display Number (e.g. 01)',
-          required: true,
-        },
-        {
           name: 'title',
           type: 'text',
           label: 'Category Name',
           required: true,
         },
         {
+          name: 'image',
+          type: 'upload',
+          relationTo: 'media',
+          label: 'Category Image',
+        },
+        {
           name: 'description',
           type: 'textarea',
           label: 'Category Description',
-        },
-        {
-          name: 'parameterLabel',
-          type: 'text',
-          label: 'Parameter Label (e.g. SYSTEM PARAMETERS)',
-          defaultValue: 'SYSTEM PARAMETERS',
-        },
-        {
-          name: 'parameterValue',
-          type: 'text',
-          label: 'Parameter Value (e.g. 150+ Lamps)',
-          required: true,
         },
         {
           name: 'linkUrl',

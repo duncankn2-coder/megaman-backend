@@ -739,11 +739,9 @@ export interface HomePage {
               subtitle?: string | null;
               categories?:
                 | {
-                    number: string;
                     title: string;
+                    image?: (string | null) | Media;
                     description?: string | null;
-                    parameterLabel?: string | null;
-                    parameterValue: string;
                     linkUrl: string;
                     linkText?: string | null;
                     id?: string | null;
@@ -817,11 +815,9 @@ export interface HomePage {
               subtitle?: string | null;
               categories?:
                 | {
-                    number: string;
                     title: string;
+                    image?: (string | null) | Media;
                     description?: string | null;
-                    parameterLabel?: string | null;
-                    parameterValue: string;
                     linkUrl: string;
                     linkText?: string | null;
                     id?: string | null;
@@ -910,11 +906,9 @@ export interface HomePageSelect<T extends boolean = true> {
                     categories?:
                       | T
                       | {
-                          number?: T;
                           title?: T;
+                          image?: T;
                           description?: T;
-                          parameterLabel?: T;
-                          parameterValue?: T;
                           linkUrl?: T;
                           linkText?: T;
                           id?: T;
@@ -996,11 +990,9 @@ export interface HomePageSelect<T extends boolean = true> {
                     categories?:
                       | T
                       | {
-                          number?: T;
                           title?: T;
+                          image?: T;
                           description?: T;
-                          parameterLabel?: T;
-                          parameterValue?: T;
                           linkUrl?: T;
                           linkText?: T;
                           id?: T;
