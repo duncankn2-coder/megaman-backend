@@ -76,6 +76,7 @@ export interface Config {
     news: News;
     symbols: Symbol;
     skus: Skus;
+    videos: Video;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -91,6 +92,7 @@ export interface Config {
     news: NewsSelect<false> | NewsSelect<true>;
     symbols: SymbolsSelect<false> | SymbolsSelect<true>;
     skus: SkusSelect<false> | SkusSelect<true>;
+    videos: VideosSelect<false> | VideosSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -388,6 +390,30 @@ export interface Skus {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "videos".
+ */
+export interface Video {
+  id: string;
+  title: string;
+  description?: string | null;
+  /**
+   * Pasted YouTube video URL (e.g., https://www.youtube.com/watch?v=E8vXpMvPILk or https://youtu.be/E8vXpMvPILk)
+   */
+  youtubeLink: string;
+  /**
+   * Auto-extracted YouTube video ID
+   */
+  youtubeId: string;
+  category: 'Corporate' | 'Smart Lighting' | 'Installation' | 'Case Study' | 'Sustainability' | 'Technical';
+  /**
+   * e.g. 3:42, 4:15, or 6:28
+   */
+  duration: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -428,6 +454,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'skus';
         value: string | Skus;
+      } | null)
+    | ({
+        relationTo: 'videos';
+        value: string | Video;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -674,6 +704,20 @@ export interface SkusSelect<T extends boolean = true> {
   photometryLdt?: T;
   photometryIes?: T;
   specifications?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "videos_select".
+ */
+export interface VideosSelect<T extends boolean = true> {
+  title?: T;
+  description?: T;
+  youtubeLink?: T;
+  youtubeId?: T;
+  category?: T;
+  duration?: T;
   updatedAt?: T;
   createdAt?: T;
 }
