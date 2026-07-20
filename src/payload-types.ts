@@ -77,6 +77,7 @@ export interface Config {
     symbols: Symbol;
     skus: Skus;
     videos: Video;
+    awards: Award;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -93,6 +94,7 @@ export interface Config {
     symbols: SymbolsSelect<false> | SymbolsSelect<true>;
     skus: SkusSelect<false> | SkusSelect<true>;
     videos: VideosSelect<false> | VideosSelect<true>;
+    awards: AwardsSelect<false> | AwardsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -414,6 +416,32 @@ export interface Video {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "awards".
+ */
+export interface Award {
+  id: string;
+  title: string;
+  /**
+   * e.g. 2025, 2013-17
+   */
+  year: string;
+  /**
+   * e.g. Hong Kong Commercial Daily, BATIBOUW, Belgium
+   */
+  institution: string;
+  /**
+   * Awards category to filter by on the website
+   */
+  category: 'environmental' | 'quality' | 'technological' | 'other';
+  /**
+   * Image file for the award brand logo
+   */
+  logo?: (string | null) | Media;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -458,6 +486,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'videos';
         value: string | Video;
+      } | null)
+    | ({
+        relationTo: 'awards';
+        value: string | Award;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -718,6 +750,19 @@ export interface VideosSelect<T extends boolean = true> {
   youtubeId?: T;
   category?: T;
   duration?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "awards_select".
+ */
+export interface AwardsSelect<T extends boolean = true> {
+  title?: T;
+  year?: T;
+  institution?: T;
+  category?: T;
+  logo?: T;
   updatedAt?: T;
   createdAt?: T;
 }
