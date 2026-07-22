@@ -452,7 +452,8 @@ export async function processSkuBulkImport(
       const watt = getField(row, ['watt', 'Wattage']);
       const lampBase = getField(row, ['Lamp base', 'lamp base']);
       const colourTemp = getField(row, ['Colortemp.', 'Color Temp', 'colour_temp']);
-      const mmCode = getField(row, ['MM CODE', 'mm_code', 'MMCODE']);
+      const mmCodeRaw = getField(row, ['MM CODE', 'mm_code', 'MMCODE']);
+      const mmCode = (mmCodeRaw && /^\d{6}\//.test(mmCodeRaw)) ? mmCodeRaw.substring(7) : mmCodeRaw;
       const voltage = getField(row, ['Voltage', 'voltage']);
       const connector = getField(row, ['Connector', 'Terminal Block', '端子台']);
       const ip = getField(row, ['IPXX', 'IP']);

@@ -243,7 +243,7 @@ export async function processLightSourceBulkImport(
 
     // Use normalized model number for mapping, but original for CMS title
     const normalizedModel = normalizeModelNumber(modelNo);
-    const mmCode = mmCodeRaw;
+    const mmCode = (mmCodeRaw && /^\d{6}\//.test(mmCodeRaw)) ? mmCodeRaw.substring(7) : mmCodeRaw;
 
     logs.push(`Processing row ${i + 1}: MM Code "${mmCode}" for model "${modelNo}"...`);
 
@@ -253,6 +253,12 @@ export async function processLightSourceBulkImport(
       const key = cleanKeys[colIdx];
       if (!key) continue;
       specRecord[key] = cleanValue(row[colIdx], key);
+    }
+    if (specRecord['mm_code']) {
+      let val = String(specRecord['mm_code']).trim();
+      if (/^\d{6}\//.test(val)) {
+        specRecord['mm_code'] = val.substring(7);
+      }
     }
 
     // Sync specs to MongoDB

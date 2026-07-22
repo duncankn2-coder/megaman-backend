@@ -235,6 +235,25 @@ export interface Family {
       }[]
     | null;
   symbols?: (string | Symbol)[] | null;
+  /**
+   * Select which parameters/specifications are active for this family. This controls both the visible dropdown filters and the Technical Configuration spreadsheet columns.
+   */
+  selectedParameters?:
+    | (
+        | 'mmCode'
+        | 'modelNo'
+        | 'colour'
+        | 'wattage'
+        | 'luminousFlux'
+        | 'colourTemperature'
+        | 'cri'
+        | 'efficacy'
+        | 'ip'
+        | 'connector'
+        | 'lampBase'
+        | 'voltage'
+      )[]
+    | null;
   layout?:
     | (
         | {
@@ -647,6 +666,7 @@ export interface FamiliesSelect<T extends boolean = true> {
         id?: T;
       };
   symbols?: T;
+  selectedParameters?: T;
   layout?:
     | T
     | {
