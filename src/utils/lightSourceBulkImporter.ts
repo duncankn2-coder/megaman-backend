@@ -212,7 +212,9 @@ export async function processLightSourceBulkImport(
   const idxDescription = cleanKeys.indexOf('supplier_description') !== -1 
     ? cleanKeys.indexOf('supplier_description') 
     : cleanKeys.indexOf('description');
-  const idxFamily = cleanKeys.indexOf('series');
+  const idxFamily = cleanKeys.indexOf('shape') !== -1 
+    ? cleanKeys.indexOf('shape') 
+    : cleanKeys.indexOf('series');
   const idxCategory1 = cleanKeys.indexOf('category1');
   const idxCategory2 = cleanKeys.indexOf('category2');
   const idxColour = cleanKeys.indexOf('housing_colour');

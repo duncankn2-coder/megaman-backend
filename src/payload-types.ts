@@ -78,6 +78,7 @@ export interface Config {
     skus: Skus;
     videos: Video;
     awards: Award;
+    catalogs: Catalog;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -95,6 +96,7 @@ export interface Config {
     skus: SkusSelect<false> | SkusSelect<true>;
     videos: VideosSelect<false> | VideosSelect<true>;
     awards: AwardsSelect<false> | AwardsSelect<true>;
+    catalogs: CatalogsSelect<false> | CatalogsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -189,7 +191,6 @@ export interface Product {
   datasheetPdf?: (string | null) | Media;
   photometryLdt?: (string | null) | Media;
   photometryIes?: (string | null) | Media;
-  bimRevit?: (string | null) | Media;
   techDocControlGear?: (string | null) | Media;
   techDocContainingProduct?: (string | null) | Media;
   techDocLightSource?: (string | null) | Media;
@@ -297,6 +298,7 @@ export interface Category {
   id: string;
   name: string;
   parent?: (string | null) | Category;
+  image?: (string | null) | Media;
   updatedAt: string;
   createdAt: string;
 }
@@ -461,6 +463,20 @@ export interface Award {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "catalogs".
+ */
+export interface Catalog {
+  id: string;
+  title: string;
+  description?: string | null;
+  category: 'general' | 'lamps' | 'indoor' | 'outdoor' | 'technical';
+  catalogFile: string | Media;
+  image?: (string | null) | Media;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -509,6 +525,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'awards';
         value: string | Award;
+      } | null)
+    | ({
+        relationTo: 'catalogs';
+        value: string | Catalog;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -599,7 +619,6 @@ export interface ProductsSelect<T extends boolean = true> {
   datasheetPdf?: T;
   photometryLdt?: T;
   photometryIes?: T;
-  bimRevit?: T;
   techDocControlGear?: T;
   techDocContainingProduct?: T;
   techDocLightSource?: T;
@@ -640,6 +659,7 @@ export interface ProjectsSelect<T extends boolean = true> {
 export interface CategoriesSelect<T extends boolean = true> {
   name?: T;
   parent?: T;
+  image?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -783,6 +803,19 @@ export interface AwardsSelect<T extends boolean = true> {
   institution?: T;
   category?: T;
   logo?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "catalogs_select".
+ */
+export interface CatalogsSelect<T extends boolean = true> {
+  title?: T;
+  description?: T;
+  category?: T;
+  catalogFile?: T;
+  image?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -313,7 +313,7 @@ export const COLUMN_SYNONYMS: Record<string, string[]> = {
   series_name: ['series name', 'series', 'family', '系列名'],
   customer: ['customer', '客户'],
   customer_model_no_old: ['customer model no.(old)', 'customer model no old', 'old model no', 'old model number'],
-  customer_model_no_new: ['customer model no.  (new erp)', 'customer model no. (new)', 'customer model no new', 'new erp model no', 'new erp model number', 'product code', 'model number'],
+  customer_model_no_new: ['customer model no.  (new erp)', 'customer model no. (new)', 'customer model no new', 'new erp model no', 'new erp model number', 'model number', 'model_number'],
   yk_product_code: ['yk product code', 'yk product_code', 'yk code', 'product code'],
   yk_model_no: ['yk model no', 'yk model_no', 'yk model', 'factory model', '工厂型号'],
   description: ['description', 'desc', '描述'],
@@ -377,11 +377,22 @@ export async function processXlsxToJson(xlsxBuffer: Buffer): Promise<any[]> {
 
     let matchedIndex = -1;
     const synonyms = COLUMN_SYNONYMS[key] || [];
+    
+    // 1. Try exact matches on synonyms first
     for (const syn of synonyms) {
-      matchedIndex = headers.findIndex(h => h === syn || h.includes(syn));
+      matchedIndex = headers.findIndex(h => h === syn);
       if (matchedIndex !== -1) break;
     }
+    
+    // 2. Try substring/includes matches on synonyms if no exact match found
+    if (matchedIndex === -1) {
+      for (const syn of synonyms) {
+        matchedIndex = headers.findIndex(h => h.includes(syn));
+        if (matchedIndex !== -1) break;
+      }
+    }
 
+    // 3. Fallback to clean key (e.g. replace underscore with space)
     if (matchedIndex === -1) {
       const cleanKey = key.replace(/_/g, ' ');
       matchedIndex = headers.findIndex(h => h === cleanKey || h.includes(cleanKey));

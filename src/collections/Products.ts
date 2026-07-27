@@ -339,6 +339,18 @@ export const Products: CollectionConfig = {
           if (specs) {
             // Update the incoming data with the fetched specifications
             data.specifications = specs;
+            
+            // Map power, colourTemperature, and colour if not explicitly set
+            if (specs.on_mode_power_w && (data.power === undefined || data.power === null)) {
+              data.power = String(specs.on_mode_power_w);
+            }
+            if (specs.cct_k && (data.colourTemperature === undefined || data.colourTemperature === null)) {
+              data.colourTemperature = String(specs.cct_k);
+            }
+            if (specs.fitting_colour && (data.colour === undefined || data.colour === null)) {
+              data.colour = String(specs.fitting_colour);
+            }
+
             console.log(`Set specifications for product with model ${modelNumber}:`, specs);
           } else {
             console.warn(`No specifications found for model number: ${modelNumber}`);
@@ -456,12 +468,6 @@ export const Products: CollectionConfig = {
       type: 'upload',
       relationTo: 'media',
       label: 'IES Photometrics File',
-    },
-    {
-      name: 'bimRevit',
-      type: 'upload',
-      relationTo: 'media',
-      label: 'BIM Revit Object File',
     },
     {
       name: 'techDocControlGear',

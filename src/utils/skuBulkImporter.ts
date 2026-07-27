@@ -3,6 +3,15 @@ import * as xlsx from 'xlsx';
 import AdmZip from 'adm-zip';
 import path from 'path';
 import { processXlsxToJson, findHeadersRowIndex } from './xlsxToJsonConverter';
+import { fetchSpecifications } from './fetchSpecifications';
+import { getMongoClient } from './mongoClient';
+
+function getModelPrefix(model: string): string {
+  if (!model) return '';
+  const base = model.replace(/v\d+/gi, '');
+  const match = base.match(/^[a-zA-Z0-9]+/);
+  return match ? match[0] : base.substring(0, 6);
+}
 
 function normalizeModelNumber(model: string): string {
   if (!model) return '';
@@ -18,6 +27,7 @@ function cleanModel(model: string): string {
     .toLowerCase()
     .replace(/\s+/g, '')
     .replace(/v\d+/g, '') // remove version numbers
+    .replace(/v(?=\D|$)/g, '') // remove standalone v followed by non-digit or end of string
     .replace(/[-_]/g, '')
     .replace(/\//g, '')
     .replace(/dl/g, '')
@@ -213,6 +223,34 @@ export async function processSkuBulkImport(
     try {
       generalSpecs = await processXlsxToJson(generalXlsxBuffer);
       logs.push(`Successfully parsed ${generalSpecs.length} specification rows using schema converter.`);
+      
+      // Connect to MongoDB to sync generalSpecs to general_data.luminaire
+      try {
+        const mongoClient = await getMongoClient();
+        const db = mongoClient.db('general_data');
+        const luminaireCollection = db.collection('luminaire');
+        logs.push('Connected to general_data MongoDB database for syncing specifications.');
+        
+        if (generalSpecs.length > 0) {
+          logs.push(`Syncing ${generalSpecs.length} specification rows to MongoDB...`);
+          for (const spec of generalSpecs) {
+            const modelNumber = spec.customer_model_no_new || spec.yk_model_no;
+            if (!modelNumber) continue;
+            
+            const cleanItem = { ...spec };
+            delete cleanItem._id;
+            
+            await luminaireCollection.updateOne(
+              { customer_model_no_new: modelNumber },
+              { $set: cleanItem },
+              { upsert: true }
+            );
+          }
+          logs.push('Successfully synced specifications to MongoDB general_data.luminaire.');
+        }
+      } catch (err: any) {
+        warnings.push(`Could not sync specifications to general_data database: ${err.message}`);
+      }
     } catch (err: any) {
       warnings.push(`Schema converter failed: ${err.message}. Proceeding without variant-specific specifications.`);
     }
@@ -387,6 +425,24 @@ export async function processSkuBulkImport(
           dimmingType: dimming || undefined,
         };
 
+        // Find specifications
+        let productSpecs: any = null;
+        if (generalSpecs.length > 0) {
+          productSpecs = generalSpecs.find(specs => 
+            specs && normalizeModelNumber(specs.customer_model_no_new) === normalizeModelNumber(modelNo)
+          );
+        }
+        if (!productSpecs) {
+          try {
+            productSpecs = await fetchSpecifications(modelNo);
+          } catch (err) {
+            // Ignore
+          }
+        }
+        if (productSpecs) {
+          productData.specifications = productSpecs;
+        }
+
         const finalProductImage = imageId || placeholderImageId;
         if (finalProductImage) productData.images = finalProductImage;
         if (familyId) productData.families = familyId;
@@ -514,25 +570,33 @@ export async function processSkuBulkImport(
           parentProductId = dbMatch.docs[0].id;
           parentProductName = dbMatch.docs[0].name;
         } else {
-          // Fuzzy DB lookup
-          const allProducts = await payload.find({
-            collection: 'products',
-            limit: 1000,
-          });
-          // Try normalized match first
-          let matched = allProducts.docs.find(
-            p => normalizeModelNumber(p.name) === normalizeModelNumber(modelNoVariant)
-          );
-          // Fallback to clean match
-          if (!matched) {
-            const cleanVar = cleanModel(modelNoVariant);
-            matched = allProducts.docs.find(
-              p => cleanModel(p.name) === cleanVar
+          // Fuzzy DB lookup using prefix-based query
+          const prefix = getModelPrefix(modelNoVariant);
+          if (prefix) {
+            const fuzzyMatch = await payload.find({
+              collection: 'products',
+              where: {
+                name: {
+                  like: prefix,
+                },
+              },
+              limit: 100,
+            });
+            // Try normalized match first
+            let matched = fuzzyMatch.docs.find(
+              p => normalizeModelNumber(p.name) === normalizeModelNumber(modelNoVariant)
             );
-          }
-          if (matched) {
-            parentProductId = matched.id;
-            parentProductName = matched.name;
+            // Fallback to clean match
+            if (!matched) {
+              const cleanVar = cleanModel(modelNoVariant);
+              matched = fuzzyMatch.docs.find(
+                p => cleanModel(p.name) === cleanVar
+              );
+            }
+            if (matched) {
+              parentProductId = matched.id;
+              parentProductName = matched.name;
+            }
           }
         }
       } else if (!parentProductName) {
@@ -564,9 +628,19 @@ export async function processSkuBulkImport(
           normalizeModelNumber(specs.customer_model_no_new) === normalizeModelNumber(modelNoVariant) &&
           (specs.cct_k ? String(specs.cct_k).replace(/[^\d]/g, '') === cctClean : false)
         );
-        if (matchingSpecs) {
-          logs.push(`Found variant-specific specifications for SKU "${mmCode}" (CCT: ${cctClean}K).`);
+      }
+      
+      // Fallback: Query the general_data MongoDB database if not found in memory
+      if (!matchingSpecs) {
+        try {
+          matchingSpecs = await fetchSpecifications(modelNoVariant, mmCode);
+        } catch (err: any) {
+          // Ignore
         }
+      }
+
+      if (matchingSpecs) {
+        logs.push(`Found specifications for SKU "${mmCode}" (CCT: ${cctClean}K).`);
       }
 
       // Photometry file auto-matching from ZIP

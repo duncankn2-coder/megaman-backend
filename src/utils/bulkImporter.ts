@@ -96,7 +96,6 @@ export async function processBulkImport(
     const datasheetPdfFile = getField(row, ['Datasheet PDF File', 'DatasheetPDFFile', 'PDF', 'datasheet_pdf', 'datasheet', 'pdf']);
     const ldtFile = getField(row, ['LDT File', 'LDTFile', 'LDT', 'ldt_file', 'ldt']);
     const iesFile = getField(row, ['IES File', 'IESFile', 'IES', 'ies_file', 'ies']);
-    const bimFile = getField(row, ['BIM Revit File', 'BIMRevitFile', 'BIM', 'bim_file', 'bim', 'revit']);
     const techDocControlGearFile = getField(row, ['Technical Document - Control Gear', 'Technical Document Control Gear', 'TechnicalDocumentControlGear', 'tech_doc_control_gear', 'control_gear_doc']);
     const techDocContainingProductFile = getField(row, ['Technical Document - Containing Product', 'Technical Document Containing Product', 'TechnicalDocumentContainingProduct', 'tech_doc_containing_product', 'containing_product_doc']);
     const techDocLightSourceFile = getField(row, ['Technical Document - Light Source', 'Technical Document Light Source', 'TechnicalDocumentLightSource', 'tech_doc_light_source', 'light_source_doc']);
@@ -211,11 +210,6 @@ export async function processBulkImport(
       fallbackIess.push(`${m}.ies`);
     }
 
-    const fallbackBims: string[] = [];
-    for (const m of normalizedModels) {
-      fallbackBims.push(`${m}.rfa`);
-    }
-
     const fallbackControlGears: string[] = [];
     for (const m of normalizedModels) {
       fallbackControlGears.push(`${m}_control_gear.pdf`, `${m}_cg.pdf`);
@@ -262,13 +256,6 @@ export async function processBulkImport(
       iesFile,
       fallbackIess,
       `IES Photometrics for ${modelNumber}`,
-      'document'
-    );
-
-    const bimId = await uploadAssetFromZip(
-      bimFile,
-      fallbackBims,
-      `BIM Revit Object for ${modelNumber}`,
       'document'
     );
 
@@ -406,9 +393,6 @@ export async function processBulkImport(
       }
       if (iesId) {
         productData.photometryIes = iesId;
-      }
-      if (bimId) {
-        productData.bimRevit = bimId;
       }
       if (techDocControlGearId) {
         productData.techDocControlGear = techDocControlGearId;

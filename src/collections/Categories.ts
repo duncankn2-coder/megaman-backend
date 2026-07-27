@@ -26,5 +26,11 @@ export const Categories: CollectionConfig = {
         id: { not_equals: id }, // Prevents a category from being its own parent
       }),
     },
+    {
+      name: 'image',
+      type: 'upload',
+      relationTo: 'media',
+      label: 'Category Image (Optional)',
+    },
   ],
 };
