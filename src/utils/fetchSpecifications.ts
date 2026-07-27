@@ -84,7 +84,7 @@ export async function fetchSpecifications(modelNumber: string, mmCode?: string) 
           customer_model_no_new: { $regex: new RegExp('^' + prefix, 'i') }
         }).toArray();
         
-        specDoc = lumCandidates.find(c => cleanModel(c.customer_model_no_new) === cleanTarget);
+        specDoc = lumCandidates.find(c => cleanModel(c.customer_model_no_new) === cleanTarget) || null;
         
         // Search light_source candidates if still not found
         if (!specDoc) {
@@ -99,7 +99,7 @@ export async function fetchSpecifications(modelNumber: string, mmCode?: string) 
           specDoc = lsCandidates.find(c => 
             cleanModel(c.new_erp_model_no) === cleanTarget || 
             cleanModel(c.yk_model_no) === cleanTarget
-          );
+          ) || null;
         }
       }
     }
