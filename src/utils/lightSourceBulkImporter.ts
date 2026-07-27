@@ -257,7 +257,7 @@ export async function processLightSourceBulkImport(
       specRecord[key] = cleanValue(row[colIdx], key);
     }
     if (specRecord['mm_code']) {
-      let val = String(specRecord['mm_code']).trim();
+      const val = String(specRecord['mm_code']).trim();
       if (/^\d{6}\//.test(val)) {
         specRecord['mm_code'] = val.substring(7);
       }
