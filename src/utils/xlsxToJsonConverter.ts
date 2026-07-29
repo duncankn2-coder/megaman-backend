@@ -182,6 +182,18 @@ export function cleanValue(val: any, key: string): any {
     return null;
   }
   
+  // IP rating specific validation and cleanup
+  if (key === 'ip') {
+    if (strVal.length > 25 || lowerVal.includes('shape:') || lowerVal.includes('housing') || lowerVal.includes('bunker') || lowerVal.includes('ceiling light')) {
+      return null;
+    }
+    const parts = strVal.split(/[\/,;]/).map(p => p.trim()).filter(Boolean);
+    const normalizedParts = parts.map(p => /^ip\d+/i.test(p) ? p.toUpperCase() : p);
+    const unique = Array.from(new Set(normalizedParts));
+    if (unique.length === 0) return null;
+    return unique.length === 1 ? unique[0] : unique.join('/');
+  }
+
   // List of fields that MUST be numbers in the target JSON schema
   const numericFields = new Set([
     "input_current_ma",
@@ -334,7 +346,7 @@ export const COLUMN_SYNONYMS: Record<string, string[]> = {
   shape: ['shape', '形状'],
   housing_material: ['housing material', 'material', '外壳材质'],
   diffuser_material: ['diffuser material', 'cover material', 'diffuser', 'cover finish', '透光罩材质'],
-  ip: ['ip', 'ipxx', 'ip rating', '防护等级'],
+  ip: ['ip rating', 'ip_rating', 'ipxx', '防护等级', 'ip'],
 };
 
 export async function processXlsxToJson(xlsxBuffer: Buffer): Promise<any[]> {
@@ -370,10 +382,6 @@ export async function processXlsxToJson(xlsxBuffer: Buffer): Promise<any[]> {
   const keyToExcelIndexMap = new Map<string, number>();
   for (let i = 0; i < LUMINAIRE_KEYS.length; i++) {
     const key = LUMINAIRE_KEYS[i];
-    let defaultIndex = i;
-    if (i >= 167) {
-      defaultIndex = i + 1;
-    }
 
     let matchedIndex = -1;
     const synonyms = COLUMN_SYNONYMS[key] || [];
@@ -384,10 +392,18 @@ export async function processXlsxToJson(xlsxBuffer: Buffer): Promise<any[]> {
       if (matchedIndex !== -1) break;
     }
     
-    // 2. Try substring/includes matches on synonyms if no exact match found
+    // 2. Try regex or includes matches on synonyms if no exact match found
     if (matchedIndex === -1) {
       for (const syn of synonyms) {
-        matchedIndex = headers.findIndex(h => h.includes(syn));
+        if (syn === 'ip') {
+          // Avoid matching "description" for short key "ip"
+          matchedIndex = headers.findIndex(h => /\bip\b/i.test(h) || h === 'ipxx');
+        } else if (syn.length <= 3) {
+          const reg = new RegExp(`\\b${syn}\\b`, 'i');
+          matchedIndex = headers.findIndex(h => reg.test(h));
+        } else {
+          matchedIndex = headers.findIndex(h => h.includes(syn));
+        }
         if (matchedIndex !== -1) break;
       }
     }
@@ -395,33 +411,37 @@ export async function processXlsxToJson(xlsxBuffer: Buffer): Promise<any[]> {
     // 3. Fallback to clean key (e.g. replace underscore with space)
     if (matchedIndex === -1) {
       const cleanKey = key.replace(/_/g, ' ');
-      matchedIndex = headers.findIndex(h => h === cleanKey || h.includes(cleanKey));
+      if (key === 'ip') {
+        matchedIndex = headers.findIndex(h => /\bip\b/i.test(h));
+      } else {
+        matchedIndex = headers.findIndex(h => h === cleanKey || h.includes(cleanKey));
+      }
     }
 
-    keyToExcelIndexMap.set(key, matchedIndex !== -1 ? matchedIndex : defaultIndex);
+    keyToExcelIndexMap.set(key, matchedIndex);
   }
 
   // Row 4 (index 4) onwards contain product data rows
   const dataRows = rawRows.slice(4);
   const convertedList: any[] = [];
 
-  const idxModelNew = keyToExcelIndexMap.get('customer_model_no_new') ?? 8;
-  const idxModelYk = keyToExcelIndexMap.get('yk_model_no') ?? 10;
+  const idxModelNew = keyToExcelIndexMap.get('customer_model_no_new') ?? -1;
+  const idxModelYk = keyToExcelIndexMap.get('yk_model_no') ?? -1;
 
   for (const row of dataRows) {
     if (row.length === 0) continue;
     
     // Check if the row contains a valid Model Name SKU
-    const modelNew = row[idxModelNew];
-    const modelYk = row[idxModelYk];
+    const modelNew = idxModelNew !== -1 ? row[idxModelNew] : null;
+    const modelYk = idxModelYk !== -1 ? row[idxModelYk] : null;
     if (!modelNew && !modelYk) continue;
 
     const obj: any = {};
     for (let i = 0; i < LUMINAIRE_KEYS.length; i++) {
       const key = LUMINAIRE_KEYS[i];
-      const excelIndex = keyToExcelIndexMap.get(key) ?? (i >= 167 ? i + 1 : i);
+      const excelIndex = keyToExcelIndexMap.get(key) ?? -1;
       
-      const rawVal = row[excelIndex];
+      const rawVal = excelIndex !== -1 ? row[excelIndex] : null;
       obj[key] = cleanValue(rawVal, key);
     }
     

@@ -665,7 +665,6 @@ export async function processSkuBulkImport(
           colourTemperature: colourTemp || undefined,
           voltage: voltage || undefined,
           connector: connector || undefined,
-          ip: ip || undefined,
           packingMethod: packing || undefined,
           eanBarcode: ean || undefined,
           innerBoxItf: innerItf || undefined,
