@@ -19,6 +19,14 @@ export const Media: CollectionConfig = {
       required: true,
     },
     {
+      name: 'description',
+      type: 'textarea',
+      required: false,
+      admin: {
+        description: 'Optional description or caption for this media item (displayed below image on family pages)',
+      },
+    },
+    {
       name: 'type',
       type: 'select',
       options: [

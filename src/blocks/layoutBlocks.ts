@@ -273,3 +273,88 @@ export const NewsBlock: Block = {
     },
   ],
 };
+
+export const ScrollVideoBlock: Block = {
+  slug: 'scrollVideo',
+  labels: {
+    singular: 'Scroll-Driven Video Showcase',
+    plural: 'Scroll-Driven Video Showcases',
+  },
+  fields: [
+    {
+      name: 'title',
+      type: 'text',
+      label: 'Section Main Heading',
+    },
+    {
+      name: 'subtitle',
+      type: 'text',
+      label: 'Section Category Subtitle',
+    },
+    {
+      name: 'video',
+      type: 'upload',
+      relationTo: 'media',
+      label: 'Scroll Video (Desktop MP4)',
+    },
+    {
+      name: 'mobileVideo',
+      type: 'upload',
+      relationTo: 'media',
+      label: 'Scroll Video (Mobile MP4, Optional)',
+    },
+    {
+      name: 'captions',
+      type: 'array',
+      label: 'Scroll Storytelling Captions & CTAs',
+      minRows: 1,
+      maxRows: 6,
+      fields: [
+        {
+          name: 'title',
+          type: 'text',
+          label: 'Caption Title / Heading',
+          required: true,
+        },
+        {
+          name: 'content',
+          type: 'textarea',
+          label: 'Caption Narrative Text',
+        },
+        {
+          name: 'align',
+          type: 'select',
+          label: 'Caption Screen Alignment',
+          defaultValue: 'left',
+          options: [
+            { label: 'Left Aligned', value: 'left' },
+            { label: 'Center Aligned', value: 'center' },
+            { label: 'Right Aligned', value: 'right' },
+          ],
+        },
+        {
+          name: 'startPercent',
+          type: 'number',
+          label: 'Scroll Start Trigger (0 to 100%)',
+          defaultValue: 10,
+        },
+        {
+          name: 'endPercent',
+          type: 'number',
+          label: 'Scroll End Trigger (0 to 100%)',
+          defaultValue: 40,
+        },
+        {
+          name: 'linkText',
+          type: 'text',
+          label: 'Action Button Text (Optional)',
+        },
+        {
+          name: 'linkUrl',
+          type: 'text',
+          label: 'Action Button Link (Optional)',
+        },
+      ],
+    },
+  ],
+};

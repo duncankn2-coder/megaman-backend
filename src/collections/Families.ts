@@ -1,5 +1,5 @@
 import { CollectionConfig } from 'payload'
-import { EditorialBlock, HighlightProductsBlock, InspirationBlock } from '../blocks/layoutBlocks'
+import { EditorialBlock, HighlightProductsBlock, InspirationBlock, ScrollVideoBlock } from '../blocks/layoutBlocks'
 
 export const Families: CollectionConfig = {
   slug: 'families',
@@ -108,6 +108,7 @@ export const Families: CollectionConfig = {
         EditorialBlock,
         HighlightProductsBlock,
         InspirationBlock,
+        ScrollVideoBlock,
       ],
     },
   ],

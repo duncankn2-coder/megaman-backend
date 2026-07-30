@@ -161,6 +161,10 @@ export interface User {
 export interface Media {
   id: string;
   alt: string;
+  /**
+   * Optional description or caption for this media item (displayed below image on family pages)
+   */
+  description?: string | null;
   type?: ('image' | 'video' | 'document') | null;
   updatedAt: string;
   createdAt: string;
@@ -284,6 +288,27 @@ export interface Family {
             id?: string | null;
             blockName?: string | null;
             blockType: 'inspiration';
+          }
+        | {
+            title?: string | null;
+            subtitle?: string | null;
+            video?: (string | null) | Media;
+            mobileVideo?: (string | null) | Media;
+            captions?:
+              | {
+                  title: string;
+                  content?: string | null;
+                  align?: ('left' | 'center' | 'right') | null;
+                  startPercent?: number | null;
+                  endPercent?: number | null;
+                  linkText?: string | null;
+                  linkUrl?: string | null;
+                  id?: string | null;
+                }[]
+              | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'scrollVideo';
           }
       )[]
     | null;
@@ -593,6 +618,7 @@ export interface UsersSelect<T extends boolean = true> {
  */
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
+  description?: T;
   type?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -718,6 +744,28 @@ export interface FamiliesSelect<T extends boolean = true> {
               title?: T;
               subtitle?: T;
               projects?: T;
+              id?: T;
+              blockName?: T;
+            };
+        scrollVideo?:
+          | T
+          | {
+              title?: T;
+              subtitle?: T;
+              video?: T;
+              mobileVideo?: T;
+              captions?:
+                | T
+                | {
+                    title?: T;
+                    content?: T;
+                    align?: T;
+                    startPercent?: T;
+                    endPercent?: T;
+                    linkText?: T;
+                    linkUrl?: T;
+                    id?: T;
+                  };
               id?: T;
               blockName?: T;
             };
