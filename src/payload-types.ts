@@ -241,7 +241,7 @@ export interface Family {
     | null;
   symbols?: (string | Symbol)[] | null;
   /**
-   * Uploaded PDF for Market Surveillance Dismantle Instruction. Automatically appended to EPREL Technical Document starting from Page 3.
+   * Uploaded PDF for Market Surveillance Dismantle Instruction. Automatically merged into Technical Document - Light Source and Technical Document - Control Gear for all products in this family.
    */
   dismantleInstructionPdf?: (string | null) | Media;
   /**

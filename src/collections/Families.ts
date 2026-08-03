@@ -78,12 +78,11 @@ export const Families: CollectionConfig = {
     },
     {
       name: 'dismantleInstructionPdf',
-      type: 'relationship',
+      type: 'upload',
       relationTo: 'media',
-      hasMany: false,
       label: 'Dismantle Instruction PDF ([family_name]_di.pdf)',
       admin: {
-        description: 'Uploaded PDF for Market Surveillance Dismantle Instruction. Automatically appended to EPREL Technical Document starting from Page 3.',
+        description: 'Uploaded PDF for Market Surveillance Dismantle Instruction. Automatically merged into Technical Document - Light Source and Technical Document - Control Gear for all products in this family.',
       },
     },
     {

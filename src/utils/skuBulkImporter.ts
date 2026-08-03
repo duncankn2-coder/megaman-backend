@@ -379,6 +379,16 @@ export async function processSkuBulkImport(
       let familyId: string | null = null;
       if (familyName) {
         try {
+          const cleanFamName = familyName.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_');
+          const famSlugName = familyName.toLowerCase().replace(/\s+/g, '-');
+          const diFallbacks = [
+            `${cleanFamName}_di.pdf`,
+            `${famSlugName}_di.pdf`,
+            `${familyName.toLowerCase()}_di.pdf`,
+            `${familyName.toLowerCase()}-di.pdf`,
+          ];
+          const diPdfId = await uploadAssetFromZip(undefined, diFallbacks, `Dismantle Instruction PDF for ${familyName}`, 'document');
+
           const query = await payload.find({
             collection: 'families',
             where: { name: { equals: familyName } },
@@ -386,16 +396,26 @@ export async function processSkuBulkImport(
           });
           if (query.docs.length > 0) {
             familyId = query.docs[0].id;
+            if (diPdfId && !query.docs[0].dismantleInstructionPdf) {
+              await payload.update({
+                collection: 'families',
+                id: familyId,
+                data: { dismantleInstructionPdf: diPdfId },
+              });
+            }
           } else {
             const familyImageId = imageId || placeholderImageId;
+            const newFamData: any = {
+              name: familyName,
+              description: `A collection of premium Megaman ${familyName} products.`,
+              media: familyImageId ? [familyImageId] : [],
+              categories: categoryIds,
+            };
+            if (diPdfId) newFamData.dismantleInstructionPdf = diPdfId;
+
             const newFam = await payload.create({
               collection: 'families',
-              data: {
-                name: familyName,
-                description: `A collection of premium Megaman ${familyName} products.`,
-                media: familyImageId ? [familyImageId] : [],
-                categories: categoryIds,
-              },
+              data: newFamData,
             });
             familyId = newFam.id;
           }

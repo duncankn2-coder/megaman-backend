@@ -18,7 +18,8 @@ const headers = [
   'BIM Revit File',
   'Technical Document - Control Gear',
   'Technical Document - Containing Product',
-  'Technical Document - Light Source'
+  'Technical Document - Light Source',
+  'Dismantle Instruction PDF'
 ];
 
 const mockRows = [
@@ -37,7 +38,8 @@ const mockRows = [
     'BIM Revit File': 'triona_round.rfa',
     'Technical Document - Control Gear': 'triona_control_gear.pdf',
     'Technical Document - Containing Product': 'triona_containing_product.pdf',
-    'Technical Document - Light Source': 'triona_light_source.pdf'
+    'Technical Document - Light Source': 'triona_light_source.pdf',
+    'Dismantle Instruction PDF': 'triona_di.pdf'
   },
   {
     'Model Number': 'F50309RC-Black',
@@ -54,7 +56,8 @@ const mockRows = [
     'BIM Revit File': 'triona_round.rfa',
     'Technical Document - Control Gear': 'triona_control_gear.pdf',
     'Technical Document - Containing Product': 'triona_containing_product.pdf',
-    'Technical Document - Light Source': 'triona_light_source.pdf'
+    'Technical Document - Light Source': 'triona_light_source.pdf',
+    'Dismantle Instruction PDF': 'triona_di.pdf'
   }
 ];
 
@@ -77,7 +80,8 @@ ws['!cols'] = [
   { wch: 22 }, // BIM Revit File
   { wch: 35 }, // Technical Document - Control Gear
   { wch: 35 }, // Technical Document - Containing Product
-  { wch: 35 }  // Technical Document - Light Source
+  { wch: 35 }, // Technical Document - Light Source
+  { wch: 35 }  // Dismantle Instruction PDF
 ];
 
 xlsx.utils.book_append_sheet(wb, ws, 'Template');

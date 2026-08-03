@@ -316,6 +316,116 @@ export const Products: CollectionConfig = {
         }
       },
     },
+    {
+      path: '/:id/technical-document',
+      method: 'get',
+      handler: async (req) => {
+        try {
+          const { id } = req.routeParams || {};
+          const url = new URL(req.url || '', 'http://localhost');
+          const type = url.searchParams.get('type') || 'light-source';
+
+          if (!id) {
+            return new Response(JSON.stringify({ error: 'Product ID is required' }), { status: 400 });
+          }
+
+          // Fetch product with depth=2 to populate family and media
+          const product = await req.payload.findByID({
+            collection: 'products',
+            id: String(id),
+            depth: 2,
+          });
+
+          if (!product) {
+            return new Response(JSON.stringify({ error: 'Product not found' }), { status: 404 });
+          }
+
+          // Resolve primary target document field
+          let targetMediaField: any = null;
+          if (type === 'control-gear') {
+            targetMediaField = product.techDocControlGear;
+          } else if (type === 'containing-product') {
+            targetMediaField = product.techDocContainingProduct;
+          } else {
+            targetMediaField = product.techDocLightSource;
+          }
+
+          // Resolve family dismantle instruction PDF
+          const familyObj = typeof product.families === 'object' && product.families !== null ? product.families : null;
+          const familyDiMediaField: any = familyObj?.dismantleInstructionPdf || null;
+
+          const fs = await import('fs');
+          const path = await import('path');
+          const { PDFDocument } = await import('pdf-lib');
+
+          const getMediaBuffer = (mediaObj: any): Buffer | null => {
+            if (!mediaObj) return null;
+            let filename = '';
+            if (typeof mediaObj === 'object' && mediaObj.filename) {
+              filename = mediaObj.filename;
+            } else if (typeof mediaObj === 'string') {
+              filename = mediaObj;
+            }
+            if (!filename) return null;
+
+            const filePath = path.resolve('public/media', filename);
+            if (fs.existsSync(filePath)) {
+              return fs.readFileSync(filePath);
+            }
+            return null;
+          };
+
+          const targetBuffer = getMediaBuffer(targetMediaField);
+          const diBuffer = getMediaBuffer(familyDiMediaField);
+
+          if (!targetBuffer && !diBuffer) {
+            return new Response(JSON.stringify({ error: 'No technical document or dismantle instruction found for this product.' }), {
+              status: 404,
+              headers: { 'Content-Type': 'application/json' },
+            });
+          }
+
+          let finalPdfBuffer: Uint8Array;
+
+          if (targetBuffer && diBuffer) {
+            try {
+              // Physically merge DI PDF pages into target document PDF using pdf-lib
+              const mainPdf = await PDFDocument.load(targetBuffer);
+              const diPdf = await PDFDocument.load(diBuffer);
+
+              const copiedPages = await mainPdf.copyPages(diPdf, diPdf.getPageIndices());
+              copiedPages.forEach((page) => mainPdf.addPage(page));
+
+              finalPdfBuffer = await mainPdf.save();
+            } catch (mergeErr) {
+              console.error('Error merging PDF files:', mergeErr);
+              finalPdfBuffer = targetBuffer;
+            }
+          } else if (targetBuffer) {
+            finalPdfBuffer = targetBuffer;
+          } else {
+            finalPdfBuffer = diBuffer!;
+          }
+
+          const modelName = product.name || 'product';
+          const safeFilename = `Technical_Document_${type}_${modelName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+
+          return new Response(new Uint8Array(finalPdfBuffer), {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/pdf',
+              'Content-Disposition': `inline; filename="${safeFilename}"`,
+            },
+          });
+        } catch (err: any) {
+          console.error('Error serving merged technical document:', err);
+          return new Response(JSON.stringify({ error: err.message || 'Server error' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+      },
+    },
   ],
   hooks: {
     beforeChange: [
@@ -407,6 +517,26 @@ export const Products: CollectionConfig = {
         } catch (error) {
           console.error(`Error removing product ID ${id} from family relationships:`, error);
         }
+      },
+    ],
+    afterRead: [
+      async ({ doc }) => {
+        try {
+          if (doc.families && typeof doc.families === 'object' && doc.families !== null) {
+            const famDi = (doc.families as any).dismantleInstructionPdf;
+            if (famDi) {
+              if (!doc.techDocLightSource) {
+                doc.techDocLightSource = famDi;
+              }
+              if (!doc.techDocControlGear) {
+                doc.techDocControlGear = famDi;
+              }
+            }
+          }
+        } catch (err) {
+          // ignore error during hook execution
+        }
+        return doc;
       },
     ],
   },

@@ -99,6 +99,7 @@ export async function processBulkImport(
     const techDocControlGearFile = getField(row, ['Technical Document - Control Gear', 'Technical Document Control Gear', 'TechnicalDocumentControlGear', 'tech_doc_control_gear', 'control_gear_doc']);
     const techDocContainingProductFile = getField(row, ['Technical Document - Containing Product', 'Technical Document Containing Product', 'TechnicalDocumentContainingProduct', 'tech_doc_containing_product', 'containing_product_doc']);
     const techDocLightSourceFile = getField(row, ['Technical Document - Light Source', 'Technical Document Light Source', 'TechnicalDocumentLightSource', 'tech_doc_light_source', 'light_source_doc']);
+    const dismantleInstructionFile = getField(row, ['Dismantle Instruction PDF', 'Dismantle Instruction', 'DismantleInstruction', 'dismantle_instruction_pdf', 'di_pdf']);
 
     if (!modelNumber) {
       warnings.push(`Row ${rowNum}: Skipped because "Model Number" is missing.`);
@@ -320,6 +321,21 @@ export async function processBulkImport(
     let finalFamilyId: string | null = null;
     if (familyName) {
       try {
+        const cleanFamName = familyName.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_');
+        const famSlugName = familyName.toLowerCase().replace(/\s+/g, '-');
+        const fallbackDis = [
+          `${cleanFamName}_di.pdf`,
+          `${famSlugName}_di.pdf`,
+          `${familyName.toLowerCase()}_di.pdf`,
+          `${familyName.toLowerCase()}-di.pdf`,
+        ];
+        const dismantlePdfId = await uploadAssetFromZip(
+          dismantleInstructionFile,
+          fallbackDis,
+          `Dismantle Instruction PDF for ${familyName}`,
+          'document'
+        );
+
         const famQuery = await payload.find({
           collection: 'families',
           where: {
@@ -336,24 +352,34 @@ export async function processBulkImport(
           const existingCatIds = existingCategories.map(c => typeof c === 'object' ? c.id : c);
           const unionCatIds = Array.from(new Set([...existingCatIds, ...finalCategoryIds]));
           
+          const updateFamData: any = {
+            categories: unionCatIds,
+          };
+          if (dismantlePdfId && !famQuery.docs[0].dismantleInstructionPdf) {
+            updateFamData.dismantleInstructionPdf = dismantlePdfId;
+          }
+
           await payload.update({
             collection: 'families',
             id: finalFamilyId,
-            data: {
-              categories: unionCatIds,
-            },
+            data: updateFamData,
           });
         } else {
           logs.push(`Family "${familyName}" not found. Creating dynamically...`);
           // Pass the product's primary image to satisfy 'media' required option
+          const newFamData: any = {
+            name: familyName,
+            description: `A collection of premium Megaman ${familyName} products.`,
+            media: [imageId],
+            categories: finalCategoryIds,
+          };
+          if (dismantlePdfId) {
+            newFamData.dismantleInstructionPdf = dismantlePdfId;
+          }
+
           const newFam = await payload.create({
             collection: 'families',
-            data: {
-              name: familyName,
-              description: `A collection of premium Megaman ${familyName} products.`,
-              media: [imageId],
-              categories: finalCategoryIds,
-            },
+            data: newFamData,
           });
           finalFamilyId = newFam.id;
           logs.push(`Created family "${familyName}".`);
