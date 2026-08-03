@@ -241,6 +241,10 @@ export interface Family {
     | null;
   symbols?: (string | Symbol)[] | null;
   /**
+   * Uploaded PDF for Market Surveillance Dismantle Instruction. Automatically appended to EPREL Technical Document starting from Page 3.
+   */
+  dismantleInstructionPdf?: (string | null) | Media;
+  /**
    * Select which parameters/specifications are active for this family. This controls both the visible dropdown filters and the Technical Configuration spreadsheet columns.
    */
   selectedParameters?:
@@ -712,6 +716,7 @@ export interface FamiliesSelect<T extends boolean = true> {
         id?: T;
       };
   symbols?: T;
+  dismantleInstructionPdf?: T;
   selectedParameters?: T;
   layout?:
     | T

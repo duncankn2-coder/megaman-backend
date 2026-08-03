@@ -325,18 +325,40 @@ export async function processLightSourceBulkImport(
           where: { name: { equals: familyName } },
           limit: 1,
         });
+
+        // Search ZIP for family dismantle instruction PDF (e.g. [family_name]_di.pdf)
+        const cleanFamName = familyName.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_');
+        const famSlugName = familyName.toLowerCase().replace(/\s+/g, '-');
+        const diFallbacks = [
+          `${cleanFamName}_di.pdf`,
+          `${famSlugName}_di.pdf`,
+          `${familyName.toLowerCase()}_di.pdf`,
+          `${familyName.toLowerCase()}-di.pdf`,
+        ];
+        const diPdfId = await uploadAssetFromZip(undefined, diFallbacks, `Dismantle Instruction PDF for ${familyName}`, 'document');
+
         if (query.docs.length > 0) {
           familyId = query.docs[0].id as string;
+          if (diPdfId && !query.docs[0].dismantleInstructionPdf) {
+            await payload.update({
+              collection: 'families',
+              id: familyId,
+              data: { dismantleInstructionPdf: diPdfId },
+            });
+          }
         } else {
           const familyImageId = imageId || placeholderImageId;
+          const newFamData: any = {
+            name: familyName,
+            description: `A collection of premium Megaman ${familyName} light sources.`,
+            media: familyImageId ? [familyImageId] : [],
+            categories: categoryIds,
+          };
+          if (diPdfId) newFamData.dismantleInstructionPdf = diPdfId;
+
           const newFam = await payload.create({
             collection: 'families',
-            data: {
-              name: familyName,
-              description: `A collection of premium Megaman ${familyName} light sources.`,
-              media: familyImageId ? [familyImageId] : [],
-              categories: categoryIds,
-            },
+            data: newFamData,
           });
           familyId = newFam.id as string;
         }
