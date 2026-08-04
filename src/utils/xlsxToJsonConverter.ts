@@ -347,6 +347,19 @@ export const COLUMN_SYNONYMS: Record<string, string[]> = {
   housing_material: ['housing material', 'material', '外壳材质'],
   diffuser_material: ['diffuser material', 'cover material', 'diffuser', 'cover finish', '透光罩材质'],
   ip: ['ip rating', 'ip_rating', 'ipxx', '防护等级', 'ip'],
+  driver_model: ['driver model', 'driver_model', 'scg_driver_model_no', 'control gear model no', 'control gear model'],
+  scg_max_output_power: ['maximum output power', 'max output power', 'scg_max_output_power', 'maximum output power (w)'],
+  scg_efficiency_full_load: ['efficiency in full-load', 'efficiency in full load', 'efficiency full load', 'scg_efficiency_full_load'],
+  scg_no_load_power: ['no-load power (pno)', 'no-load power', 'no load power (pno)', 'no load power', 'pno', 'scg_no_load_power'],
+  scg_standby_power: ['standby power (psb)', 'standby power', 'psb', 'scg_standby_power'],
+  scg_networked_standby_power: ['networked standby power (pnet)', 'networked standby power', 'pnet', 'scg_networked_standby_power'],
+  scg_outer_dimensions_height_mm: ['scg height', 'scg_outer_dimensions_height_mm', 'outer dimensions height'],
+  scg_outer_dimensions_width_mm: ['scg width', 'scg_outer_dimensions_width_mm', 'outer dimensions width'],
+  scg_outer_dimensions_depth_mm: ['scg depth', 'scg_outer_dimensions_depth_mm', 'outer dimensions depth'],
+  scg_mass_g: ['mass in grams', 'mass (g)', 'mass in gram', 'scg_mass_g'],
+  scg_standards_compliance: ['standards compliance', 'standards_compliance', 'scg_standards_compliance'],
+  output_votage_fixture_v: ['output voltage', 'output voltage (v)', 'output voltage fixture', 'output_votage_fixture_v', 'output_voltage'],
+  output_current_fixture_ma: ['output current', 'output current (ma)', 'output current fixture', 'output_current_fixture_ma', 'output_current'],
 };
 
 export async function processXlsxToJson(xlsxBuffer: Buffer): Promise<any[]> {
