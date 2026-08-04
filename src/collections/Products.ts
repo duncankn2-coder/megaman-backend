@@ -528,9 +528,6 @@ export const Products: CollectionConfig = {
               if (!doc.techDocLightSource) {
                 doc.techDocLightSource = famDi;
               }
-              if (!doc.techDocControlGear) {
-                doc.techDocControlGear = famDi;
-              }
             }
           }
         } catch (err) {
