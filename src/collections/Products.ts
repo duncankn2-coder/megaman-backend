@@ -597,6 +597,30 @@ export const Products: CollectionConfig = {
       label: 'IES Photometrics File',
     },
     {
+      name: 'lightSpectrumGraph',
+      type: 'upload',
+      relationTo: 'media',
+      label: 'Light Spectrum Graph Image',
+    },
+    {
+      name: 'lineDrawing',
+      type: 'upload',
+      relationTo: 'media',
+      label: 'Line Drawing / Dimensional Drawing Image',
+    },
+    {
+      name: 'photometricPolarDiagram',
+      type: 'upload',
+      relationTo: 'media',
+      label: 'Photometric Polar Diagram Image',
+    },
+    {
+      name: 'beamAngleDiagram',
+      type: 'upload',
+      relationTo: 'media',
+      label: 'Beam Angle Diagram Image',
+    },
+    {
       name: 'techDocControlGear',
       type: 'upload',
       relationTo: 'media',

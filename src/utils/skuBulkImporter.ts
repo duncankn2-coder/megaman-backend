@@ -666,6 +666,10 @@ export async function processSkuBulkImport(
       // Photometry file auto-matching from ZIP
       const ldtId = await uploadAssetFromZip(undefined, [`${mmCode}.ldt`, `${modelNoVariant}.ldt`], `LDT Photometrics for ${mmCode}`, 'document');
       const iesId = await uploadAssetFromZip(undefined, [`${mmCode}.ies`, `${modelNoVariant}.ies`], `IES Photometrics for ${mmCode}`, 'document');
+      const spectrumId = await uploadAssetFromZip(undefined, [`${mmCode}_spectrum.png`, `${mmCode}_spectrum.jpg`, `${modelNoVariant}_spectrum.png`], `Light Spectrum Graph for ${mmCode}`, 'image');
+      const drawingId = await uploadAssetFromZip(undefined, [`${mmCode}_drawing.png`, `${mmCode}_drawing.jpg`, `${modelNoVariant}_drawing.png`], `Line Drawing for ${mmCode}`, 'image');
+      const polarId = await uploadAssetFromZip(undefined, [`${mmCode}_polar.png`, `${mmCode}_polar.jpg`, `${modelNoVariant}_polar.png`], `Photometric Polar Diagram for ${mmCode}`, 'image');
+      const beamId = await uploadAssetFromZip(undefined, [`${mmCode}_beam.png`, `${mmCode}_beam.jpg`, `${modelNoVariant}_beam.png`], `Beam Angle Diagram for ${mmCode}`, 'image');
 
       try {
         const query = await payload.find({
@@ -695,6 +699,10 @@ export async function processSkuBulkImport(
 
         if (ldtId) skuData.photometryLdt = ldtId;
         if (iesId) skuData.photometryIes = iesId;
+        if (spectrumId) skuData.lightSpectrumGraph = spectrumId;
+        if (drawingId) skuData.lineDrawing = drawingId;
+        if (polarId) skuData.photometricPolarDiagram = polarId;
+        if (beamId) skuData.beamAngleDiagram = beamId;
 
         if (query.docs.length > 0) {
           const existing = query.docs[0];

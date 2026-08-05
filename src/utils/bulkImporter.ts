@@ -100,6 +100,10 @@ export async function processBulkImport(
     const techDocContainingProductFile = getField(row, ['Technical Document - Containing Product', 'Technical Document Containing Product', 'TechnicalDocumentContainingProduct', 'tech_doc_containing_product', 'containing_product_doc']);
     const techDocLightSourceFile = getField(row, ['Technical Document - Light Source', 'Technical Document Light Source', 'TechnicalDocumentLightSource', 'tech_doc_light_source', 'light_source_doc']);
     const dismantleInstructionFile = getField(row, ['Dismantle Instruction PDF', 'Dismantle Instruction', 'DismantleInstruction', 'dismantle_instruction_pdf', 'di_pdf']);
+    const lightSpectrumGraphFile = getField(row, ['Light Spectrum Graph', 'LightSpectrumGraph', 'spectrum_graph', 'light_spectrum_graph', 'spectrum']);
+    const lineDrawingFile = getField(row, ['Line Drawing', 'LineDrawing', 'dimensional_drawing', 'line_drawing', 'drawing']);
+    const photometricPolarDiagramFile = getField(row, ['Photometric Polar Diagram', 'PhotometricPolarDiagram', 'polar_diagram', 'photometric_polar_diagram', 'polar_curve']);
+    const beamAngleDiagramFile = getField(row, ['Beam Angle Diagram', 'BeamAngleDiagram', 'beam_diagram', 'beam_angle_diagram', 'beam_angle']);
 
     if (!modelNumber) {
       warnings.push(`Row ${rowNum}: Skipped because "Model Number" is missing.`);
@@ -226,6 +230,26 @@ export async function processBulkImport(
       fallbackLightSources.push(`${m}_light_source.pdf`, `${m}_ls.pdf`);
     }
 
+    const fallbackLightSpectrumGraphs: string[] = [];
+    for (const m of normalizedModels) {
+      fallbackLightSpectrumGraphs.push(`${m}_spectrum.png`, `${m}_spectrum.jpg`, `${m}_sp.png`, `${m}_sp.jpg`);
+    }
+
+    const fallbackLineDrawings: string[] = [];
+    for (const m of normalizedModels) {
+      fallbackLineDrawings.push(`${m}_drawing.png`, `${m}_drawing.jpg`, `${m}_line.png`, `${m}_dr.png`);
+    }
+
+    const fallbackPhotometricPolarDiagrams: string[] = [];
+    for (const m of normalizedModels) {
+      fallbackPhotometricPolarDiagrams.push(`${m}_polar.png`, `${m}_polar.jpg`, `${m}_polar_curve.png`);
+    }
+
+    const fallbackBeamAngleDiagrams: string[] = [];
+    for (const m of normalizedModels) {
+      fallbackBeamAngleDiagrams.push(`${m}_beam.png`, `${m}_beam.jpg`, `${m}_cone.png`);
+    }
+
     // 1. Upload Primary Image (Required)
     const imageId = await uploadAssetFromZip(
       imageFile,
@@ -279,6 +303,34 @@ export async function processBulkImport(
       fallbackLightSources,
       `Technical Document - Light Source for ${modelNumber}`,
       'document'
+    );
+
+    const lightSpectrumGraphId = await uploadAssetFromZip(
+      lightSpectrumGraphFile,
+      fallbackLightSpectrumGraphs,
+      `Light Spectrum Graph for ${modelNumber}`,
+      'image'
+    );
+
+    const lineDrawingId = await uploadAssetFromZip(
+      lineDrawingFile,
+      fallbackLineDrawings,
+      `Line Drawing for ${modelNumber}`,
+      'image'
+    );
+
+    const photometricPolarDiagramId = await uploadAssetFromZip(
+      photometricPolarDiagramFile,
+      fallbackPhotometricPolarDiagrams,
+      `Photometric Polar Diagram for ${modelNumber}`,
+      'image'
+    );
+
+    const beamAngleDiagramId = await uploadAssetFromZip(
+      beamAngleDiagramFile,
+      fallbackBeamAngleDiagrams,
+      `Beam Angle Diagram for ${modelNumber}`,
+      'image'
     );
 
     // 3. Resolve Category (Match or Create)
@@ -428,6 +480,18 @@ export async function processBulkImport(
       }
       if (techDocLightSourceId) {
         productData.techDocLightSource = techDocLightSourceId;
+      }
+      if (lightSpectrumGraphId) {
+        productData.lightSpectrumGraph = lightSpectrumGraphId;
+      }
+      if (lineDrawingId) {
+        productData.lineDrawing = lineDrawingId;
+      }
+      if (photometricPolarDiagramId) {
+        productData.photometricPolarDiagram = photometricPolarDiagramId;
+      }
+      if (beamAngleDiagramId) {
+        productData.beamAngleDiagram = beamAngleDiagramId;
       }
 
       if (existingProducts.docs.length > 0) {

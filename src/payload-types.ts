@@ -195,6 +195,10 @@ export interface Product {
   datasheetPdf?: (string | null) | Media;
   photometryLdt?: (string | null) | Media;
   photometryIes?: (string | null) | Media;
+  lightSpectrumGraph?: (string | null) | Media;
+  lineDrawing?: (string | null) | Media;
+  photometricPolarDiagram?: (string | null) | Media;
+  beamAngleDiagram?: (string | null) | Media;
   techDocControlGear?: (string | null) | Media;
   techDocContainingProduct?: (string | null) | Media;
   techDocLightSource?: (string | null) | Media;
@@ -428,6 +432,10 @@ export interface Skus {
   remark?: string | null;
   photometryLdt?: (string | null) | Media;
   photometryIes?: (string | null) | Media;
+  lightSpectrumGraph?: (string | null) | Media;
+  lineDrawing?: (string | null) | Media;
+  photometricPolarDiagram?: (string | null) | Media;
+  beamAngleDiagram?: (string | null) | Media;
   specifications?:
     | {
         [k: string]: unknown;
@@ -649,6 +657,10 @@ export interface ProductsSelect<T extends boolean = true> {
   datasheetPdf?: T;
   photometryLdt?: T;
   photometryIes?: T;
+  lightSpectrumGraph?: T;
+  lineDrawing?: T;
+  photometricPolarDiagram?: T;
+  beamAngleDiagram?: T;
   techDocControlGear?: T;
   techDocContainingProduct?: T;
   techDocLightSource?: T;
@@ -828,6 +840,10 @@ export interface SkusSelect<T extends boolean = true> {
   remark?: T;
   photometryLdt?: T;
   photometryIes?: T;
+  lightSpectrumGraph?: T;
+  lineDrawing?: T;
+  photometricPolarDiagram?: T;
+  beamAngleDiagram?: T;
   specifications?: T;
   updatedAt?: T;
   createdAt?: T;
