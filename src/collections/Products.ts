@@ -358,25 +358,58 @@ export const Products: CollectionConfig = {
           const path = await import('path');
           const { PDFDocument } = await import('pdf-lib');
 
-          const getMediaBuffer = (mediaObj: any): Buffer | null => {
+          const payloadUrl = process.env.PAYLOAD_PUBLIC_SERVER_URL || 'http://localhost:3000';
+
+          const getMediaBuffer = async (mediaObj: any): Promise<Buffer | null> => {
             if (!mediaObj) return null;
             let filename = '';
-            if (typeof mediaObj === 'object' && mediaObj.filename) {
-              filename = mediaObj.filename;
+            let mediaUrl = '';
+            if (typeof mediaObj === 'object' && mediaObj !== null) {
+              filename = mediaObj.filename || '';
+              mediaUrl = mediaObj.url || '';
             } else if (typeof mediaObj === 'string') {
-              filename = mediaObj;
+              try {
+                const fetchedMedia = await req.payload.findByID({
+                  collection: 'media',
+                  id: mediaObj,
+                });
+                if (fetchedMedia) {
+                  filename = fetchedMedia.filename || '';
+                  mediaUrl = fetchedMedia.url || '';
+                }
+              } catch (e) {
+                filename = mediaObj;
+              }
             }
-            if (!filename) return null;
 
-            const filePath = path.resolve('public/media', filename);
-            if (fs.existsSync(filePath)) {
-              return fs.readFileSync(filePath);
+            // 1. Try local file path first
+            if (filename) {
+              const filePath = path.resolve('public/media', filename);
+              if (fs.existsSync(filePath)) {
+                return fs.readFileSync(filePath);
+              }
+            }
+
+            // 2. Try fetching from URL (Vercel Blob Storage or Payload API)
+            if (mediaUrl) {
+              try {
+                const fullUrl = mediaUrl.startsWith('http')
+                  ? mediaUrl
+                  : `${payloadUrl}${mediaUrl.startsWith('/') ? '' : '/'}${mediaUrl}`;
+                const res = await fetch(fullUrl);
+                if (res.ok) {
+                  const arrayBuffer = await res.arrayBuffer();
+                  return Buffer.from(arrayBuffer);
+                }
+              } catch (e) {
+                console.error('Failed to fetch media buffer from URL:', mediaUrl, e);
+              }
             }
             return null;
           };
 
-          const targetBuffer = getMediaBuffer(targetMediaField);
-          const diBuffer = getMediaBuffer(familyDiMediaField);
+          const targetBuffer = await getMediaBuffer(targetMediaField);
+          const diBuffer = await getMediaBuffer(familyDiMediaField);
 
           if (!targetBuffer && !diBuffer) {
             return new Response(JSON.stringify({ error: 'No technical document or dismantle instruction found for this product.' }), {
@@ -387,7 +420,10 @@ export const Products: CollectionConfig = {
 
           let finalPdfBuffer: Uint8Array;
 
-          if (targetBuffer && diBuffer) {
+          const targetId = typeof targetMediaField === 'object' && targetMediaField ? targetMediaField.id : targetMediaField;
+          const diId = typeof familyDiMediaField === 'object' && familyDiMediaField ? familyDiMediaField.id : familyDiMediaField;
+
+          if (targetBuffer && diBuffer && String(targetId) !== String(diId)) {
             try {
               // Physically merge DI PDF pages into target document PDF using pdf-lib
               const mainPdf = await PDFDocument.load(targetBuffer);
