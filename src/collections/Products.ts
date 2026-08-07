@@ -346,6 +346,8 @@ export const Products: CollectionConfig = {
             targetMediaField = product.techDocControlGear;
           } else if (type === 'containing-product') {
             targetMediaField = product.techDocContainingProduct;
+          } else if (type === 'datasheet') {
+            targetMediaField = product.datasheetPdf;
           } else {
             targetMediaField = product.techDocLightSource;
           }
