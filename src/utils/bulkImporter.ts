@@ -197,7 +197,7 @@ export async function processBulkImport(
 
     const fallbackImages: string[] = [];
     for (const m of normalizedModels) {
-      fallbackImages.push(`${m}.png`, `${m}.jpg`, `${m}.jpeg`, `${m}.gif`);
+      fallbackImages.push(`${m}.png`, `${m}.jpg`, `${m}.jpeg`, `${m}.gif`, `${m}.svg`);
     }
 
     const fallbackDatasheets: string[] = [];
@@ -232,22 +232,22 @@ export async function processBulkImport(
 
     const fallbackLightSpectrumGraphs: string[] = [];
     for (const m of normalizedModels) {
-      fallbackLightSpectrumGraphs.push(`${m}_spectrum.png`, `${m}_spectrum.jpg`, `${m}_sp.png`, `${m}_sp.jpg`);
+      fallbackLightSpectrumGraphs.push(`${m}_spectrum.png`, `${m}_spectrum.jpg`, `${m}_spectrum.svg`, `${m}_sp.png`, `${m}_sp.jpg`, `${m}_sp.svg`);
     }
 
     const fallbackLineDrawings: string[] = [];
     for (const m of normalizedModels) {
-      fallbackLineDrawings.push(`${m}_drawing.png`, `${m}_drawing.jpg`, `${m}_line.png`, `${m}_dr.png`);
+      fallbackLineDrawings.push(`${m}_drawing.png`, `${m}_drawing.jpg`, `${m}_drawing.svg`, `${m}_line.png`, `${m}_line.svg`, `${m}_dr.png`, `${m}_dr.svg`);
     }
 
     const fallbackPhotometricPolarDiagrams: string[] = [];
     for (const m of normalizedModels) {
-      fallbackPhotometricPolarDiagrams.push(`${m}_polar.png`, `${m}_polar.jpg`, `${m}_polar_curve.png`);
+      fallbackPhotometricPolarDiagrams.push(`${m}_polar.png`, `${m}_polar.jpg`, `${m}_polar.svg`, `${m}_polar_curve.png`, `${m}_polar_curve.svg`);
     }
 
     const fallbackBeamAngleDiagrams: string[] = [];
     for (const m of normalizedModels) {
-      fallbackBeamAngleDiagrams.push(`${m}_beam.png`, `${m}_beam.jpg`, `${m}_cone.png`);
+      fallbackBeamAngleDiagrams.push(`${m}_beam.png`, `${m}_beam.jpg`, `${m}_beam.svg`, `${m}_cone.png`, `${m}_cone.svg`);
     }
 
     // 1. Upload Primary Image (Required)

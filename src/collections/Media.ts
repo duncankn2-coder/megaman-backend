@@ -4,7 +4,17 @@ export const Media: CollectionConfig = {
   slug: 'media',
   upload: {
     staticDir: 'public/media',
-    mimeTypes: ['image/*', 'video/*', 'application/pdf', 'text/plain', 'application/octet-stream', 'application/zip', 'application/x-zip-compressed'],
+    mimeTypes: [
+      'image/*',
+      'image/svg+xml',
+      'video/*',
+      'application/pdf',
+      'text/plain',
+      'application/octet-stream',
+      'application/zip',
+      'application/x-zip-compressed',
+    ],
+    adminThumbnail: ({ doc }) => (doc?.mimeType === 'image/svg+xml' ? (doc.url as string) : null),
   },
   access: {
     read: () => true, // Allow anyone to read products
