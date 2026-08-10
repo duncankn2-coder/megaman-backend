@@ -392,21 +392,24 @@ export const Products: CollectionConfig = {
               }
             }
 
-            // 2. Try fetching from URL (Vercel Blob Storage or Payload API)
-            if (mediaUrl) {
+            // 2. Try fetching from URL or API media route (Vercel Blob Storage or Payload API)
+            const targetUrls = [
+              mediaUrl ? (mediaUrl.startsWith('http') ? mediaUrl : `${payloadUrl}${mediaUrl.startsWith('/') ? '' : '/'}${mediaUrl}`) : null,
+              filename ? `${payloadUrl}/api/media/file/${filename}` : null,
+            ].filter(Boolean) as string[];
+
+            for (const url of targetUrls) {
               try {
-                const fullUrl = mediaUrl.startsWith('http')
-                  ? mediaUrl
-                  : `${payloadUrl}${mediaUrl.startsWith('/') ? '' : '/'}${mediaUrl}`;
-                const res = await fetch(fullUrl);
+                const res = await fetch(url);
                 if (res.ok) {
                   const arrayBuffer = await res.arrayBuffer();
                   return Buffer.from(arrayBuffer);
                 }
               } catch (e) {
-                console.error('Failed to fetch media buffer from URL:', mediaUrl, e);
+                console.error('Failed to fetch media buffer from URL:', url, e);
               }
             }
+
             return null;
           };
 
