@@ -360,7 +360,8 @@ export const Products: CollectionConfig = {
           const path = await import('path');
           const { PDFDocument } = await import('pdf-lib');
 
-          const payloadUrl = process.env.PAYLOAD_PUBLIC_SERVER_URL || 'http://localhost:3000';
+          const payloadUrl = process.env.PAYLOAD_PUBLIC_SERVER_URL 
+            || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
 
           const getMediaBuffer = async (mediaObj: any): Promise<Buffer | null> => {
             if (!mediaObj) return null;
@@ -384,11 +385,17 @@ export const Products: CollectionConfig = {
               }
             }
 
-            // 1. Try local file path first
+            // 1. Try local file paths first
             if (filename) {
-              const filePath = path.resolve('public/media', filename);
-              if (fs.existsSync(filePath)) {
-                return fs.readFileSync(filePath);
+              const pathsToTry = [
+                path.resolve('public/media', filename),
+                path.join(process.cwd(), 'public/media', filename),
+                path.join(process.cwd(), 'public', filename),
+              ];
+              for (const filePath of pathsToTry) {
+                if (fs.existsSync(filePath)) {
+                  return fs.readFileSync(filePath);
+                }
               }
             }
 
