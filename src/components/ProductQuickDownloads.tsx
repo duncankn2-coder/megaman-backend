@@ -21,6 +21,11 @@ interface ProductData {
   techDocControlGear?: MediaObj | string | null;
   techDocContainingProduct?: MediaObj | string | null;
   datasheetPdf?: MediaObj | string | null;
+  families?: {
+    id?: string;
+    name?: string;
+    dismantleInstructionPdf?: MediaObj | string | null;
+  } | string | null;
 }
 
 export const ProductQuickDownloads: React.FC = () => {
@@ -35,7 +40,7 @@ export const ProductQuickDownloads: React.FC = () => {
     async function fetchProductDetails() {
       try {
         setLoading(true);
-        const res = await fetch(`/api/products/${id}?depth=1`);
+        const res = await fetch(`/api/products/${id}?depth=2`);
         if (res.ok) {
           const data = await res.json();
           if (isMounted) {
@@ -78,10 +83,19 @@ export const ProductQuickDownloads: React.FC = () => {
     return null;
   };
 
+  const frontendUrl = process.env.NEXT_PUBLIC_FRONTEND_URL 
+    || process.env.PAYLOAD_PUBLIC_FRONTEND_URL 
+    || (typeof window !== 'undefined' && window.location.hostname.includes('localhost') 
+        ? 'http://localhost:3001' 
+        : 'https://megaman-frontend.vercel.app');
+
   const spectrumUrl = getMediaUrl(product?.lightSpectrumGraph);
   const lineDrawingUrl = getMediaUrl(product?.lineDrawing);
   const polarUrl = getMediaUrl(product?.photometricPolarDiagram);
   const beamUrl = getMediaUrl(product?.beamAngleDiagram);
+  
+  const familyObj = typeof product?.families === 'object' && product?.families !== null ? product.families : null;
+  const dismantlePdfUrl = getMediaUrl(familyObj?.dismantleInstructionPdf);
 
   const buttonStyle: React.CSSProperties = {
     display: 'flex',
@@ -122,22 +136,22 @@ export const ProductQuickDownloads: React.FC = () => {
         {loading && <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Loading...</span>}
       </div>
 
-      {/* 1. TECHNICAL DOCUMENTS */}
+      {/* 1. FULL TECHNICAL DOCUMENTS (WEB PREVIEW & PDF PRINT) */}
       <div style={sectionHeaderStyle}>
-        📄 Merged Technical Documents
+        📄 Full Technical Documents (Web & Print PDF)
       </div>
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         <a 
-          href={`/api/products/${id}/technical-document?type=datasheet`}
+          href={`${frontendUrl}/products/${id}/datasheet`}
           target="_blank"
           rel="noopener noreferrer"
           style={buttonStyle}
         >
-          <span>Datasheet PDF</span>
+          <span>Datasheet (Full Document)</span>
           <span>↗</span>
         </a>
         <a 
-          href={`/api/products/${id}/technical-document?type=light-source`}
+          href={`${frontendUrl}/products/${id}/eprel-light-source`}
           target="_blank"
           rel="noopener noreferrer"
           style={buttonStyle}
@@ -146,7 +160,7 @@ export const ProductQuickDownloads: React.FC = () => {
           <span>↗</span>
         </a>
         <a 
-          href={`/api/products/${id}/technical-document?type=control-gear`}
+          href={`${frontendUrl}/products/${id}/control-gear`}
           target="_blank"
           rel="noopener noreferrer"
           style={buttonStyle}
@@ -155,7 +169,7 @@ export const ProductQuickDownloads: React.FC = () => {
           <span>↗</span>
         </a>
         <a 
-          href={`/api/products/${id}/technical-document?type=containing-product`}
+          href={`${frontendUrl}/products/${id}/containing-product`}
           target="_blank"
           rel="noopener noreferrer"
           style={buttonStyle}
@@ -165,9 +179,9 @@ export const ProductQuickDownloads: React.FC = () => {
         </a>
       </div>
 
-      {/* 2. SPECTRUM GRAPH & ASSETS */}
+      {/* 2. SPECTRUM GRAPH & MEDIA ASSETS */}
       <div style={sectionHeaderStyle}>
-        🌈 Spectrum Graph & Drawings
+        🌈 Spectrum Graph & Image Assets
       </div>
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         {spectrumUrl ? (
@@ -200,6 +214,24 @@ export const ProductQuickDownloads: React.FC = () => {
           <div style={{ fontSize: '0.7rem', color: '#64748b', fontStyle: 'italic', marginBottom: '0.4rem' }}>
             No Spectrum Graph Image uploaded
           </div>
+        )}
+
+        {dismantlePdfUrl && (
+          <a 
+            href={dismantlePdfUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            download
+            style={{
+              ...buttonStyle,
+              color: '#fbbf24',
+              backgroundColor: 'rgba(251, 191, 36, 0.08)',
+              borderColor: 'rgba(251, 191, 36, 0.25)',
+            }}
+          >
+            <span>Download Dismantle Instruction PDF</span>
+            <span>↓</span>
+          </a>
         )}
 
         {lineDrawingUrl && (

@@ -452,7 +452,15 @@ export const Products: CollectionConfig = {
           } else if (targetBuffer) {
             finalPdfBuffer = targetBuffer;
           } else {
-            finalPdfBuffer = diBuffer!;
+            // When no pre-uploaded static PDF document exists for this product,
+            // redirect to the full dynamic technical document web page which renders all pages + dismantle instruction.
+            const frontendUrl = process.env.PAYLOAD_PUBLIC_FRONTEND_URL 
+              || process.env.NEXT_PUBLIC_FRONTEND_URL 
+              || 'https://megaman-frontend.vercel.app';
+            const pagePath = type === 'datasheet' 
+              ? 'datasheet' 
+              : (type === 'control-gear' ? 'control-gear' : (type === 'containing-product' ? 'containing-product' : 'eprel-light-source'));
+            return Response.redirect(`${frontendUrl}/products/${id}/${pagePath}`, 302);
           }
 
           const modelName = product.name || 'product';
