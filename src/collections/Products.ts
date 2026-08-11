@@ -609,6 +609,16 @@ export const Products: CollectionConfig = {
       },
     },
     {
+      name: 'quickDownloads',
+      type: 'ui',
+      admin: {
+        position: 'sidebar',
+        components: {
+          Field: '/components/ProductQuickDownloads#ProductQuickDownloads',
+        },
+      },
+    },
+    {
       name: 'description',
       type: 'textarea',
     },
