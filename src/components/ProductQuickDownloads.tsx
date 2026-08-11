@@ -142,15 +142,6 @@ export const ProductQuickDownloads: React.FC = () => {
       </div>
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         <a 
-          href={`${frontendUrl}/products/${id}/datasheet`}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={buttonStyle}
-        >
-          <span>Datasheet (Full Document)</span>
-          <span>↗</span>
-        </a>
-        <a 
           href={`${frontendUrl}/products/${id}/eprel-light-source`}
           target="_blank"
           rel="noopener noreferrer"
