@@ -482,6 +482,65 @@ export const Products: CollectionConfig = {
         }
       },
     },
+    {
+      path: '/:id/eprel-xml',
+      method: 'get',
+      handler: async (req) => {
+        try {
+          if (!req.user) {
+            return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+              status: 401,
+              headers: { 'Content-Type': 'application/json' },
+            });
+          }
+
+          const { id } = req.routeParams || {};
+          const url = new URL(req.url || '', 'http://localhost');
+          const regNumber = url.searchParams.get('regNumber') || '';
+          const startDate = url.searchParams.get('startDate') || '2027-01-01+01:00';
+
+          if (!id) {
+            return new Response(JSON.stringify({ error: 'Product ID is required' }), { status: 400 });
+          }
+
+          // Fetch product with depth=2
+          const product = await req.payload.findByID({
+            collection: 'products',
+            id: String(id),
+            depth: 2,
+          });
+
+          if (!product) {
+            return new Response(JSON.stringify({ error: 'Product not found' }), { status: 404 });
+          }
+
+          const { generateEprelXml } = await import('../utils/eprelXmlGenerator');
+          const xmlContent = generateEprelXml({
+            product,
+            eprelRegistrationNumber: regNumber,
+            onMarketStartDate: startDate,
+          });
+
+          const specs = (product.specifications || {}) as any;
+          const modelIdentifier = specs.model_identifier || specs.light_source_model_no || product.name || 'product';
+          const safeFilename = `registration-data-${String(modelIdentifier).replace(/[^a-zA-Z0-9_\-]/g, '_')}.xml`;
+
+          return new Response(xmlContent, {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/xml; charset=utf-8',
+              'Content-Disposition': `attachment; filename="${safeFilename}"`,
+            },
+          });
+        } catch (err: any) {
+          console.error('Error generating EPREL XML:', err);
+          return new Response(JSON.stringify({ error: err.message || 'Server error' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+      },
+    },
   ],
   hooks: {
     beforeChange: [

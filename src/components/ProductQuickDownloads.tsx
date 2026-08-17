@@ -127,6 +127,23 @@ export const ProductQuickDownloads: React.FC = () => {
     gap: '4px',
   };
 
+  const [eprelRegNo, setEprelRegNo] = useState<string>('');
+  const [onMarketStartDate, setOnMarketStartDate] = useState<string>('2027-01-01');
+
+  const modelIdentifier = (product as any)?.specifications?.model_identifier 
+    || (product as any)?.specifications?.light_source_model_no 
+    || product?.name 
+    || '';
+
+  const handleDownloadEprelXml = () => {
+    if (!id) return;
+    const params = new URLSearchParams();
+    if (eprelRegNo) params.set('regNumber', eprelRegNo.trim());
+    if (onMarketStartDate) params.set('startDate', onMarketStartDate.trim());
+
+    window.open(`/api/products/${id}/eprel-xml?${params.toString()}`, '_blank');
+  };
+
   return (
     <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
@@ -136,7 +153,96 @@ export const ProductQuickDownloads: React.FC = () => {
         {loading && <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Loading...</span>}
       </div>
 
-      {/* 1. FULL TECHNICAL DOCUMENTS (WEB PREVIEW & PDF PRINT) */}
+      {/* 1. EPREL BULK UPLOAD XML */}
+      <div style={sectionHeaderStyle}>
+        📦 EPREL Bulk Upload XML
+      </div>
+      <div style={{ 
+        background: 'rgba(15, 23, 42, 0.6)', 
+        border: '1px solid rgba(56, 189, 248, 0.25)', 
+        borderRadius: '8px', 
+        padding: '0.75rem', 
+        marginBottom: '0.85rem' 
+      }}>
+        {modelIdentifier && (
+          <div style={{ fontSize: '0.68rem', color: '#94a3b8', marginBottom: '0.5rem' }}>
+            <span style={{ color: '#64748b' }}>Model Identifier (Col BZ): </span>
+            <strong style={{ color: '#38bdf8' }}>{modelIdentifier}</strong>
+          </div>
+        )}
+
+        <div style={{ marginBottom: '0.5rem' }}>
+          <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 600, color: '#cbd5e1', marginBottom: '0.2rem' }}>
+            EPREL Reg Number:
+          </label>
+          <input 
+            type="text" 
+            placeholder="e.g. 2820811"
+            value={eprelRegNo}
+            onChange={(e) => setEprelRegNo(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '0.35rem 0.5rem',
+              fontSize: '0.75rem',
+              borderRadius: '4px',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              backgroundColor: 'rgba(0, 0, 0, 0.3)',
+              color: '#fff',
+              outline: 'none',
+              boxSizing: 'border-box'
+            }}
+          />
+        </div>
+
+        <div style={{ marginBottom: '0.6rem' }}>
+          <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 600, color: '#cbd5e1', marginBottom: '0.2rem' }}>
+            On Market Start Date:
+          </label>
+          <input 
+            type="date" 
+            value={onMarketStartDate}
+            onChange={(e) => setOnMarketStartDate(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '0.35rem 0.5rem',
+              fontSize: '0.75rem',
+              borderRadius: '4px',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              backgroundColor: 'rgba(0, 0, 0, 0.3)',
+              color: '#fff',
+              outline: 'none',
+              boxSizing: 'border-box'
+            }}
+          />
+        </div>
+
+        <button
+          type="button"
+          onClick={handleDownloadEprelXml}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px',
+            padding: '0.5rem 0.75rem',
+            fontSize: '0.75rem',
+            fontWeight: 700,
+            color: '#fff',
+            background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+            border: '1px solid #38bdf8',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+          }}
+        >
+          <span>Export registration-data.xml</span>
+          <span>↓</span>
+        </button>
+      </div>
+
+      {/* 2. FULL TECHNICAL DOCUMENTS (WEB PREVIEW & PDF PRINT) */}
       <div style={sectionHeaderStyle}>
         📄 Full Technical Documents (Web & Print PDF)
       </div>
@@ -170,7 +276,7 @@ export const ProductQuickDownloads: React.FC = () => {
         </a>
       </div>
 
-      {/* 2. SPECTRUM GRAPH & MEDIA ASSETS */}
+      {/* 3. SPECTRUM GRAPH & MEDIA ASSETS */}
       <div style={sectionHeaderStyle}>
         🌈 Spectrum Graph & Image Assets
       </div>
@@ -267,3 +373,4 @@ export const ProductQuickDownloads: React.FC = () => {
     </div>
   );
 };
+
