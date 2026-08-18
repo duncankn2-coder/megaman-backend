@@ -140,7 +140,12 @@ export const ProductQuickDownloads: React.FC = () => {
     if (eprelRegNo) params.set('regNumber', eprelRegNo.trim());
     if (onMarketStartDate) params.set('startDate', onMarketStartDate.trim());
 
-    window.open(`/api/products/${id}/eprel-xml?${params.toString()}`, '_blank');
+    const a = document.createElement('a');
+    a.href = `/api/products/${id}/eprel-xml?${params.toString()}`;
+    a.download = 'registration-data.xml';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   return (

@@ -112,6 +112,24 @@ function getColourTempFromCoordinates(xVal: any, yVal: any): string | null {
   return cctFromX || cctFromY || null;
 }
 
+export function getTechnicalDocumentFilename(type: 'light-source' | 'containing-product' | 'control-gear' | string, product: any): string {
+  const specs = product?.specifications || {};
+  const customerModel = String(specs.customer_model_no_new || specs.customer_model_no || product?.name || 'PRODUCT')
+    .replace(/\//g, '-').replace(/[^a-zA-Z0-9_\-]/g, '_');
+  const modelId = String(specs.model_identifier || specs.light_source_model_no || product?.name || 'MODEL_IDENTIFIER')
+    .replace(/\//g, '-').replace(/[^a-zA-Z0-9_\-]/g, '_');
+  const driverModel = String(specs.driver_model || specs.control_gear_model_no || 'DRIVER')
+    .replace(/\//g, '-').replace(/[^a-zA-Z0-9_\-]/g, '_');
+
+  if (type === 'control-gear') {
+    return `${customerModel}_${driverModel}_CG_TD.pdf`;
+  }
+  if (type === 'containing-product') {
+    return `${customerModel}_CP_TD.pdf`;
+  }
+  return `${customerModel}_${modelId}_LS_TD.pdf`;
+}
+
 export function generateEprelXml(options: EprelXmlOptions): string {
   const { product, eprelRegistrationNumber, onMarketStartDate } = options;
   const specs = product.specifications || {};
@@ -127,17 +145,13 @@ export function generateEprelXml(options: EprelXmlOptions): string {
   const requestId = escapeXml(options.requestId || defaultRequestId);
   const operationId = escapeXml(options.operationId || '14');
 
-  // 2. Model Identifier (Column BZ from General Data / specifications)
-  const modelIdentifier = escapeXml(
-    specs.model_identifier ||
-    specs.light_source_model_no ||
-    product.name ||
-    'MODEL_IDENTIFIER'
-  );
+  // 2. Model Identifier & Customer Model
+  const rawCustomerModelNo = specs.customer_model_no_new || specs.customer_model_no || product.name || 'PRODUCT';
+  const rawModelIdentifier = specs.model_identifier || specs.light_source_model_no || product.name || 'MODEL_IDENTIFIER';
 
-  const productName = product.name || 'PRODUCT';
-  const safeModelName = productName.replace(/\//g, '-').replace(/[^a-zA-Z0-9_\-]/g, '_');
-  const safeModelId = modelIdentifier.replace(/\//g, '-').replace(/[^a-zA-Z0-9_\-]/g, '_');
+  const modelIdentifier = escapeXml(rawModelIdentifier);
+  const safeCustomerModel = String(rawCustomerModelNo).replace(/\//g, '-').replace(/[^a-zA-Z0-9_\-]/g, '_');
+  const safeModelId = String(rawModelIdentifier).replace(/\//g, '-').replace(/[^a-zA-Z0-9_\-]/g, '_');
 
   // 3. Date formatting (ensure timezone or format YYYY-MM-DD+01:00)
   let formattedStartDate = onMarketStartDate ? String(onMarketStartDate).trim() : '2027-01-01+01:00';
@@ -145,8 +159,8 @@ export function generateEprelXml(options: EprelXmlOptions): string {
     formattedStartDate += '+01:00';
   }
 
-  // 4. Media & Tech Doc file paths
-  const defaultTechDocFilename = `${safeModelName}_${safeModelId}_LS_TD.PDF`;
+  // 4. Media & Tech Doc file paths: "customer_model_no_new" + "_" + "model_identifier" + "_LS_TD.pdf"
+  const defaultTechDocFilename = `${safeCustomerModel}_${safeModelId}_LS_TD.pdf`;
   const techDocFilename = getMediaFilename(product.techDocLightSource, defaultTechDocFilename);
 
   // 5. CCT values & Chromaticity Coordinates calculation

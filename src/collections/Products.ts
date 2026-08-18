@@ -463,8 +463,8 @@ export const Products: CollectionConfig = {
             return Response.redirect(`${frontendUrl}/products/${id}/${pagePath}`, 302);
           }
 
-          const modelName = product.name || 'product';
-          const safeFilename = `Technical_Document_${type}_${modelName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+          const { getTechnicalDocumentFilename } = await import('../utils/eprelXmlGenerator');
+          const safeFilename = getTechnicalDocumentFilename(type, product);
 
           return new Response(new Uint8Array(finalPdfBuffer), {
             status: 200,
@@ -521,9 +521,7 @@ export const Products: CollectionConfig = {
             onMarketStartDate: startDate,
           });
 
-          const specs = (product.specifications || {}) as any;
-          const modelIdentifier = specs.model_identifier || specs.light_source_model_no || product.name || 'product';
-          const safeFilename = `registration-data-${String(modelIdentifier).replace(/[^a-zA-Z0-9_\-]/g, '_')}.xml`;
+          const safeFilename = 'registration-data.xml';
 
           return new Response(xmlContent, {
             status: 200,
