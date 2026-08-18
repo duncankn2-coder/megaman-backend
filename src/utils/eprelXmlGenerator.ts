@@ -71,6 +71,33 @@ function getMediaFilename(media: any, defaultFilename: string): string {
   return defaultFilename;
 }
 
+function getColourTempFromCoordinates(xVal: any, yVal: any): string | null {
+  const x = typeof xVal === 'number' ? xVal : parseFloat(String(xVal));
+  const y = typeof yVal === 'number' ? yVal : parseFloat(String(yVal));
+
+  // Determine CCT from X-Coordinate per specification table
+  let cctFromX: string | null = null;
+  if (!isNaN(x)) {
+    if (x >= 0.295 && x <= 0.324) cctFromX = '6500K';
+    else if (x >= 0.325 && x <= 0.354) cctFromX = '5000K';
+    else if (x >= 0.355 && x <= 0.394) cctFromX = '4000K';
+    else if (x >= 0.415 && x <= 0.444) cctFromX = '3000K';
+    else if (x >= 0.445 && x <= 0.474) cctFromX = '2800K';
+  }
+
+  // Determine CCT from Y-Coordinate per specification table
+  let cctFromY: string | null = null;
+  if (!isNaN(y)) {
+    if (y >= 0.315 && y <= 0.344) cctFromY = '6500K';
+    else if (y >= 0.345 && y <= 0.364) cctFromY = '5000K';
+    else if (y >= 0.365 && y <= 0.384) cctFromY = '4000K';
+    else if (y >= 0.385 && y <= 0.404) cctFromY = '3000K';
+    else if (y >= 0.405 && y <= 0.424) cctFromY = '2800K';
+  }
+
+  return cctFromX || cctFromY || null;
+}
+
 export function generateEprelXml(options: EprelXmlOptions): string {
   const { product, eprelRegistrationNumber, onMarketStartDate } = options;
   const specs = product.specifications || {};
@@ -95,8 +122,8 @@ export function generateEprelXml(options: EprelXmlOptions): string {
   );
 
   const productName = product.name || 'PRODUCT';
-  const safeModelName = productName.replace(/[^a-zA-Z0-9_\-]/g, '_');
-  const safeModelId = modelIdentifier.replace(/[^a-zA-Z0-9_\-]/g, '_');
+  const safeModelName = productName.replace(/\//g, '-').replace(/[^a-zA-Z0-9_\-]/g, '_');
+  const safeModelId = modelIdentifier.replace(/\//g, '-').replace(/[^a-zA-Z0-9_\-]/g, '_');
 
   // 3. Date formatting (ensure timezone or format YYYY-MM-DD+01:00)
   let formattedStartDate = onMarketStartDate ? String(onMarketStartDate).trim() : '2027-01-01+01:00';
@@ -108,15 +135,25 @@ export function generateEprelXml(options: EprelXmlOptions): string {
   const defaultTechDocFilename = `${safeModelName}_${safeModelId}_LS_TD.PDF`;
   const techDocFilename = getMediaFilename(product.techDocLightSource, defaultTechDocFilename);
 
-  const defaultSpectrumFilename = `${safeModelName}_spectrum.jpg`;
-  const spectrumFilename = getMediaFilename(product.lightSpectrumGraph, defaultSpectrumFilename);
+  // 5. CCT values & Chromaticity Coordinates calculation
+  const rawChromX = specs.chromaticity_coordinates_x;
+  const rawChromY = specs.chromaticity_coordinates_y;
+  const coordCct = getColourTempFromCoordinates(rawChromX, rawChromY);
 
-  // 5. CCT values (single or multiple steps e.g. "3000/4000/6500" or "4000K")
   const rawCct = specs.cct_k || product.colourTemperature || '3000/4000/6500';
   const cctMatches = String(rawCct).match(/\d{4}/g) || ['3000', '4000', '6500'];
   const cctType = cctMatches.length > 1 ? 'STEPS' : 'SINGLE_VALUE';
   const cctTags = cctMatches.map(c => `<CORRELATED_COLOUR_TEMP>${c}</CORRELATED_COLOUR_TEMP>`).join('\n');
   const firstCct = cctMatches[0] || '3000';
+
+  const effectiveSpectrumCct = coordCct || (firstCct ? `${firstCct}K` : '4000K');
+
+  // Series Name for spectrum filename: "series_name" + "_" + colour temperature + "_spectrum.jpg"
+  const rawSeriesName = specs.series_name || (product.families && typeof product.families === 'object' ? product.families.name : '') || product.series || safeModelName;
+  const safeSeriesName = String(rawSeriesName).trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-]/g, '_');
+
+  const defaultSpectrumFilename = `${safeSeriesName}_${effectiveSpectrumCct}_spectrum.jpg`;
+  const spectrumFilename = getMediaFilename(product.lightSpectrumGraph, defaultSpectrumFilename);
 
   // 6. Extracted Parameters from Specifications
   const lightingTech = escapeXml(specs.lighting_tech || 'LED');
@@ -130,28 +167,27 @@ export function generateEprelXml(options: EprelXmlOptions): string {
   const dimmable = formatDimmable(specs.light_source_dimmable || specs.dimmable);
 
   const energyCons = escapeXml(
-    specs.energy_consumption_on_mode ||
-    specs.on_mode_power_w ||
-    product.power ||
-    '20'
+    (specs.energy_consumption_on_mode !== undefined && specs.energy_consumption_on_mode !== null && specs.energy_consumption_on_mode !== '')
+      ? specs.energy_consumption_on_mode
+      : (specs.on_mode_power_w || product.power || '20')
   );
   const energyClass = escapeXml(specs.energy_efficiency_class || 'D');
   const luminousFlux = escapeXml(
-    specs.light_source_useful_luminous_flux_lm ||
-    specs.useful_luminous_flux_lm ||
-    specs.total_luminous_flux_lm ||
-    '3100'
+    (specs.light_source_useful_luminous_flux_lm !== undefined && specs.light_source_useful_luminous_flux_lm !== null && specs.light_source_useful_luminous_flux_lm !== '')
+      ? specs.light_source_useful_luminous_flux_lm
+      : (specs.useful_luminous_flux_lm || specs.total_luminous_flux_lm || '3100')
   );
   const beamAngleCorrespondence = formatBeamAngleCorrespondence(specs.beam_angle_correspondence);
 
   const powerOnMode = escapeXml(
-    specs.light_source_on_mode_power_w ||
-    specs.on_mode_power_w ||
-    product.power ||
-    '20'
+    (specs.light_source_on_mode_power_w !== undefined && specs.light_source_on_mode_power_w !== null && specs.light_source_on_mode_power_w !== '')
+      ? specs.light_source_on_mode_power_w
+      : (specs.on_mode_power_w || product.power || '20')
   );
   const powerStandby = escapeXml(
-    specs.light_source_standby_power_w !== undefined ? specs.light_source_standby_power_w : '0'
+    (specs.light_source_standby_power_w !== undefined && specs.light_source_standby_power_w !== null && specs.light_source_standby_power_w !== '')
+      ? specs.light_source_standby_power_w
+      : '0'
   );
   const cri = escapeXml(
     specs.ra ||
@@ -161,28 +197,29 @@ export function generateEprelXml(options: EprelXmlOptions): string {
   );
 
   const dimHeight = escapeXml(
-    specs.light_source_outer_dimensions_high_mm ||
-    specs.height_mm ||
-    '29'
+    (specs.light_source_outer_dimensions_high_mm !== undefined && specs.light_source_outer_dimensions_high_mm !== null && specs.light_source_outer_dimensions_high_mm !== '')
+      ? specs.light_source_outer_dimensions_high_mm
+      : (specs.height_mm || '29')
   );
   const dimWidth = escapeXml(
-    specs.light_source_outer_dimensions_width_mm ||
-    specs.width_mm ||
-    specs.diameter_mm ||
-    '157'
+    (specs.light_source_outer_dimensions_width_mm !== undefined && specs.light_source_outer_dimensions_width_mm !== null && specs.light_source_outer_dimensions_width_mm !== '')
+      ? specs.light_source_outer_dimensions_width_mm
+      : (specs.width_mm || specs.diameter_mm || '157')
   );
   const dimDepth = escapeXml(
-    specs.light_source_outer_dimensions_depth_mm ||
-    specs.length_mm ||
-    specs.diameter_mm ||
-    specs.width_mm ||
-    '157'
+    (specs.light_source_outer_dimensions_depth_mm !== undefined && specs.light_source_outer_dimensions_depth_mm !== null && specs.light_source_outer_dimensions_depth_mm !== '')
+      ? specs.light_source_outer_dimensions_depth_mm
+      : (specs.length_mm || specs.diameter_mm || specs.width_mm || '157')
   );
 
   const claimEquivalentPower = formatBoolean(specs.claim_equivalent_power, false);
   const chromX = escapeXml(specs.chromaticity_coordinates_x || '0.38');
   const chromY = escapeXml(specs.chromaticity_coordinates_y || '0.38');
-  const r9Cri = escapeXml(specs.r9_cri_value !== undefined ? specs.r9_cri_value : '0');
+  const r9Cri = escapeXml(
+    (specs.r9_cri_value !== undefined && specs.r9_cri_value !== null && specs.r9_cri_value !== '')
+      ? specs.r9_cri_value
+      : '0'
+  );
   const survivalFactor = escapeXml(specs.survival_factor || '0.9');
   const lumenMaintenanceFactor = escapeXml(specs.lumen_maintanance_factor_3600h || '0.96');
   const displacementFactor = escapeXml(specs.displacement_factor || '0.9');
