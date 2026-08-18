@@ -32,6 +32,8 @@ export const ProductQuickDownloads: React.FC = () => {
   const { id } = useDocumentInfo();
   const [product, setProduct] = useState<ProductData | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const [eprelRegNo, setEprelRegNo] = useState<string>('');
+  const [onMarketStartDate, setOnMarketStartDate] = useState<string>('2027-01-01');
 
   useEffect(() => {
     if (!id) return;
@@ -126,9 +128,6 @@ export const ProductQuickDownloads: React.FC = () => {
     alignItems: 'center',
     gap: '4px',
   };
-
-  const [eprelRegNo, setEprelRegNo] = useState<string>('');
-  const [onMarketStartDate, setOnMarketStartDate] = useState<string>('2027-01-01');
 
   const modelIdentifier = (product as any)?.specifications?.model_identifier 
     || (product as any)?.specifications?.light_source_model_no 
