@@ -75,22 +75,36 @@ function getColourTempFromCoordinates(xVal: any, yVal: any): string | null {
   const x = typeof xVal === 'number' ? xVal : parseFloat(String(xVal));
   const y = typeof yVal === 'number' ? yVal : parseFloat(String(yVal));
 
-  // Determine CCT from X-Coordinate per specification table
+  // Determine CCT from X-Coordinate per revised specification table:
+  // 0 -> Undefine
+  // 0.30 - 0.32 -> 6500K
+  // 0.33 - 0.35 -> 5000K
+  // 0.36 - 0.39 (including 0.366, 0.37, 0.38) -> 4000K
+  // 0.42 - 0.44 -> 3000K
+  // 0.45 - 0.47 -> 2800K
+  // > 0.47 -> Undefine
   let cctFromX: string | null = null;
-  if (!isNaN(x)) {
+  if (!isNaN(x) && x > 0) {
     if (x >= 0.295 && x <= 0.324) cctFromX = '6500K';
     else if (x >= 0.325 && x <= 0.354) cctFromX = '5000K';
-    else if (x >= 0.355 && x <= 0.394) cctFromX = '4000K';
+    else if (x >= 0.355 && x <= 0.404) cctFromX = '4000K';
     else if (x >= 0.415 && x <= 0.444) cctFromX = '3000K';
     else if (x >= 0.445 && x <= 0.474) cctFromX = '2800K';
   }
 
-  // Determine CCT from Y-Coordinate per specification table
+  // Determine CCT from Y-Coordinate per revised specification table:
+  // 0 -> Undefine
+  // 0.32 - 0.34 -> 6500K
+  // 0.35 - 0.36 -> 5000K
+  // 0.367 - 0.38 (including 0.37, 0.38) -> 4000K
+  // 0.39 - 0.40 -> 3000K
+  // 0.41 - 0.42 -> 2800K
+  // >= 0.43 -> Undefine
   let cctFromY: string | null = null;
-  if (!isNaN(y)) {
+  if (!isNaN(y) && y > 0) {
     if (y >= 0.315 && y <= 0.344) cctFromY = '6500K';
-    else if (y >= 0.345 && y <= 0.364) cctFromY = '5000K';
-    else if (y >= 0.365 && y <= 0.384) cctFromY = '4000K';
+    else if (y >= 0.345 && y < 0.366) cctFromY = '5000K';
+    else if (y >= 0.366 && y <= 0.384) cctFromY = '4000K';
     else if (y >= 0.385 && y <= 0.404) cctFromY = '3000K';
     else if (y >= 0.405 && y <= 0.424) cctFromY = '2800K';
   }
