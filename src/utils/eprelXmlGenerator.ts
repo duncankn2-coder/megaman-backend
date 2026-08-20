@@ -139,7 +139,7 @@ export function getSpectrumFilename(product: any): string {
   const rawCct = specs.cct_k || product?.colourTemperature || '3000/4000/6500';
   const cctMatches = String(rawCct).match(/\d{4}/g) || ['3000', '4000', '6500'];
   const firstCct = cctMatches[0] || '3000';
-  const effectiveSpectrumCct = coordCct || (firstCct ? `${firstCct}K` : '4000K');
+  const effectiveSpectrumCct = coordCct || (firstCct ? `${firstCct}k` : '4000k');
 
   const rawModelId = specs.model_identifier || specs.light_source_model_no || product?.name || 'MODEL';
   const safeModelId = String(rawModelId).replace(/\//g, '-').replace(/[^a-zA-Z0-9_\-]/g, '_');
@@ -147,7 +147,7 @@ export function getSpectrumFilename(product: any): string {
   const rawSeriesName = specs.series_name || (product?.families && typeof product?.families === 'object' ? product?.families.name : '') || product?.series || safeModelId;
   const safeSeriesName = String(rawSeriesName).trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-]/g, '_');
 
-  return `${safeSeriesName}_${effectiveSpectrumCct}_spectrum.jpg`;
+  return `${safeSeriesName}_${effectiveSpectrumCct}_spectrum.jpg`.toLowerCase();
 }
 
 export function generateEprelXml(options: EprelXmlOptions): string {
