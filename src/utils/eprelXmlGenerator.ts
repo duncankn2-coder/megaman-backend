@@ -130,6 +130,26 @@ export function getTechnicalDocumentFilename(type: 'light-source' | 'containing-
   return `${customerModel}_${modelId}_LS_TD.pdf`;
 }
 
+export function getSpectrumFilename(product: any): string {
+  const specs = product?.specifications || {};
+  const rawChromX = specs.chromaticity_coordinates_x;
+  const rawChromY = specs.chromaticity_coordinates_y;
+  const coordCct = getColourTempFromCoordinates(rawChromX, rawChromY);
+
+  const rawCct = specs.cct_k || product?.colourTemperature || '3000/4000/6500';
+  const cctMatches = String(rawCct).match(/\d{4}/g) || ['3000', '4000', '6500'];
+  const firstCct = cctMatches[0] || '3000';
+  const effectiveSpectrumCct = coordCct || (firstCct ? `${firstCct}K` : '4000K');
+
+  const rawModelId = specs.model_identifier || specs.light_source_model_no || product?.name || 'MODEL';
+  const safeModelId = String(rawModelId).replace(/\//g, '-').replace(/[^a-zA-Z0-9_\-]/g, '_');
+
+  const rawSeriesName = specs.series_name || (product?.families && typeof product?.families === 'object' ? product?.families.name : '') || product?.series || safeModelId;
+  const safeSeriesName = String(rawSeriesName).trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-]/g, '_');
+
+  return `${safeSeriesName}_${effectiveSpectrumCct}_spectrum.jpg`;
+}
+
 export function generateEprelXml(options: EprelXmlOptions): string {
   const { product, eprelRegistrationNumber, onMarketStartDate } = options;
   const specs = product.specifications || {};
@@ -150,8 +170,6 @@ export function generateEprelXml(options: EprelXmlOptions): string {
   const rawModelIdentifier = specs.model_identifier || specs.light_source_model_no || product.name || 'MODEL_IDENTIFIER';
 
   const modelIdentifier = escapeXml(rawModelIdentifier);
-  const safeCustomerModel = String(rawCustomerModelNo).replace(/\//g, '-').replace(/[^a-zA-Z0-9_\-]/g, '_');
-  const safeModelId = String(rawModelIdentifier).replace(/\//g, '-').replace(/[^a-zA-Z0-9_\-]/g, '_');
 
   // 3. Date formatting (ensure timezone or format YYYY-MM-DD+01:00)
   let formattedStartDate = onMarketStartDate ? String(onMarketStartDate).trim() : '2027-01-01+01:00';
@@ -159,9 +177,9 @@ export function generateEprelXml(options: EprelXmlOptions): string {
     formattedStartDate += '+01:00';
   }
 
-  // 4. Media & Tech Doc file paths: "customer_model_no_new" + "_" + "model_identifier" + "_LS_TD.pdf"
-  const defaultTechDocFilename = `${safeCustomerModel}_${safeModelId}_LS_TD.pdf`;
-  const techDocFilename = getMediaFilename(product.techDocLightSource, defaultTechDocFilename);
+  // 4. Media & Tech Doc file paths: always uses standard technical document filename
+  // "${customer_model_no_new}_${model_identifier}_LS_TD.pdf"
+  const techDocFilename = getTechnicalDocumentFilename('light-source', product);
 
   // 5. CCT values & Chromaticity Coordinates calculation
   const rawChromX = specs.chromaticity_coordinates_x;
@@ -174,14 +192,8 @@ export function generateEprelXml(options: EprelXmlOptions): string {
   const cctTags = cctMatches.map(c => `<CORRELATED_COLOUR_TEMP>${c}</CORRELATED_COLOUR_TEMP>`).join('\n');
   const firstCct = cctMatches[0] || '3000';
 
-  const effectiveSpectrumCct = coordCct || (firstCct ? `${firstCct}K` : '4000K');
-
-  // Series Name for spectrum filename: "series_name" + "_" + colour temperature + "_spectrum.jpg"
-  const rawSeriesName = specs.series_name || (product.families && typeof product.families === 'object' ? product.families.name : '') || product.series || safeModelName;
-  const safeSeriesName = String(rawSeriesName).trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-]/g, '_');
-
-  const defaultSpectrumFilename = `${safeSeriesName}_${effectiveSpectrumCct}_spectrum.jpg`;
-  const spectrumFilename = getMediaFilename(product.lightSpectrumGraph, defaultSpectrumFilename);
+  // Spectrum filename
+  const spectrumFilename = getSpectrumFilename(product);
 
   // 6. Extracted Parameters from Specifications
   const lightingTech = escapeXml(specs.lighting_tech || 'LED');
