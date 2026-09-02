@@ -5,7 +5,9 @@ export const Families: CollectionConfig = {
   slug: 'families',
   admin: {
     useAsTitle: 'name', // Displays family name in admin UI
+    defaultColumns: ['name', 'priority', 'categories', 'updatedAt'],
   },
+  defaultSort: '-priority',
   access: {
     read: () => true, // Allow anyone to read products
     create: ({ req }) => !!req.user, // Only authenticated users can create
@@ -17,6 +19,17 @@ export const Families: CollectionConfig = {
       name: 'name',
       type: 'text',
       required: true,
+    },
+    {
+      name: 'priority',
+      type: 'number',
+      label: 'Priority',
+      defaultValue: 0,
+      index: true,
+      admin: {
+        position: 'sidebar',
+        description: 'Display priority on the catalog page. Higher numbers appear first (e.g. 100 before 10). Default is 0.',
+      },
     },
     {
       name: 'description',

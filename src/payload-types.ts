@@ -227,6 +227,10 @@ export interface Product {
 export interface Family {
   id: string;
   name: string;
+  /**
+   * Display priority on the catalog page. Higher numbers appear first (e.g. 100 before 10). Default is 0.
+   */
+  priority?: number | null;
   description: string;
   categories: (string | Category)[];
   media: (string | Media)[];
