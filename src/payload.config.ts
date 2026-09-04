@@ -42,6 +42,8 @@ export default buildConfig({
   cors: [
     'http://localhost:3001',
     'https://megaman-frontend.vercel.app',
+    'https://megamanuk.com',
+    'https://www.megamanuk.com',
     process.env.PAYLOAD_PUBLIC_FRONTEND_URL || '',
   ].filter(Boolean),
   editor: lexicalEditor(),

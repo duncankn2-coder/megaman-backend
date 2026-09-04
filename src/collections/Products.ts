@@ -663,10 +663,11 @@ export const Products: CollectionConfig = {
       hasMany: true,
       label: 'Display on Sites',
       required: true,
-      defaultValue: ['international', 'hk'],
+      defaultValue: ['international', 'hk', 'uk'],
       options: [
         { label: 'International Website (megaman.cc)', value: 'international' },
         { label: 'Hong Kong Website (hk.megaman.cc)', value: 'hk' },
+        { label: 'United Kingdom Website (megamanuk.com)', value: 'uk' },
       ],
       admin: {
         position: 'sidebar',
