@@ -80,7 +80,7 @@ export const CategoriesGridBlock: Block = {
       type: 'array',
       label: 'Category Items',
       minRows: 1,
-      maxRows: 8,
+      maxRows: 16,
       fields: [
         {
           name: 'title',
