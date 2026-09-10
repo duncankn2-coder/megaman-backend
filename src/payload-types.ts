@@ -276,7 +276,13 @@ export interface Family {
         | {
             title?: string | null;
             hideTitle?: boolean | null;
+            titleColor?: ('default' | 'dark' | 'white' | 'blue' | 'muted' | 'custom') | null;
+            titleCustomColor?: string | null;
+            titleSize?: ('default' | 'sm' | 'md' | 'lg' | 'xl' | '2xl') | null;
             subtitle?: string | null;
+            subtitleColor?: ('default' | 'blue' | 'dark' | 'white' | 'muted' | 'custom') | null;
+            subtitleCustomColor?: string | null;
+            subtitleSize?: ('default' | 'sm' | 'md' | 'lg') | null;
             content?: string | null;
             image?: (string | null) | Media;
             linkText?: string | null;
@@ -289,7 +295,13 @@ export interface Family {
         | {
             title?: string | null;
             hideTitle?: boolean | null;
+            titleColor?: ('default' | 'dark' | 'white' | 'blue' | 'muted' | 'custom') | null;
+            titleCustomColor?: string | null;
+            titleSize?: ('default' | 'sm' | 'md' | 'lg' | 'xl' | '2xl') | null;
             subtitle?: string | null;
+            subtitleColor?: ('default' | 'blue' | 'dark' | 'white' | 'muted' | 'custom') | null;
+            subtitleCustomColor?: string | null;
+            subtitleSize?: ('default' | 'sm' | 'md' | 'lg') | null;
             products: (string | Product)[];
             id?: string | null;
             blockName?: string | null;
@@ -298,7 +310,13 @@ export interface Family {
         | {
             title?: string | null;
             hideTitle?: boolean | null;
+            titleColor?: ('default' | 'dark' | 'white' | 'blue' | 'muted' | 'custom') | null;
+            titleCustomColor?: string | null;
+            titleSize?: ('default' | 'sm' | 'md' | 'lg' | 'xl' | '2xl') | null;
             subtitle?: string | null;
+            subtitleColor?: ('default' | 'blue' | 'dark' | 'white' | 'muted' | 'custom') | null;
+            subtitleCustomColor?: string | null;
+            subtitleSize?: ('default' | 'sm' | 'md' | 'lg') | null;
             projects: (string | Project)[];
             id?: string | null;
             blockName?: string | null;
@@ -307,13 +325,22 @@ export interface Family {
         | {
             title?: string | null;
             hideTitle?: boolean | null;
+            titleColor?: ('default' | 'dark' | 'white' | 'blue' | 'muted' | 'custom') | null;
+            titleCustomColor?: string | null;
+            titleSize?: ('default' | 'sm' | 'md' | 'lg' | 'xl' | '2xl') | null;
             subtitle?: string | null;
+            subtitleColor?: ('default' | 'blue' | 'dark' | 'white' | 'muted' | 'custom') | null;
+            subtitleCustomColor?: string | null;
+            subtitleSize?: ('default' | 'sm' | 'md' | 'lg') | null;
             video?: (string | null) | Media;
             mobileVideo?: (string | null) | Media;
             captions?:
               | {
                   title?: string | null;
                   hideTitle?: boolean | null;
+                  titleColor?: ('default' | 'dark' | 'white' | 'blue' | 'muted' | 'custom') | null;
+                  titleCustomColor?: string | null;
+                  titleSize?: ('default' | 'sm' | 'md' | 'lg' | 'xl' | '2xl') | null;
                   content?: string | null;
                   align?: ('left' | 'center' | 'right') | null;
                   startPercent?: number | null;
@@ -754,7 +781,13 @@ export interface FamiliesSelect<T extends boolean = true> {
           | {
               title?: T;
               hideTitle?: T;
+              titleColor?: T;
+              titleCustomColor?: T;
+              titleSize?: T;
               subtitle?: T;
+              subtitleColor?: T;
+              subtitleCustomColor?: T;
+              subtitleSize?: T;
               content?: T;
               image?: T;
               linkText?: T;
@@ -768,7 +801,13 @@ export interface FamiliesSelect<T extends boolean = true> {
           | {
               title?: T;
               hideTitle?: T;
+              titleColor?: T;
+              titleCustomColor?: T;
+              titleSize?: T;
               subtitle?: T;
+              subtitleColor?: T;
+              subtitleCustomColor?: T;
+              subtitleSize?: T;
               products?: T;
               id?: T;
               blockName?: T;
@@ -778,7 +817,13 @@ export interface FamiliesSelect<T extends boolean = true> {
           | {
               title?: T;
               hideTitle?: T;
+              titleColor?: T;
+              titleCustomColor?: T;
+              titleSize?: T;
               subtitle?: T;
+              subtitleColor?: T;
+              subtitleCustomColor?: T;
+              subtitleSize?: T;
               projects?: T;
               id?: T;
               blockName?: T;
@@ -788,7 +833,13 @@ export interface FamiliesSelect<T extends boolean = true> {
           | {
               title?: T;
               hideTitle?: T;
+              titleColor?: T;
+              titleCustomColor?: T;
+              titleSize?: T;
               subtitle?: T;
+              subtitleColor?: T;
+              subtitleCustomColor?: T;
+              subtitleSize?: T;
               video?: T;
               mobileVideo?: T;
               captions?:
@@ -796,6 +847,9 @@ export interface FamiliesSelect<T extends boolean = true> {
                 | {
                     title?: T;
                     hideTitle?: T;
+                    titleColor?: T;
+                    titleCustomColor?: T;
+                    titleSize?: T;
                     content?: T;
                     align?: T;
                     startPercent?: T;
@@ -959,7 +1013,13 @@ export interface HomePage {
                 | {
                     title?: string | null;
                     hideTitle?: boolean | null;
+                    titleColor?: ('default' | 'dark' | 'white' | 'blue' | 'muted' | 'custom') | null;
+                    titleCustomColor?: string | null;
+                    titleSize?: ('default' | 'sm' | 'md' | 'lg' | 'xl' | '2xl') | null;
                     subtitle?: string | null;
+                    subtitleColor?: ('default' | 'blue' | 'dark' | 'white' | 'muted' | 'custom') | null;
+                    subtitleCustomColor?: string | null;
+                    subtitleSize?: ('default' | 'sm' | 'md' | 'lg') | null;
                     description?: string | null;
                     image: string | Media;
                     hideButton?: boolean | null;
@@ -975,7 +1035,13 @@ export interface HomePage {
           | {
               title?: string | null;
               hideTitle?: boolean | null;
+              titleColor?: ('default' | 'dark' | 'white' | 'blue' | 'muted' | 'custom') | null;
+              titleCustomColor?: string | null;
+              titleSize?: ('default' | 'sm' | 'md' | 'lg' | 'xl' | '2xl') | null;
               subtitle?: string | null;
+              subtitleColor?: ('default' | 'blue' | 'dark' | 'white' | 'muted' | 'custom') | null;
+              subtitleCustomColor?: string | null;
+              subtitleSize?: ('default' | 'sm' | 'md' | 'lg') | null;
               categories?:
                 | {
                     title: string;
@@ -993,7 +1059,13 @@ export interface HomePage {
           | {
               title?: string | null;
               hideTitle?: boolean | null;
+              titleColor?: ('default' | 'dark' | 'white' | 'blue' | 'muted' | 'custom') | null;
+              titleCustomColor?: string | null;
+              titleSize?: ('default' | 'sm' | 'md' | 'lg' | 'xl' | '2xl') | null;
               subtitle?: string | null;
+              subtitleColor?: ('default' | 'blue' | 'dark' | 'white' | 'muted' | 'custom') | null;
+              subtitleCustomColor?: string | null;
+              subtitleSize?: ('default' | 'sm' | 'md' | 'lg') | null;
               content?: string | null;
               image?: (string | null) | Media;
               linkText?: string | null;
@@ -1006,7 +1078,13 @@ export interface HomePage {
           | {
               title?: string | null;
               hideTitle?: boolean | null;
+              titleColor?: ('default' | 'dark' | 'white' | 'blue' | 'muted' | 'custom') | null;
+              titleCustomColor?: string | null;
+              titleSize?: ('default' | 'sm' | 'md' | 'lg' | 'xl' | '2xl') | null;
               subtitle?: string | null;
+              subtitleColor?: ('default' | 'blue' | 'dark' | 'white' | 'muted' | 'custom') | null;
+              subtitleCustomColor?: string | null;
+              subtitleSize?: ('default' | 'sm' | 'md' | 'lg') | null;
               products: (string | Product)[];
               id?: string | null;
               blockName?: string | null;
@@ -1015,7 +1093,13 @@ export interface HomePage {
           | {
               title?: string | null;
               hideTitle?: boolean | null;
+              titleColor?: ('default' | 'dark' | 'white' | 'blue' | 'muted' | 'custom') | null;
+              titleCustomColor?: string | null;
+              titleSize?: ('default' | 'sm' | 'md' | 'lg' | 'xl' | '2xl') | null;
               subtitle?: string | null;
+              subtitleColor?: ('default' | 'blue' | 'dark' | 'white' | 'muted' | 'custom') | null;
+              subtitleCustomColor?: string | null;
+              subtitleSize?: ('default' | 'sm' | 'md' | 'lg') | null;
               projects: (string | Project)[];
               id?: string | null;
               blockName?: string | null;
@@ -1024,7 +1108,13 @@ export interface HomePage {
           | {
               title?: string | null;
               hideTitle?: boolean | null;
+              titleColor?: ('default' | 'dark' | 'white' | 'blue' | 'muted' | 'custom') | null;
+              titleCustomColor?: string | null;
+              titleSize?: ('default' | 'sm' | 'md' | 'lg' | 'xl' | '2xl') | null;
               subtitle?: string | null;
+              subtitleColor?: ('default' | 'blue' | 'dark' | 'white' | 'muted' | 'custom') | null;
+              subtitleCustomColor?: string | null;
+              subtitleSize?: ('default' | 'sm' | 'md' | 'lg') | null;
               source?: ('latest' | 'custom') | null;
               featuredNews?: (string | News)[] | null;
               id?: string | null;
@@ -1042,7 +1132,13 @@ export interface HomePage {
                 | {
                     title?: string | null;
                     hideTitle?: boolean | null;
+                    titleColor?: ('default' | 'dark' | 'white' | 'blue' | 'muted' | 'custom') | null;
+                    titleCustomColor?: string | null;
+                    titleSize?: ('default' | 'sm' | 'md' | 'lg' | 'xl' | '2xl') | null;
                     subtitle?: string | null;
+                    subtitleColor?: ('default' | 'blue' | 'dark' | 'white' | 'muted' | 'custom') | null;
+                    subtitleCustomColor?: string | null;
+                    subtitleSize?: ('default' | 'sm' | 'md' | 'lg') | null;
                     description?: string | null;
                     image: string | Media;
                     hideButton?: boolean | null;
@@ -1058,7 +1154,13 @@ export interface HomePage {
           | {
               title?: string | null;
               hideTitle?: boolean | null;
+              titleColor?: ('default' | 'dark' | 'white' | 'blue' | 'muted' | 'custom') | null;
+              titleCustomColor?: string | null;
+              titleSize?: ('default' | 'sm' | 'md' | 'lg' | 'xl' | '2xl') | null;
               subtitle?: string | null;
+              subtitleColor?: ('default' | 'blue' | 'dark' | 'white' | 'muted' | 'custom') | null;
+              subtitleCustomColor?: string | null;
+              subtitleSize?: ('default' | 'sm' | 'md' | 'lg') | null;
               categories?:
                 | {
                     title: string;
@@ -1076,7 +1178,13 @@ export interface HomePage {
           | {
               title?: string | null;
               hideTitle?: boolean | null;
+              titleColor?: ('default' | 'dark' | 'white' | 'blue' | 'muted' | 'custom') | null;
+              titleCustomColor?: string | null;
+              titleSize?: ('default' | 'sm' | 'md' | 'lg' | 'xl' | '2xl') | null;
               subtitle?: string | null;
+              subtitleColor?: ('default' | 'blue' | 'dark' | 'white' | 'muted' | 'custom') | null;
+              subtitleCustomColor?: string | null;
+              subtitleSize?: ('default' | 'sm' | 'md' | 'lg') | null;
               content?: string | null;
               image?: (string | null) | Media;
               linkText?: string | null;
@@ -1089,7 +1197,13 @@ export interface HomePage {
           | {
               title?: string | null;
               hideTitle?: boolean | null;
+              titleColor?: ('default' | 'dark' | 'white' | 'blue' | 'muted' | 'custom') | null;
+              titleCustomColor?: string | null;
+              titleSize?: ('default' | 'sm' | 'md' | 'lg' | 'xl' | '2xl') | null;
               subtitle?: string | null;
+              subtitleColor?: ('default' | 'blue' | 'dark' | 'white' | 'muted' | 'custom') | null;
+              subtitleCustomColor?: string | null;
+              subtitleSize?: ('default' | 'sm' | 'md' | 'lg') | null;
               products: (string | Product)[];
               id?: string | null;
               blockName?: string | null;
@@ -1098,7 +1212,13 @@ export interface HomePage {
           | {
               title?: string | null;
               hideTitle?: boolean | null;
+              titleColor?: ('default' | 'dark' | 'white' | 'blue' | 'muted' | 'custom') | null;
+              titleCustomColor?: string | null;
+              titleSize?: ('default' | 'sm' | 'md' | 'lg' | 'xl' | '2xl') | null;
               subtitle?: string | null;
+              subtitleColor?: ('default' | 'blue' | 'dark' | 'white' | 'muted' | 'custom') | null;
+              subtitleCustomColor?: string | null;
+              subtitleSize?: ('default' | 'sm' | 'md' | 'lg') | null;
               projects: (string | Project)[];
               id?: string | null;
               blockName?: string | null;
@@ -1107,7 +1227,13 @@ export interface HomePage {
           | {
               title?: string | null;
               hideTitle?: boolean | null;
+              titleColor?: ('default' | 'dark' | 'white' | 'blue' | 'muted' | 'custom') | null;
+              titleCustomColor?: string | null;
+              titleSize?: ('default' | 'sm' | 'md' | 'lg' | 'xl' | '2xl') | null;
               subtitle?: string | null;
+              subtitleColor?: ('default' | 'blue' | 'dark' | 'white' | 'muted' | 'custom') | null;
+              subtitleCustomColor?: string | null;
+              subtitleSize?: ('default' | 'sm' | 'md' | 'lg') | null;
               source?: ('latest' | 'custom') | null;
               featuredNews?: (string | News)[] | null;
               id?: string | null;
@@ -1125,7 +1251,13 @@ export interface HomePage {
                 | {
                     title?: string | null;
                     hideTitle?: boolean | null;
+                    titleColor?: ('default' | 'dark' | 'white' | 'blue' | 'muted' | 'custom') | null;
+                    titleCustomColor?: string | null;
+                    titleSize?: ('default' | 'sm' | 'md' | 'lg' | 'xl' | '2xl') | null;
                     subtitle?: string | null;
+                    subtitleColor?: ('default' | 'blue' | 'dark' | 'white' | 'muted' | 'custom') | null;
+                    subtitleCustomColor?: string | null;
+                    subtitleSize?: ('default' | 'sm' | 'md' | 'lg') | null;
                     description?: string | null;
                     image: string | Media;
                     hideButton?: boolean | null;
@@ -1141,7 +1273,13 @@ export interface HomePage {
           | {
               title?: string | null;
               hideTitle?: boolean | null;
+              titleColor?: ('default' | 'dark' | 'white' | 'blue' | 'muted' | 'custom') | null;
+              titleCustomColor?: string | null;
+              titleSize?: ('default' | 'sm' | 'md' | 'lg' | 'xl' | '2xl') | null;
               subtitle?: string | null;
+              subtitleColor?: ('default' | 'blue' | 'dark' | 'white' | 'muted' | 'custom') | null;
+              subtitleCustomColor?: string | null;
+              subtitleSize?: ('default' | 'sm' | 'md' | 'lg') | null;
               categories?:
                 | {
                     title: string;
@@ -1159,7 +1297,13 @@ export interface HomePage {
           | {
               title?: string | null;
               hideTitle?: boolean | null;
+              titleColor?: ('default' | 'dark' | 'white' | 'blue' | 'muted' | 'custom') | null;
+              titleCustomColor?: string | null;
+              titleSize?: ('default' | 'sm' | 'md' | 'lg' | 'xl' | '2xl') | null;
               subtitle?: string | null;
+              subtitleColor?: ('default' | 'blue' | 'dark' | 'white' | 'muted' | 'custom') | null;
+              subtitleCustomColor?: string | null;
+              subtitleSize?: ('default' | 'sm' | 'md' | 'lg') | null;
               content?: string | null;
               image?: (string | null) | Media;
               linkText?: string | null;
@@ -1172,7 +1316,13 @@ export interface HomePage {
           | {
               title?: string | null;
               hideTitle?: boolean | null;
+              titleColor?: ('default' | 'dark' | 'white' | 'blue' | 'muted' | 'custom') | null;
+              titleCustomColor?: string | null;
+              titleSize?: ('default' | 'sm' | 'md' | 'lg' | 'xl' | '2xl') | null;
               subtitle?: string | null;
+              subtitleColor?: ('default' | 'blue' | 'dark' | 'white' | 'muted' | 'custom') | null;
+              subtitleCustomColor?: string | null;
+              subtitleSize?: ('default' | 'sm' | 'md' | 'lg') | null;
               products: (string | Product)[];
               id?: string | null;
               blockName?: string | null;
@@ -1181,7 +1331,13 @@ export interface HomePage {
           | {
               title?: string | null;
               hideTitle?: boolean | null;
+              titleColor?: ('default' | 'dark' | 'white' | 'blue' | 'muted' | 'custom') | null;
+              titleCustomColor?: string | null;
+              titleSize?: ('default' | 'sm' | 'md' | 'lg' | 'xl' | '2xl') | null;
               subtitle?: string | null;
+              subtitleColor?: ('default' | 'blue' | 'dark' | 'white' | 'muted' | 'custom') | null;
+              subtitleCustomColor?: string | null;
+              subtitleSize?: ('default' | 'sm' | 'md' | 'lg') | null;
               projects: (string | Project)[];
               id?: string | null;
               blockName?: string | null;
@@ -1190,7 +1346,13 @@ export interface HomePage {
           | {
               title?: string | null;
               hideTitle?: boolean | null;
+              titleColor?: ('default' | 'dark' | 'white' | 'blue' | 'muted' | 'custom') | null;
+              titleCustomColor?: string | null;
+              titleSize?: ('default' | 'sm' | 'md' | 'lg' | 'xl' | '2xl') | null;
               subtitle?: string | null;
+              subtitleColor?: ('default' | 'blue' | 'dark' | 'white' | 'muted' | 'custom') | null;
+              subtitleCustomColor?: string | null;
+              subtitleSize?: ('default' | 'sm' | 'md' | 'lg') | null;
               source?: ('latest' | 'custom') | null;
               featuredNews?: (string | News)[] | null;
               id?: string | null;
@@ -1222,7 +1384,13 @@ export interface HomePageSelect<T extends boolean = true> {
                       | {
                           title?: T;
                           hideTitle?: T;
+                          titleColor?: T;
+                          titleCustomColor?: T;
+                          titleSize?: T;
                           subtitle?: T;
+                          subtitleColor?: T;
+                          subtitleCustomColor?: T;
+                          subtitleSize?: T;
                           description?: T;
                           image?: T;
                           hideButton?: T;
@@ -1238,7 +1406,13 @@ export interface HomePageSelect<T extends boolean = true> {
                 | {
                     title?: T;
                     hideTitle?: T;
+                    titleColor?: T;
+                    titleCustomColor?: T;
+                    titleSize?: T;
                     subtitle?: T;
+                    subtitleColor?: T;
+                    subtitleCustomColor?: T;
+                    subtitleSize?: T;
                     categories?:
                       | T
                       | {
@@ -1257,7 +1431,13 @@ export interface HomePageSelect<T extends boolean = true> {
                 | {
                     title?: T;
                     hideTitle?: T;
+                    titleColor?: T;
+                    titleCustomColor?: T;
+                    titleSize?: T;
                     subtitle?: T;
+                    subtitleColor?: T;
+                    subtitleCustomColor?: T;
+                    subtitleSize?: T;
                     content?: T;
                     image?: T;
                     linkText?: T;
@@ -1271,7 +1451,13 @@ export interface HomePageSelect<T extends boolean = true> {
                 | {
                     title?: T;
                     hideTitle?: T;
+                    titleColor?: T;
+                    titleCustomColor?: T;
+                    titleSize?: T;
                     subtitle?: T;
+                    subtitleColor?: T;
+                    subtitleCustomColor?: T;
+                    subtitleSize?: T;
                     products?: T;
                     id?: T;
                     blockName?: T;
@@ -1281,7 +1467,13 @@ export interface HomePageSelect<T extends boolean = true> {
                 | {
                     title?: T;
                     hideTitle?: T;
+                    titleColor?: T;
+                    titleCustomColor?: T;
+                    titleSize?: T;
                     subtitle?: T;
+                    subtitleColor?: T;
+                    subtitleCustomColor?: T;
+                    subtitleSize?: T;
                     projects?: T;
                     id?: T;
                     blockName?: T;
@@ -1291,7 +1483,13 @@ export interface HomePageSelect<T extends boolean = true> {
                 | {
                     title?: T;
                     hideTitle?: T;
+                    titleColor?: T;
+                    titleCustomColor?: T;
+                    titleSize?: T;
                     subtitle?: T;
+                    subtitleColor?: T;
+                    subtitleCustomColor?: T;
+                    subtitleSize?: T;
                     source?: T;
                     featuredNews?: T;
                     id?: T;
@@ -1313,7 +1511,13 @@ export interface HomePageSelect<T extends boolean = true> {
                       | {
                           title?: T;
                           hideTitle?: T;
+                          titleColor?: T;
+                          titleCustomColor?: T;
+                          titleSize?: T;
                           subtitle?: T;
+                          subtitleColor?: T;
+                          subtitleCustomColor?: T;
+                          subtitleSize?: T;
                           description?: T;
                           image?: T;
                           hideButton?: T;
@@ -1329,7 +1533,13 @@ export interface HomePageSelect<T extends boolean = true> {
                 | {
                     title?: T;
                     hideTitle?: T;
+                    titleColor?: T;
+                    titleCustomColor?: T;
+                    titleSize?: T;
                     subtitle?: T;
+                    subtitleColor?: T;
+                    subtitleCustomColor?: T;
+                    subtitleSize?: T;
                     categories?:
                       | T
                       | {
@@ -1348,7 +1558,13 @@ export interface HomePageSelect<T extends boolean = true> {
                 | {
                     title?: T;
                     hideTitle?: T;
+                    titleColor?: T;
+                    titleCustomColor?: T;
+                    titleSize?: T;
                     subtitle?: T;
+                    subtitleColor?: T;
+                    subtitleCustomColor?: T;
+                    subtitleSize?: T;
                     content?: T;
                     image?: T;
                     linkText?: T;
@@ -1362,7 +1578,13 @@ export interface HomePageSelect<T extends boolean = true> {
                 | {
                     title?: T;
                     hideTitle?: T;
+                    titleColor?: T;
+                    titleCustomColor?: T;
+                    titleSize?: T;
                     subtitle?: T;
+                    subtitleColor?: T;
+                    subtitleCustomColor?: T;
+                    subtitleSize?: T;
                     products?: T;
                     id?: T;
                     blockName?: T;
@@ -1372,7 +1594,13 @@ export interface HomePageSelect<T extends boolean = true> {
                 | {
                     title?: T;
                     hideTitle?: T;
+                    titleColor?: T;
+                    titleCustomColor?: T;
+                    titleSize?: T;
                     subtitle?: T;
+                    subtitleColor?: T;
+                    subtitleCustomColor?: T;
+                    subtitleSize?: T;
                     projects?: T;
                     id?: T;
                     blockName?: T;
@@ -1382,7 +1610,13 @@ export interface HomePageSelect<T extends boolean = true> {
                 | {
                     title?: T;
                     hideTitle?: T;
+                    titleColor?: T;
+                    titleCustomColor?: T;
+                    titleSize?: T;
                     subtitle?: T;
+                    subtitleColor?: T;
+                    subtitleCustomColor?: T;
+                    subtitleSize?: T;
                     source?: T;
                     featuredNews?: T;
                     id?: T;
@@ -1404,7 +1638,13 @@ export interface HomePageSelect<T extends boolean = true> {
                       | {
                           title?: T;
                           hideTitle?: T;
+                          titleColor?: T;
+                          titleCustomColor?: T;
+                          titleSize?: T;
                           subtitle?: T;
+                          subtitleColor?: T;
+                          subtitleCustomColor?: T;
+                          subtitleSize?: T;
                           description?: T;
                           image?: T;
                           hideButton?: T;
@@ -1420,7 +1660,13 @@ export interface HomePageSelect<T extends boolean = true> {
                 | {
                     title?: T;
                     hideTitle?: T;
+                    titleColor?: T;
+                    titleCustomColor?: T;
+                    titleSize?: T;
                     subtitle?: T;
+                    subtitleColor?: T;
+                    subtitleCustomColor?: T;
+                    subtitleSize?: T;
                     categories?:
                       | T
                       | {
@@ -1439,7 +1685,13 @@ export interface HomePageSelect<T extends boolean = true> {
                 | {
                     title?: T;
                     hideTitle?: T;
+                    titleColor?: T;
+                    titleCustomColor?: T;
+                    titleSize?: T;
                     subtitle?: T;
+                    subtitleColor?: T;
+                    subtitleCustomColor?: T;
+                    subtitleSize?: T;
                     content?: T;
                     image?: T;
                     linkText?: T;
@@ -1453,7 +1705,13 @@ export interface HomePageSelect<T extends boolean = true> {
                 | {
                     title?: T;
                     hideTitle?: T;
+                    titleColor?: T;
+                    titleCustomColor?: T;
+                    titleSize?: T;
                     subtitle?: T;
+                    subtitleColor?: T;
+                    subtitleCustomColor?: T;
+                    subtitleSize?: T;
                     products?: T;
                     id?: T;
                     blockName?: T;
@@ -1463,7 +1721,13 @@ export interface HomePageSelect<T extends boolean = true> {
                 | {
                     title?: T;
                     hideTitle?: T;
+                    titleColor?: T;
+                    titleCustomColor?: T;
+                    titleSize?: T;
                     subtitle?: T;
+                    subtitleColor?: T;
+                    subtitleCustomColor?: T;
+                    subtitleSize?: T;
                     projects?: T;
                     id?: T;
                     blockName?: T;
@@ -1473,7 +1737,13 @@ export interface HomePageSelect<T extends boolean = true> {
                 | {
                     title?: T;
                     hideTitle?: T;
+                    titleColor?: T;
+                    titleCustomColor?: T;
+                    titleSize?: T;
                     subtitle?: T;
+                    subtitleColor?: T;
+                    subtitleCustomColor?: T;
+                    subtitleSize?: T;
                     source?: T;
                     featuredNews?: T;
                     id?: T;

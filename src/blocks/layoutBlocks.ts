@@ -1,4 +1,94 @@
-import { Block } from 'payload';
+import { Block, Field } from 'payload';
+
+export const titleStyleFields: Field[] = [
+  {
+    type: 'row',
+    fields: [
+      {
+        name: 'titleColor',
+        type: 'select',
+        label: 'Title Color',
+        defaultValue: 'default',
+        admin: { width: '50%' },
+        options: [
+          { label: 'Default', value: 'default' },
+          { label: 'Dark (#111827)', value: 'dark' },
+          { label: 'White (#FFFFFF)', value: 'white' },
+          { label: 'Megaman Blue (#005288)', value: 'blue' },
+          { label: 'Muted Gray (#6B7280)', value: 'muted' },
+          { label: 'Custom Hex', value: 'custom' },
+        ],
+      },
+      {
+        name: 'titleCustomColor',
+        type: 'text',
+        label: 'Custom Title Color (Hex, e.g. #FF5500)',
+        admin: {
+          width: '50%',
+          condition: (data, siblingData) => siblingData?.titleColor === 'custom',
+        },
+      },
+    ],
+  },
+  {
+    name: 'titleSize',
+    type: 'select',
+    label: 'Title Size',
+    defaultValue: 'default',
+    options: [
+      { label: 'Default', value: 'default' },
+      { label: 'Small (24px)', value: 'sm' },
+      { label: 'Medium (30px)', value: 'md' },
+      { label: 'Large (36px)', value: 'lg' },
+      { label: 'Extra Large (48px)', value: 'xl' },
+      { label: 'Huge (60px)', value: '2xl' },
+    ],
+  },
+];
+
+export const subtitleStyleFields: Field[] = [
+  {
+    type: 'row',
+    fields: [
+      {
+        name: 'subtitleColor',
+        type: 'select',
+        label: 'Subtitle Color',
+        defaultValue: 'default',
+        admin: { width: '50%' },
+        options: [
+          { label: 'Default', value: 'default' },
+          { label: 'Megaman Blue (#005288)', value: 'blue' },
+          { label: 'Dark (#111827)', value: 'dark' },
+          { label: 'White (#FFFFFF)', value: 'white' },
+          { label: 'Muted Gray (#6B7280)', value: 'muted' },
+          { label: 'Custom Hex', value: 'custom' },
+        ],
+      },
+      {
+        name: 'subtitleCustomColor',
+        type: 'text',
+        label: 'Custom Subtitle Color (Hex, e.g. #FF5500)',
+        admin: {
+          width: '50%',
+          condition: (data, siblingData) => siblingData?.subtitleColor === 'custom',
+        },
+      },
+    ],
+  },
+  {
+    name: 'subtitleSize',
+    type: 'select',
+    label: 'Subtitle Size',
+    defaultValue: 'default',
+    options: [
+      { label: 'Default (10px tracking-widest)', value: 'default' },
+      { label: 'Small (12px)', value: 'sm' },
+      { label: 'Medium (14px)', value: 'md' },
+      { label: 'Large (16px)', value: 'lg' },
+    ],
+  },
+];
 
 export const HeroBlock: Block = {
   slug: 'hero',
@@ -26,12 +116,14 @@ export const HeroBlock: Block = {
           label: 'Hide Slide Title',
           defaultValue: false,
         },
+        ...titleStyleFields,
         {
           name: 'subtitle',
           type: 'text',
           label: 'Slide Subtitle / Category Label',
           required: false,
         },
+        ...subtitleStyleFields,
         {
           name: 'description',
           type: 'textarea',
@@ -92,6 +184,7 @@ export const CategoriesGridBlock: Block = {
       label: 'Hide Section Title',
       defaultValue: false,
     },
+    ...titleStyleFields,
     {
       name: 'subtitle',
       type: 'text',
@@ -99,6 +192,7 @@ export const CategoriesGridBlock: Block = {
       defaultValue: 'PORTFOLIO OVERVIEW',
       required: false,
     },
+    ...subtitleStyleFields,
     {
       name: 'categories',
       type: 'array',
@@ -159,12 +253,14 @@ export const EditorialBlock: Block = {
       label: 'Hide Section Title',
       defaultValue: false,
     },
+    ...titleStyleFields,
     {
       name: 'subtitle',
       type: 'text',
       label: 'Section Category Subtitle',
       required: false,
     },
+    ...subtitleStyleFields,
     {
       name: 'content',
       type: 'textarea',
@@ -220,6 +316,7 @@ export const HighlightProductsBlock: Block = {
       label: 'Hide Section Title',
       defaultValue: false,
     },
+    ...titleStyleFields,
     {
       name: 'subtitle',
       type: 'text',
@@ -227,6 +324,7 @@ export const HighlightProductsBlock: Block = {
       defaultValue: 'PREMIUM SELECTIONS',
       required: false,
     },
+    ...subtitleStyleFields,
     {
       name: 'products',
       type: 'relationship',
@@ -258,6 +356,7 @@ export const InspirationBlock: Block = {
       label: 'Hide Section Title',
       defaultValue: false,
     },
+    ...titleStyleFields,
     {
       name: 'subtitle',
       type: 'text',
@@ -265,6 +364,7 @@ export const InspirationBlock: Block = {
       defaultValue: 'PROJECTS & REFERENCES',
       required: false,
     },
+    ...subtitleStyleFields,
     {
       name: 'projects',
       type: 'relationship',
@@ -296,6 +396,7 @@ export const NewsBlock: Block = {
       label: 'Hide Section Title',
       defaultValue: false,
     },
+    ...titleStyleFields,
     {
       name: 'subtitle',
       type: 'text',
@@ -303,6 +404,7 @@ export const NewsBlock: Block = {
       defaultValue: 'PRESS & MEDIA',
       required: false,
     },
+    ...subtitleStyleFields,
     {
       name: 'source',
       type: 'select',
@@ -345,12 +447,14 @@ export const ScrollVideoBlock: Block = {
       label: 'Hide Section Title',
       defaultValue: false,
     },
+    ...titleStyleFields,
     {
       name: 'subtitle',
       type: 'text',
       label: 'Section Category Subtitle',
       required: false,
     },
+    ...subtitleStyleFields,
     {
       name: 'video',
       type: 'upload',
@@ -382,6 +486,7 @@ export const ScrollVideoBlock: Block = {
           label: 'Hide Caption Title',
           defaultValue: false,
         },
+        ...titleStyleFields,
         {
           name: 'content',
           type: 'textarea',
