@@ -18,6 +18,12 @@ export const Catalogs: CollectionConfig = {
       required: true,
     },
     {
+      name: 'hideTitle',
+      type: 'checkbox',
+      label: 'Hide Title',
+      defaultValue: false,
+    },
+    {
       name: 'description',
       type: 'textarea',
     },

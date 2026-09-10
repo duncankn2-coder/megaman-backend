@@ -19,6 +19,12 @@ export const News: CollectionConfig = {
       required: true,
     },
     {
+      name: 'hideTitle',
+      type: 'checkbox',
+      label: 'Hide Title',
+      defaultValue: false,
+    },
+    {
       name: 'category',
       type: 'text',
       required: true,

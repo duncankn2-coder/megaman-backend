@@ -32,6 +32,12 @@ export const Projects: CollectionConfig = {
       required: true,
     },
     {
+      name: 'hideTitle',
+      type: 'checkbox',
+      label: 'Hide Title',
+      defaultValue: false,
+    },
+    {
       name: 'slug',
       type: 'text',
       required: true,

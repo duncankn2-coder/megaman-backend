@@ -274,7 +274,8 @@ export interface Family {
   layout?:
     | (
         | {
-            title: string;
+            title?: string | null;
+            hideTitle?: boolean | null;
             subtitle?: string | null;
             content?: string | null;
             image?: (string | null) | Media;
@@ -286,7 +287,8 @@ export interface Family {
             blockType: 'editorial';
           }
         | {
-            title: string;
+            title?: string | null;
+            hideTitle?: boolean | null;
             subtitle?: string | null;
             products: (string | Product)[];
             id?: string | null;
@@ -294,7 +296,8 @@ export interface Family {
             blockType: 'highlightProducts';
           }
         | {
-            title: string;
+            title?: string | null;
+            hideTitle?: boolean | null;
             subtitle?: string | null;
             projects: (string | Project)[];
             id?: string | null;
@@ -303,12 +306,14 @@ export interface Family {
           }
         | {
             title?: string | null;
+            hideTitle?: boolean | null;
             subtitle?: string | null;
             video?: (string | null) | Media;
             mobileVideo?: (string | null) | Media;
             captions?:
               | {
-                  title: string;
+                  title?: string | null;
+                  hideTitle?: boolean | null;
                   content?: string | null;
                   align?: ('left' | 'center' | 'right') | null;
                   startPercent?: number | null;
@@ -358,6 +363,7 @@ export interface Symbol {
 export interface Project {
   id: string;
   title: string;
+  hideTitle?: boolean | null;
   /**
    * URL-friendly identifier (auto-generated from title if left blank)
    */
@@ -385,6 +391,7 @@ export interface Project {
 export interface News {
   id: string;
   title: string;
+  hideTitle?: boolean | null;
   /**
    * e.g. MATTER SMART HOME, ECO SYSTEM, NEW ARRIVALS
    */
@@ -459,6 +466,7 @@ export interface Skus {
 export interface Video {
   id: string;
   title: string;
+  hideTitle?: boolean | null;
   description?: string | null;
   /**
    * Pasted YouTube video URL (e.g., https://www.youtube.com/watch?v=E8vXpMvPILk or https://youtu.be/E8vXpMvPILk)
@@ -483,6 +491,7 @@ export interface Video {
 export interface Award {
   id: string;
   title: string;
+  hideTitle?: boolean | null;
   /**
    * e.g. 2025, 2013-17
    */
@@ -509,6 +518,7 @@ export interface Award {
 export interface Catalog {
   id: string;
   title: string;
+  hideTitle?: boolean | null;
   description?: string | null;
   category: 'general' | 'lamps' | 'indoor' | 'outdoor' | 'technical';
   catalogFile: string | Media;
@@ -681,6 +691,7 @@ export interface ProductsSelect<T extends boolean = true> {
  */
 export interface ProjectsSelect<T extends boolean = true> {
   title?: T;
+  hideTitle?: T;
   slug?: T;
   description?: T;
   location?: T;
@@ -742,6 +753,7 @@ export interface FamiliesSelect<T extends boolean = true> {
           | T
           | {
               title?: T;
+              hideTitle?: T;
               subtitle?: T;
               content?: T;
               image?: T;
@@ -755,6 +767,7 @@ export interface FamiliesSelect<T extends boolean = true> {
           | T
           | {
               title?: T;
+              hideTitle?: T;
               subtitle?: T;
               products?: T;
               id?: T;
@@ -764,6 +777,7 @@ export interface FamiliesSelect<T extends boolean = true> {
           | T
           | {
               title?: T;
+              hideTitle?: T;
               subtitle?: T;
               projects?: T;
               id?: T;
@@ -773,6 +787,7 @@ export interface FamiliesSelect<T extends boolean = true> {
           | T
           | {
               title?: T;
+              hideTitle?: T;
               subtitle?: T;
               video?: T;
               mobileVideo?: T;
@@ -780,6 +795,7 @@ export interface FamiliesSelect<T extends boolean = true> {
                 | T
                 | {
                     title?: T;
+                    hideTitle?: T;
                     content?: T;
                     align?: T;
                     startPercent?: T;
@@ -801,6 +817,7 @@ export interface FamiliesSelect<T extends boolean = true> {
  */
 export interface NewsSelect<T extends boolean = true> {
   title?: T;
+  hideTitle?: T;
   category?: T;
   publishDate?: T;
   summary?: T;
@@ -859,6 +876,7 @@ export interface SkusSelect<T extends boolean = true> {
  */
 export interface VideosSelect<T extends boolean = true> {
   title?: T;
+  hideTitle?: T;
   description?: T;
   youtubeLink?: T;
   youtubeId?: T;
@@ -873,6 +891,7 @@ export interface VideosSelect<T extends boolean = true> {
  */
 export interface AwardsSelect<T extends boolean = true> {
   title?: T;
+  hideTitle?: T;
   year?: T;
   institution?: T;
   category?: T;
@@ -886,6 +905,7 @@ export interface AwardsSelect<T extends boolean = true> {
  */
 export interface CatalogsSelect<T extends boolean = true> {
   title?: T;
+  hideTitle?: T;
   description?: T;
   category?: T;
   catalogFile?: T;
@@ -937,8 +957,9 @@ export interface HomePage {
           | {
               slides?:
                 | {
-                    title: string;
-                    subtitle: string;
+                    title?: string | null;
+                    hideTitle?: boolean | null;
+                    subtitle?: string | null;
                     description?: string | null;
                     image: string | Media;
                     ctaText?: string | null;
@@ -951,7 +972,8 @@ export interface HomePage {
               blockType: 'hero';
             }
           | {
-              title: string;
+              title?: string | null;
+              hideTitle?: boolean | null;
               subtitle?: string | null;
               categories?:
                 | {
@@ -968,7 +990,8 @@ export interface HomePage {
               blockType: 'categoriesGrid';
             }
           | {
-              title: string;
+              title?: string | null;
+              hideTitle?: boolean | null;
               subtitle?: string | null;
               content?: string | null;
               image?: (string | null) | Media;
@@ -980,7 +1003,8 @@ export interface HomePage {
               blockType: 'editorial';
             }
           | {
-              title: string;
+              title?: string | null;
+              hideTitle?: boolean | null;
               subtitle?: string | null;
               products: (string | Product)[];
               id?: string | null;
@@ -988,7 +1012,8 @@ export interface HomePage {
               blockType: 'highlightProducts';
             }
           | {
-              title: string;
+              title?: string | null;
+              hideTitle?: boolean | null;
               subtitle?: string | null;
               projects: (string | Project)[];
               id?: string | null;
@@ -996,7 +1021,8 @@ export interface HomePage {
               blockType: 'inspiration';
             }
           | {
-              title: string;
+              title?: string | null;
+              hideTitle?: boolean | null;
               subtitle?: string | null;
               source?: ('latest' | 'custom') | null;
               featuredNews?: (string | News)[] | null;
@@ -1013,8 +1039,9 @@ export interface HomePage {
           | {
               slides?:
                 | {
-                    title: string;
-                    subtitle: string;
+                    title?: string | null;
+                    hideTitle?: boolean | null;
+                    subtitle?: string | null;
                     description?: string | null;
                     image: string | Media;
                     ctaText?: string | null;
@@ -1027,7 +1054,8 @@ export interface HomePage {
               blockType: 'hero';
             }
           | {
-              title: string;
+              title?: string | null;
+              hideTitle?: boolean | null;
               subtitle?: string | null;
               categories?:
                 | {
@@ -1044,7 +1072,8 @@ export interface HomePage {
               blockType: 'categoriesGrid';
             }
           | {
-              title: string;
+              title?: string | null;
+              hideTitle?: boolean | null;
               subtitle?: string | null;
               content?: string | null;
               image?: (string | null) | Media;
@@ -1056,7 +1085,8 @@ export interface HomePage {
               blockType: 'editorial';
             }
           | {
-              title: string;
+              title?: string | null;
+              hideTitle?: boolean | null;
               subtitle?: string | null;
               products: (string | Product)[];
               id?: string | null;
@@ -1064,7 +1094,8 @@ export interface HomePage {
               blockType: 'highlightProducts';
             }
           | {
-              title: string;
+              title?: string | null;
+              hideTitle?: boolean | null;
               subtitle?: string | null;
               projects: (string | Project)[];
               id?: string | null;
@@ -1072,7 +1103,8 @@ export interface HomePage {
               blockType: 'inspiration';
             }
           | {
-              title: string;
+              title?: string | null;
+              hideTitle?: boolean | null;
               subtitle?: string | null;
               source?: ('latest' | 'custom') | null;
               featuredNews?: (string | News)[] | null;
@@ -1089,8 +1121,9 @@ export interface HomePage {
           | {
               slides?:
                 | {
-                    title: string;
-                    subtitle: string;
+                    title?: string | null;
+                    hideTitle?: boolean | null;
+                    subtitle?: string | null;
                     description?: string | null;
                     image: string | Media;
                     ctaText?: string | null;
@@ -1103,7 +1136,8 @@ export interface HomePage {
               blockType: 'hero';
             }
           | {
-              title: string;
+              title?: string | null;
+              hideTitle?: boolean | null;
               subtitle?: string | null;
               categories?:
                 | {
@@ -1120,7 +1154,8 @@ export interface HomePage {
               blockType: 'categoriesGrid';
             }
           | {
-              title: string;
+              title?: string | null;
+              hideTitle?: boolean | null;
               subtitle?: string | null;
               content?: string | null;
               image?: (string | null) | Media;
@@ -1132,7 +1167,8 @@ export interface HomePage {
               blockType: 'editorial';
             }
           | {
-              title: string;
+              title?: string | null;
+              hideTitle?: boolean | null;
               subtitle?: string | null;
               products: (string | Product)[];
               id?: string | null;
@@ -1140,7 +1176,8 @@ export interface HomePage {
               blockType: 'highlightProducts';
             }
           | {
-              title: string;
+              title?: string | null;
+              hideTitle?: boolean | null;
               subtitle?: string | null;
               projects: (string | Project)[];
               id?: string | null;
@@ -1148,7 +1185,8 @@ export interface HomePage {
               blockType: 'inspiration';
             }
           | {
-              title: string;
+              title?: string | null;
+              hideTitle?: boolean | null;
               subtitle?: string | null;
               source?: ('latest' | 'custom') | null;
               featuredNews?: (string | News)[] | null;
@@ -1180,6 +1218,7 @@ export interface HomePageSelect<T extends boolean = true> {
                       | T
                       | {
                           title?: T;
+                          hideTitle?: T;
                           subtitle?: T;
                           description?: T;
                           image?: T;
@@ -1194,6 +1233,7 @@ export interface HomePageSelect<T extends boolean = true> {
                 | T
                 | {
                     title?: T;
+                    hideTitle?: T;
                     subtitle?: T;
                     categories?:
                       | T
@@ -1212,6 +1252,7 @@ export interface HomePageSelect<T extends boolean = true> {
                 | T
                 | {
                     title?: T;
+                    hideTitle?: T;
                     subtitle?: T;
                     content?: T;
                     image?: T;
@@ -1225,6 +1266,7 @@ export interface HomePageSelect<T extends boolean = true> {
                 | T
                 | {
                     title?: T;
+                    hideTitle?: T;
                     subtitle?: T;
                     products?: T;
                     id?: T;
@@ -1234,6 +1276,7 @@ export interface HomePageSelect<T extends boolean = true> {
                 | T
                 | {
                     title?: T;
+                    hideTitle?: T;
                     subtitle?: T;
                     projects?: T;
                     id?: T;
@@ -1243,6 +1286,7 @@ export interface HomePageSelect<T extends boolean = true> {
                 | T
                 | {
                     title?: T;
+                    hideTitle?: T;
                     subtitle?: T;
                     source?: T;
                     featuredNews?: T;
@@ -1264,6 +1308,7 @@ export interface HomePageSelect<T extends boolean = true> {
                       | T
                       | {
                           title?: T;
+                          hideTitle?: T;
                           subtitle?: T;
                           description?: T;
                           image?: T;
@@ -1278,6 +1323,7 @@ export interface HomePageSelect<T extends boolean = true> {
                 | T
                 | {
                     title?: T;
+                    hideTitle?: T;
                     subtitle?: T;
                     categories?:
                       | T
@@ -1296,6 +1342,7 @@ export interface HomePageSelect<T extends boolean = true> {
                 | T
                 | {
                     title?: T;
+                    hideTitle?: T;
                     subtitle?: T;
                     content?: T;
                     image?: T;
@@ -1309,6 +1356,7 @@ export interface HomePageSelect<T extends boolean = true> {
                 | T
                 | {
                     title?: T;
+                    hideTitle?: T;
                     subtitle?: T;
                     products?: T;
                     id?: T;
@@ -1318,6 +1366,7 @@ export interface HomePageSelect<T extends boolean = true> {
                 | T
                 | {
                     title?: T;
+                    hideTitle?: T;
                     subtitle?: T;
                     projects?: T;
                     id?: T;
@@ -1327,6 +1376,7 @@ export interface HomePageSelect<T extends boolean = true> {
                 | T
                 | {
                     title?: T;
+                    hideTitle?: T;
                     subtitle?: T;
                     source?: T;
                     featuredNews?: T;
@@ -1348,6 +1398,7 @@ export interface HomePageSelect<T extends boolean = true> {
                       | T
                       | {
                           title?: T;
+                          hideTitle?: T;
                           subtitle?: T;
                           description?: T;
                           image?: T;
@@ -1362,6 +1413,7 @@ export interface HomePageSelect<T extends boolean = true> {
                 | T
                 | {
                     title?: T;
+                    hideTitle?: T;
                     subtitle?: T;
                     categories?:
                       | T
@@ -1380,6 +1432,7 @@ export interface HomePageSelect<T extends boolean = true> {
                 | T
                 | {
                     title?: T;
+                    hideTitle?: T;
                     subtitle?: T;
                     content?: T;
                     image?: T;
@@ -1393,6 +1446,7 @@ export interface HomePageSelect<T extends boolean = true> {
                 | T
                 | {
                     title?: T;
+                    hideTitle?: T;
                     subtitle?: T;
                     products?: T;
                     id?: T;
@@ -1402,6 +1456,7 @@ export interface HomePageSelect<T extends boolean = true> {
                 | T
                 | {
                     title?: T;
+                    hideTitle?: T;
                     subtitle?: T;
                     projects?: T;
                     id?: T;
@@ -1411,6 +1466,7 @@ export interface HomePageSelect<T extends boolean = true> {
                 | T
                 | {
                     title?: T;
+                    hideTitle?: T;
                     subtitle?: T;
                     source?: T;
                     featuredNews?: T;

@@ -19,6 +19,12 @@ export const Awards: CollectionConfig = {
       required: true,
     },
     {
+      name: 'hideTitle',
+      type: 'checkbox',
+      label: 'Hide Title',
+      defaultValue: false,
+    },
+    {
       name: 'year',
       type: 'text',
       required: true,
