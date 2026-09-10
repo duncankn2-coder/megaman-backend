@@ -962,6 +962,7 @@ export interface HomePage {
                     subtitle?: string | null;
                     description?: string | null;
                     image: string | Media;
+                    hideButton?: boolean | null;
                     ctaText?: string | null;
                     ctaLink?: string | null;
                     id?: string | null;
@@ -1044,6 +1045,7 @@ export interface HomePage {
                     subtitle?: string | null;
                     description?: string | null;
                     image: string | Media;
+                    hideButton?: boolean | null;
                     ctaText?: string | null;
                     ctaLink?: string | null;
                     id?: string | null;
@@ -1126,6 +1128,7 @@ export interface HomePage {
                     subtitle?: string | null;
                     description?: string | null;
                     image: string | Media;
+                    hideButton?: boolean | null;
                     ctaText?: string | null;
                     ctaLink?: string | null;
                     id?: string | null;
@@ -1222,6 +1225,7 @@ export interface HomePageSelect<T extends boolean = true> {
                           subtitle?: T;
                           description?: T;
                           image?: T;
+                          hideButton?: T;
                           ctaText?: T;
                           ctaLink?: T;
                           id?: T;
@@ -1312,6 +1316,7 @@ export interface HomePageSelect<T extends boolean = true> {
                           subtitle?: T;
                           description?: T;
                           image?: T;
+                          hideButton?: T;
                           ctaText?: T;
                           ctaLink?: T;
                           id?: T;
@@ -1402,6 +1407,7 @@ export interface HomePageSelect<T extends boolean = true> {
                           subtitle?: T;
                           description?: T;
                           image?: T;
+                          hideButton?: T;
                           ctaText?: T;
                           ctaLink?: T;
                           id?: T;

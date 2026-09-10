@@ -45,16 +45,27 @@ export const HeroBlock: Block = {
           required: true,
         },
         {
+          name: 'hideButton',
+          type: 'checkbox',
+          label: 'Hide Button (CTA)',
+          defaultValue: false,
+        },
+        {
           name: 'ctaText',
           type: 'text',
           label: 'Button text (CTA)',
           defaultValue: 'EXPLORE RANGE',
+          required: false,
+          admin: {
+            condition: (data, siblingData) => !siblingData?.hideButton,
+          },
         },
         {
           name: 'ctaLink',
           type: 'text',
-          label: 'Button link URL',
+          label: 'Banner link URL (Click banner to navigate)',
           defaultValue: '#categories-section',
+          required: false,
         },
       ],
     },
