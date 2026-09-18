@@ -119,8 +119,9 @@ export const Families: CollectionConfig = {
         { label: 'Control Gear / Connector', value: 'connector' },
         { label: 'Cap / Base', value: 'lampBase' },
         { label: 'Voltage', value: 'voltage' },
+        { label: 'Symbols / Certifications', value: 'symbols' },
       ],
-      defaultValue: ['mmCode', 'modelNo', 'colour', 'wattage', 'luminousFlux', 'colourTemperature', 'cri', 'efficacy', 'ip', 'connector'],
+      defaultValue: ['mmCode', 'modelNo', 'colour', 'wattage', 'luminousFlux', 'colourTemperature', 'cri', 'efficacy', 'ip', 'connector', 'symbols'],
     },
     {
       name: 'layout',

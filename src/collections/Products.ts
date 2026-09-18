@@ -697,6 +697,16 @@ export const Products: CollectionConfig = {
         required: false, // Optional, depending on your needs
     },
     {
+      name: 'symbols',
+      type: 'relationship',
+      relationTo: 'symbols',
+      hasMany: true,
+      label: 'Symbols / Certifications',
+      admin: {
+        description: 'Select symbols / certifications applicable to this specific product model.',
+      },
+    },
+    {
       name: 'images',
       type: 'upload',
       relationTo: 'media',
