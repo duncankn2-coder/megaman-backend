@@ -191,6 +191,10 @@ export interface Product {
   sites: ('international' | 'hk' | 'uk')[];
   description?: string | null;
   families?: (string | null) | Family;
+  /**
+   * Select symbols / certifications applicable to this specific product model.
+   */
+  symbols?: (string | Symbol)[] | null;
   images: string | Media;
   datasheetPdf?: (string | null) | Media;
   photometryLdt?: (string | null) | Media;
@@ -269,6 +273,7 @@ export interface Family {
         | 'connector'
         | 'lampBase'
         | 'voltage'
+        | 'symbols'
       )[]
     | null;
   layout?:
@@ -694,6 +699,7 @@ export interface ProductsSelect<T extends boolean = true> {
   sites?: T;
   description?: T;
   families?: T;
+  symbols?: T;
   images?: T;
   datasheetPdf?: T;
   photometryLdt?: T;
