@@ -643,11 +643,24 @@ export async function processSkuBulkImport(
       const cctClean = colourTemp ? String(colourTemp).replace(/[^\d]/g, '') : '';
       let matchingSpecs: any = null;
       if (generalSpecs.length > 0) {
-        matchingSpecs = generalSpecs.find(specs => 
-          specs && 
-          normalizeModelNumber(specs.customer_model_no_new) === normalizeModelNumber(modelNoVariant) &&
-          (specs.cct_k ? String(specs.cct_k).replace(/[^\d]/g, '') === cctClean : false)
-        );
+        // 1. Try matching by model number AND clean CCT if available
+        if (cctClean) {
+          matchingSpecs = generalSpecs.find(specs => 
+            specs && 
+            normalizeModelNumber(specs.customer_model_no_new) === normalizeModelNumber(modelNoVariant) &&
+            (specs.cct_k ? String(specs.cct_k).replace(/[^\d]/g, '') === cctClean : false)
+          );
+        }
+        // 2. Fallback: match by model number alone
+        if (!matchingSpecs) {
+          matchingSpecs = generalSpecs.find(specs => 
+            specs && (
+              normalizeModelNumber(specs.customer_model_no_new) === normalizeModelNumber(modelNoVariant) ||
+              cleanModel(specs.customer_model_no_new) === cleanModel(modelNoVariant) ||
+              (specs.yk_model_no && normalizeModelNumber(specs.yk_model_no) === normalizeModelNumber(modelNoVariant))
+            )
+          );
+        }
       }
       
       // Fallback: Query the general_data MongoDB database if not found in memory
@@ -659,9 +672,79 @@ export async function processSkuBulkImport(
         }
       }
 
-      if (matchingSpecs) {
-        logs.push(`Found specifications for SKU "${mmCode}" (CCT: ${cctClean}K).`);
+      // Fallback: Check parent product specifications
+      if (!matchingSpecs && parentProductId) {
+        try {
+          const parentDoc = await payload.findByID({
+            collection: 'products',
+            id: parentProductId,
+          });
+          if (parentDoc?.specifications) {
+            matchingSpecs = parentDoc.specifications;
+          }
+        } catch (err: any) {
+          // Ignore
+        }
       }
+
+      if (matchingSpecs) {
+        logs.push(`Found specifications for SKU "${mmCode}" (Model: "${modelNoVariant}").`);
+      }
+
+      // Format CCT from General Data (e.g. 3000400050006500 -> 3000/4000/5000/6500K)
+      const formatGeneralCct = (rawCct: any): string => {
+        if (!rawCct) return '';
+        const str = String(rawCct).trim();
+        if (/^\d{8,16}$/.test(str) && str.length % 4 === 0) {
+          const parts = [];
+          for (let k = 0; k < str.length; k += 4) {
+            parts.push(str.substring(k, k + 4));
+          }
+          return parts.join('/') + 'K';
+        }
+        if (/^\d{4}$/.test(str)) {
+          return str + 'K';
+        }
+        return str;
+      };
+
+      // Extract color from General Data description or fitting_colour
+      const extractGeneralColor = (specs: any): string => {
+        if (!specs) return '';
+        if (specs.fitting_colour && specs.fitting_colour !== 'null' && specs.fitting_colour !== null) {
+          return String(specs.fitting_colour).trim();
+        }
+        if (specs.description) {
+          const match = String(specs.description).match(/Colou?r\s*:\s*([^/,\r\n]+)/i);
+          if (match) return match[1].trim();
+        }
+        return '';
+      };
+
+      // USE GENERAL DATA AS THE CORRECT DATA (General Data takes precedence)
+      const finalWattage = (matchingSpecs?.on_mode_power_w ? String(matchingSpecs.on_mode_power_w) : '')
+        || watt
+        || undefined;
+
+      const generalCctFormatted = matchingSpecs?.cct_k ? formatGeneralCct(matchingSpecs.cct_k) : '';
+      const finalColourTemp = generalCctFormatted || colourTemp || undefined;
+
+      const generalColor = extractGeneralColor(matchingSpecs);
+      // If table colour is actually a CCT (e.g. 3000/4000/6500K) or missing, ignore it
+      const isColourActuallyCct = colour ? /^\d{4}/.test(String(colour).trim()) : false;
+      const finalColour = generalColor || (!isColourActuallyCct ? colour : undefined) || undefined;
+
+      const finalVoltage = (matchingSpecs?.rated_voltage_v ? String(matchingSpecs.rated_voltage_v) : '')
+        || voltage
+        || undefined;
+
+      const finalIp = (matchingSpecs?.ip || matchingSpecs?.ip_rating ? String(matchingSpecs.ip || matchingSpecs.ip_rating) : '')
+        || ip
+        || undefined;
+
+      const finalPacking = (matchingSpecs?.packaging ? String(matchingSpecs.packaging) : '')
+        || packing
+        || undefined;
 
       // Photometry file auto-matching from ZIP
       const ldtId = await uploadAssetFromZip(undefined, [`${mmCode}.ldt`, `${modelNoVariant}.ldt`], `LDT Photometrics for ${mmCode}`, 'document');
@@ -682,14 +765,15 @@ export async function processSkuBulkImport(
           name: mmCode,
           product: parentProductId,
           modelNumber: parentProductName || modelNoVariant,
-          colour: colour || undefined,
+          colour: finalColour,
           specialFeatures: specialFeatures || undefined,
-          wattage: watt || undefined,
+          wattage: finalWattage,
           lampBase: lampBase || undefined,
-          colourTemperature: colourTemp || undefined,
-          voltage: voltage || undefined,
+          colourTemperature: finalColourTemp,
+          voltage: finalVoltage,
+          ip: finalIp,
           connector: connector || undefined,
-          packingMethod: packing || undefined,
+          packingMethod: finalPacking,
           eanBarcode: ean || undefined,
           innerBoxItf: innerItf || undefined,
           outerBoxItf: outerItf || undefined,

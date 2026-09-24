@@ -335,6 +335,7 @@ export const COLUMN_SYNONYMS: Record<string, string[]> = {
   on_mode_power_w: ['on-mode power', 'on mode power', 'power', 'wattage', 'watt', '工作功率'],
   total_luminous_flux_lm: ['total luminous flux', 'total  luminous flux', 'luminous flux', 'lumen', '光通量'],
   useful_luminous_flux_lm: ['useful luminous flux (φuse)-lightsource', 'useful luminous flux (φuse)', 'useful_luminous_flux_lm'],
+  total_mains_efficacy_lmw: ['total mains efficacy ηtm (lm/w)', 'total mains efficacy ηtm', 'total mains efficacy', 'mains efficacy', 'total_mains_efficacy_lmw', 'efficacy', 'luminous efficacy', '光效'],
   cct_k: ['correlated colour temperature', 'colour temperature', 'color temp', 'cct', '色温'],
   ra: ['colour rendering index', 'cri', 'ra'],
   beam_angle: ['beam angle', 'beam', '光束角'],
