@@ -746,6 +746,14 @@ export async function processSkuBulkImport(
         || packing
         || undefined;
 
+      const finalLampBase = (matchingSpecs?.cap_type || matchingSpecs?.lamp_holder_type || matchingSpecs?.lamp_source ? String(matchingSpecs.cap_type || matchingSpecs.lamp_holder_type || matchingSpecs.lamp_source) : '')
+        || lampBase
+        || undefined;
+
+      const finalConnector = (matchingSpecs?.['type_terminal block'] || matchingSpecs?.control_gear || matchingSpecs?.driver_type || matchingSpecs?.dimming_type ? String(matchingSpecs?.['type_terminal block'] || matchingSpecs?.control_gear || matchingSpecs?.driver_type || matchingSpecs?.dimming_type) : '')
+        || connector
+        || undefined;
+
       // Photometry file auto-matching from ZIP
       const ldtId = await uploadAssetFromZip(undefined, [`${mmCode}.ldt`, `${modelNoVariant}.ldt`], `LDT Photometrics for ${mmCode}`, 'document');
       const iesId = await uploadAssetFromZip(undefined, [`${mmCode}.ies`, `${modelNoVariant}.ies`], `IES Photometrics for ${mmCode}`, 'document');
@@ -768,11 +776,11 @@ export async function processSkuBulkImport(
           colour: finalColour,
           specialFeatures: specialFeatures || undefined,
           wattage: finalWattage,
-          lampBase: lampBase || undefined,
+          lampBase: finalLampBase,
           colourTemperature: finalColourTemp,
           voltage: finalVoltage,
           ip: finalIp,
-          connector: connector || undefined,
+          connector: finalConnector,
           packingMethod: finalPacking,
           eanBarcode: ean || undefined,
           innerBoxItf: innerItf || undefined,
