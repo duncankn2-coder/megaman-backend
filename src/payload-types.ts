@@ -361,6 +361,163 @@ export interface Family {
           }
       )[]
     | null;
+  /**
+   * Configure multi-page family datasheet layouts, tables, parameters, and content for this family.
+   */
+  datasheet?: {
+    /**
+     * Enable or disable custom multi-page datasheet configuration for this family. Defaults to disabled.
+     */
+    enabled?: boolean | null;
+    /**
+     * Leave blank to use Family Name by default.
+     */
+    title?: string | null;
+    /**
+     * Optional series tagline (e.g. "Compact Integrated LED Downlights with High IP Protection")
+     */
+    subtitle?: string | null;
+    /**
+     * Main product / application image displayed on the cover or header of the datasheet.
+     */
+    headerImage?: (string | null) | Media;
+    /**
+     * Create and organize pages of the family datasheet.
+     */
+    pages?:
+      | {
+          pageNumber?: number | null;
+          /**
+           * Add technical tables to this page, set their names, and select which parameters are displayed.
+           */
+          tables?:
+            | {
+                /**
+                 * Choose whether parameter headers appear across the top row (horizontal matrix) or down the first column with a single value column next to it.
+                 */
+                tableType: 'horizontal' | 'vertical';
+                /**
+                 * e.g. "Standard Luminaires", "Technical & Electrical Specifications", "General Characteristics"
+                 */
+                tableName: string;
+                /**
+                 * Optional note displayed below the table title (e.g. "Operating at 220-240V, 50/60Hz, Ra80")
+                 */
+                tableDescription?: string | null;
+                /**
+                 * Select parameters to display. For horizontal tables, these are the column headers. For vertical tables, these are the row headers in the first column.
+                 */
+                selectedParameters?:
+                  | (
+                      | 'mmCode'
+                      | 'modelNo'
+                      | 'optionCode'
+                      | 'colour'
+                      | 'wattage'
+                      | 'luminousFlux'
+                      | 'colourTemperature'
+                      | 'cri'
+                      | 'efficacy'
+                      | 'beamAngle'
+                      | 'ip'
+                      | 'ik'
+                      | 'controlGear'
+                      | 'connector'
+                      | 'dimmingType'
+                      | 'dimmingRange'
+                      | 'voltage'
+                      | 'frequency'
+                      | 'inputCurrent'
+                      | 'powerFactor'
+                      | 'lampBase'
+                      | 'dimensions'
+                      | 'recessedCutOut'
+                      | 'weight'
+                      | 'lifetime'
+                      | 'switchingCycles'
+                      | 'energyClass'
+                      | 'protectionClass'
+                      | 'glowWire'
+                      | 'housingMaterial'
+                      | 'diffuserMaterial'
+                      | 'operatingTemperature'
+                      | 'symbols'
+                    )[]
+                  | null;
+                /**
+                 * Optional custom parameter-value rows for vertical tables (Parameter header in 1st column, Value in 2nd column).
+                 */
+                customRows?:
+                  | {
+                      parameter: string;
+                      value: string;
+                      id?: string | null;
+                    }[]
+                  | null;
+                /**
+                 * Optional footnote at the bottom of the table (e.g. "*Tolerance +/- 10% on luminous flux")
+                 */
+                tableFootnote?: string | null;
+                id?: string | null;
+              }[]
+            | null;
+          /**
+           * Add optional diagrams, drawings, feature highlights, or notes to this datasheet page.
+           */
+          pageContents?:
+            | (
+                | {
+                    title?: string | null;
+                    content: string;
+                    id?: string | null;
+                    blockName?: string | null;
+                    blockType: 'datasheetText';
+                  }
+                | {
+                    title?: string | null;
+                    image: string | Media;
+                    caption?: string | null;
+                    id?: string | null;
+                    blockName?: string | null;
+                    blockType: 'datasheetDrawing';
+                  }
+                | {
+                    title?: string | null;
+                    image: string | Media;
+                    caption?: string | null;
+                    id?: string | null;
+                    blockName?: string | null;
+                    blockType: 'datasheetPhotometry';
+                  }
+                | {
+                    title?: string | null;
+                    items?:
+                      | {
+                          feature: string;
+                          id?: string | null;
+                        }[]
+                      | null;
+                    id?: string | null;
+                    blockName?: string | null;
+                    blockType: 'datasheetFeatures';
+                  }
+                | {
+                    title?: string | null;
+                    symbols?: (string | Symbol)[] | null;
+                    id?: string | null;
+                    blockName?: string | null;
+                    blockType: 'datasheetSymbols';
+                  }
+              )[]
+            | null;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * General footer note or disclaimer displayed at the end of the datasheet document.
+     */
+    notes?: string | null;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -867,6 +1024,89 @@ export interface FamiliesSelect<T extends boolean = true> {
               id?: T;
               blockName?: T;
             };
+      };
+  datasheet?:
+    | T
+    | {
+        enabled?: T;
+        title?: T;
+        subtitle?: T;
+        headerImage?: T;
+        pages?:
+          | T
+          | {
+              pageNumber?: T;
+              tables?:
+                | T
+                | {
+                    tableType?: T;
+                    tableName?: T;
+                    tableDescription?: T;
+                    selectedParameters?: T;
+                    customRows?:
+                      | T
+                      | {
+                          parameter?: T;
+                          value?: T;
+                          id?: T;
+                        };
+                    tableFootnote?: T;
+                    id?: T;
+                  };
+              pageContents?:
+                | T
+                | {
+                    datasheetText?:
+                      | T
+                      | {
+                          title?: T;
+                          content?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                    datasheetDrawing?:
+                      | T
+                      | {
+                          title?: T;
+                          image?: T;
+                          caption?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                    datasheetPhotometry?:
+                      | T
+                      | {
+                          title?: T;
+                          image?: T;
+                          caption?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                    datasheetFeatures?:
+                      | T
+                      | {
+                          title?: T;
+                          items?:
+                            | T
+                            | {
+                                feature?: T;
+                                id?: T;
+                              };
+                          id?: T;
+                          blockName?: T;
+                        };
+                    datasheetSymbols?:
+                      | T
+                      | {
+                          title?: T;
+                          symbols?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                  };
+              id?: T;
+            };
+        notes?: T;
       };
   updatedAt?: T;
   createdAt?: T;
