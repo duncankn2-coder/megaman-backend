@@ -467,6 +467,34 @@ export interface Family {
           pageContents?:
             | (
                 | {
+                    /**
+                     * Optional heading displayed above your custom Word-style content.
+                     */
+                    title?: string | null;
+                    /**
+                     * Word-style rich text editor. Create custom tables, format text, and paste/insert images.
+                     */
+                    content: {
+                      root: {
+                        type: string;
+                        children: {
+                          type: string;
+                          version: number;
+                          [k: string]: unknown;
+                        }[];
+                        direction: ('ltr' | 'rtl') | null;
+                        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+                        indent: number;
+                        version: number;
+                      };
+                      [k: string]: unknown;
+                    };
+                    content_html?: string | null;
+                    id?: string | null;
+                    blockName?: string | null;
+                    blockType: 'datasheetCustomContent';
+                  }
+                | {
                     title?: string | null;
                     content: string;
                     id?: string | null;
@@ -1056,6 +1084,15 @@ export interface FamiliesSelect<T extends boolean = true> {
               pageContents?:
                 | T
                 | {
+                    datasheetCustomContent?:
+                      | T
+                      | {
+                          title?: T;
+                          content?: T;
+                          content_html?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
                     datasheetText?:
                       | T
                       | {

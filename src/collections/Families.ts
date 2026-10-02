@@ -1,6 +1,7 @@
 import { CollectionConfig } from 'payload'
 import { EditorialBlock, HighlightProductsBlock, InspirationBlock, ScrollVideoBlock } from '../blocks/layoutBlocks'
 import {
+  DatasheetCustomContentBlock,
   DatasheetTextBlock,
   DatasheetDrawingBlock,
   DatasheetPhotometryBlock,
@@ -369,6 +370,7 @@ export const Families: CollectionConfig = {
                 description: 'Add optional diagrams, drawings, feature highlights, or notes to this datasheet page.',
               },
               blocks: [
+                DatasheetCustomContentBlock,
                 DatasheetTextBlock,
                 DatasheetDrawingBlock,
                 DatasheetPhotometryBlock,
