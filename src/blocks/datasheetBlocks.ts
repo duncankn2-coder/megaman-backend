@@ -1,4 +1,4 @@
-import { Block } from 'payload';
+import { Block, Field } from 'payload';
 import {
   lexicalEditor,
   lexicalHTML,
@@ -9,6 +9,34 @@ import {
   AlignFeature,
   HTMLConverterFeature,
 } from '@payloadcms/richtext-lexical';
+
+const sectionOrderingFields: Field[] = [
+  {
+    name: 'placement',
+    type: 'select',
+    label: 'Placement on Page',
+    defaultValue: 'auto',
+    admin: {
+      width: '50%',
+      description: 'Position relative to specification tables',
+    },
+    options: [
+      { label: 'Auto (Follows Page Section Order)', value: 'auto' },
+      { label: 'Top (Before Specification Tables)', value: 'top' },
+      { label: 'Bottom (After Specification Tables)', value: 'bottom' },
+    ],
+  },
+  {
+    name: 'displayPriority',
+    type: 'number',
+    label: 'Display Priority / Order',
+    admin: {
+      width: '50%',
+      placeholder: 'e.g. 5, 15, 25...',
+      description: 'Lower number appears first on the page.',
+    },
+  },
+];
 
 export const DatasheetCustomContentBlock: Block = {
   slug: 'datasheetCustomContent',
@@ -24,6 +52,10 @@ export const DatasheetCustomContentBlock: Block = {
       admin: {
         description: 'Optional heading displayed above your custom Word-style content.',
       },
+    },
+    {
+      type: 'row',
+      fields: sectionOrderingFields,
     },
     {
       name: 'content',
@@ -166,6 +198,10 @@ export const DatasheetTextBlock: Block = {
       required: false,
     },
     {
+      type: 'row',
+      fields: sectionOrderingFields,
+    },
+    {
       name: 'content',
       type: 'textarea',
       label: 'Narrative / Technical Notes',
@@ -186,6 +222,10 @@ export const DatasheetDrawingBlock: Block = {
       type: 'text',
       label: 'Drawing Title',
       defaultValue: 'DIMENSIONS & MOUNTING',
+    },
+    {
+      type: 'row',
+      fields: sectionOrderingFields,
     },
     {
       name: 'image',
@@ -216,6 +256,10 @@ export const DatasheetPhotometryBlock: Block = {
       defaultValue: 'PHOTOMETRIC DATA',
     },
     {
+      type: 'row',
+      fields: sectionOrderingFields,
+    },
+    {
       name: 'image',
       type: 'upload',
       relationTo: 'media',
@@ -242,6 +286,10 @@ export const DatasheetFeaturesBlock: Block = {
       type: 'text',
       label: 'Features Heading',
       defaultValue: 'KEY FEATURES & BENEFITS',
+    },
+    {
+      type: 'row',
+      fields: sectionOrderingFields,
     },
     {
       name: 'items',
@@ -275,6 +323,10 @@ export const DatasheetSymbolsBlock: Block = {
       type: 'text',
       label: 'Section Heading',
       defaultValue: 'STANDARDS & CERTIFICATIONS',
+    },
+    {
+      type: 'row',
+      fields: sectionOrderingFields,
     },
     {
       name: 'symbols',

@@ -388,14 +388,22 @@ export interface Family {
       | {
           pageNumber?: number | null;
           /**
+           * Choose whether Specification Tables or Custom Word Editor content appears first on this page.
+           */
+          sectionOrder?: ('tablesFirst' | 'customContentFirst' | 'byPriority') | null;
+          /**
            * Add technical tables to this page, set their names, and select which parameters are displayed.
            */
           tables?:
             | {
                 /**
-                 * Choose whether parameter headers appear across the top row (horizontal matrix) or down the first column with a single value column next to it.
+                 * Horizontal (top header matrix) or Vertical (1st column header).
                  */
                 tableType: 'horizontal' | 'vertical';
+                /**
+                 * Lower number appears first relative to other sections.
+                 */
+                displayPriority?: number | null;
                 /**
                  * e.g. "Standard Luminaires", "Technical & Electrical Specifications", "General Characteristics"
                  */
@@ -472,6 +480,14 @@ export interface Family {
                      */
                     title?: string | null;
                     /**
+                     * Position relative to specification tables
+                     */
+                    placement?: ('auto' | 'top' | 'bottom') | null;
+                    /**
+                     * Lower number appears first on the page.
+                     */
+                    displayPriority?: number | null;
+                    /**
                      * Word-style rich text editor. Create custom tables, format text, and paste/insert images.
                      */
                     content: {
@@ -496,6 +512,14 @@ export interface Family {
                   }
                 | {
                     title?: string | null;
+                    /**
+                     * Position relative to specification tables
+                     */
+                    placement?: ('auto' | 'top' | 'bottom') | null;
+                    /**
+                     * Lower number appears first on the page.
+                     */
+                    displayPriority?: number | null;
                     content: string;
                     id?: string | null;
                     blockName?: string | null;
@@ -503,6 +527,14 @@ export interface Family {
                   }
                 | {
                     title?: string | null;
+                    /**
+                     * Position relative to specification tables
+                     */
+                    placement?: ('auto' | 'top' | 'bottom') | null;
+                    /**
+                     * Lower number appears first on the page.
+                     */
+                    displayPriority?: number | null;
                     image: string | Media;
                     caption?: string | null;
                     id?: string | null;
@@ -511,6 +543,14 @@ export interface Family {
                   }
                 | {
                     title?: string | null;
+                    /**
+                     * Position relative to specification tables
+                     */
+                    placement?: ('auto' | 'top' | 'bottom') | null;
+                    /**
+                     * Lower number appears first on the page.
+                     */
+                    displayPriority?: number | null;
                     image: string | Media;
                     caption?: string | null;
                     id?: string | null;
@@ -519,6 +559,14 @@ export interface Family {
                   }
                 | {
                     title?: string | null;
+                    /**
+                     * Position relative to specification tables
+                     */
+                    placement?: ('auto' | 'top' | 'bottom') | null;
+                    /**
+                     * Lower number appears first on the page.
+                     */
+                    displayPriority?: number | null;
                     items?:
                       | {
                           feature: string;
@@ -531,6 +579,14 @@ export interface Family {
                   }
                 | {
                     title?: string | null;
+                    /**
+                     * Position relative to specification tables
+                     */
+                    placement?: ('auto' | 'top' | 'bottom') | null;
+                    /**
+                     * Lower number appears first on the page.
+                     */
+                    displayPriority?: number | null;
                     symbols?: (string | Symbol)[] | null;
                     id?: string | null;
                     blockName?: string | null;
@@ -1064,10 +1120,12 @@ export interface FamiliesSelect<T extends boolean = true> {
           | T
           | {
               pageNumber?: T;
+              sectionOrder?: T;
               tables?:
                 | T
                 | {
                     tableType?: T;
+                    displayPriority?: T;
                     tableName?: T;
                     tableDescription?: T;
                     selectedParameters?: T;
@@ -1088,6 +1146,8 @@ export interface FamiliesSelect<T extends boolean = true> {
                       | T
                       | {
                           title?: T;
+                          placement?: T;
+                          displayPriority?: T;
                           content?: T;
                           content_html?: T;
                           id?: T;
@@ -1097,6 +1157,8 @@ export interface FamiliesSelect<T extends boolean = true> {
                       | T
                       | {
                           title?: T;
+                          placement?: T;
+                          displayPriority?: T;
                           content?: T;
                           id?: T;
                           blockName?: T;
@@ -1105,6 +1167,8 @@ export interface FamiliesSelect<T extends boolean = true> {
                       | T
                       | {
                           title?: T;
+                          placement?: T;
+                          displayPriority?: T;
                           image?: T;
                           caption?: T;
                           id?: T;
@@ -1114,6 +1178,8 @@ export interface FamiliesSelect<T extends boolean = true> {
                       | T
                       | {
                           title?: T;
+                          placement?: T;
+                          displayPriority?: T;
                           image?: T;
                           caption?: T;
                           id?: T;
@@ -1123,6 +1189,8 @@ export interface FamiliesSelect<T extends boolean = true> {
                       | T
                       | {
                           title?: T;
+                          placement?: T;
+                          displayPriority?: T;
                           items?:
                             | T
                             | {
@@ -1136,6 +1204,8 @@ export interface FamiliesSelect<T extends boolean = true> {
                       | T
                       | {
                           title?: T;
+                          placement?: T;
+                          displayPriority?: T;
                           symbols?: T;
                           id?: T;
                           blockName?: T;

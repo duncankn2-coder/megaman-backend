@@ -241,9 +241,39 @@ export const Families: CollectionConfig = {
           },
           fields: [
             {
-              name: 'pageNumber',
-              type: 'number',
-              label: 'Page Number',
+              type: 'row',
+              fields: [
+                {
+                  name: 'pageNumber',
+                  type: 'number',
+                  label: 'Page Number',
+                  admin: { width: '25%' },
+                },
+                {
+                  name: 'sectionOrder',
+                  type: 'select',
+                  label: 'Section Display Order / Priority',
+                  defaultValue: 'tablesFirst',
+                  admin: {
+                    width: '75%',
+                    description: 'Choose whether Specification Tables or Custom Word Editor content appears first on this page.',
+                  },
+                  options: [
+                    {
+                      label: 'Specification Tables First, Custom Word Editor Content Below (Default)',
+                      value: 'tablesFirst',
+                    },
+                    {
+                      label: 'Custom Word Editor Content First, Specification Tables Below',
+                      value: 'customContentFirst',
+                    },
+                    {
+                      label: 'Sort by Priority Numbers (Lowest number appears first)',
+                      value: 'byPriority',
+                    },
+                  ],
+                },
+              ],
             },
             {
               name: 'tables',
@@ -259,24 +289,40 @@ export const Families: CollectionConfig = {
               },
               fields: [
                 {
-                  name: 'tableType',
-                  type: 'select',
-                  label: 'Table Type',
-                  defaultValue: 'horizontal',
-                  required: true,
-                  options: [
+                  type: 'row',
+                  fields: [
                     {
-                      label: 'Horizontal Table (Parameter headers in 1st row, multiple models)',
-                      value: 'horizontal',
+                      name: 'tableType',
+                      type: 'select',
+                      label: 'Table Type',
+                      defaultValue: 'horizontal',
+                      required: true,
+                      admin: {
+                        width: '50%',
+                        description: 'Horizontal (top header matrix) or Vertical (1st column header).',
+                      },
+                      options: [
+                        {
+                          label: 'Horizontal Table (Parameter headers in 1st row, multiple models)',
+                          value: 'horizontal',
+                        },
+                        {
+                          label: 'Vertical Table (Parameter headers in 1st column, single value column)',
+                          value: 'vertical',
+                        },
+                      ],
                     },
                     {
-                      label: 'Vertical Table (Parameter headers in 1st column, single value column)',
-                      value: 'vertical',
+                      name: 'displayPriority',
+                      type: 'number',
+                      label: 'Table Priority / Order (Optional)',
+                      admin: {
+                        width: '50%',
+                        placeholder: 'e.g. 10, 20...',
+                        description: 'Lower number appears first relative to other sections.',
+                      },
                     },
                   ],
-                  admin: {
-                    description: 'Choose whether parameter headers appear across the top row (horizontal matrix) or down the first column with a single value column next to it.',
-                  },
                 },
                 {
                   name: 'tableName',
