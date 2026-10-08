@@ -80,7 +80,7 @@ export const DATASHEET_PARAMETER_OPTIONS = [
   { label: 'Switching Cycles', value: 'switchingCycles' },
   { label: 'Energy Class', value: 'energyClass' },
   { label: 'Standards Compliance', value: 'standards' },
-  { label: 'Symbols / Certifications', value: 'symbols' },
+  { label: 'Features', value: 'symbols' },
 
   // Emergency Specifications
   { label: 'Emergency Power (W)', value: 'emergencyPower' },
