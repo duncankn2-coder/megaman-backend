@@ -1,49 +1,18 @@
 import { CollectionConfig } from 'payload'
 import { EditorialBlock, HighlightProductsBlock, InspirationBlock, ScrollVideoBlock } from '../blocks/layoutBlocks'
 import {
+  DATASHEET_PARAMETER_OPTIONS,
+  DatasheetTableBlock,
   DatasheetCustomContentBlock,
   DatasheetTextBlock,
   DatasheetDrawingBlock,
   DatasheetPhotometryBlock,
   DatasheetFeaturesBlock,
   DatasheetSymbolsBlock,
+  DatasheetPageBreakBlock,
 } from '../blocks/datasheetBlocks'
 
-export const DATASHEET_PARAMETER_OPTIONS = [
-  { label: 'MM Code', value: 'mmCode' },
-  { label: 'Model No.', value: 'modelNo' },
-  { label: 'Product Code / Option Code', value: 'optionCode' },
-  { label: 'Luminaire Finish / Colour', value: 'colour' },
-  { label: 'Power (W)', value: 'wattage' },
-  { label: 'Luminous Flux (lm)', value: 'luminousFlux' },
-  { label: 'CCT (K)', value: 'colourTemperature' },
-  { label: 'CRI (Ra)', value: 'cri' },
-  { label: 'Efficacy (lm/W)', value: 'efficacy' },
-  { label: 'Beam Angle (°)', value: 'beamAngle' },
-  { label: 'IP Rating', value: 'ip' },
-  { label: 'IK Rating', value: 'ik' },
-  { label: 'Control Gear / Driver', value: 'controlGear' },
-  { label: 'Connector / Terminal Block', value: 'connector' },
-  { label: 'Dimming Type', value: 'dimmingType' },
-  { label: 'Dimming Range', value: 'dimmingRange' },
-  { label: 'Rated Voltage (V)', value: 'voltage' },
-  { label: 'Frequency (Hz)', value: 'frequency' },
-  { label: 'Input Current (mA)', value: 'inputCurrent' },
-  { label: 'Power Factor', value: 'powerFactor' },
-  { label: 'Cap / Base', value: 'lampBase' },
-  { label: 'Dimensions (mm)', value: 'dimensions' },
-  { label: 'Recessed Cut-out (mm)', value: 'recessedCutOut' },
-  { label: 'Weight (g)', value: 'weight' },
-  { label: 'Lifetime (h)', value: 'lifetime' },
-  { label: 'Switching Cycles', value: 'switchingCycles' },
-  { label: 'Energy Class', value: 'energyClass' },
-  { label: 'Protection Class', value: 'protectionClass' },
-  { label: 'Glow Wire (°C)', value: 'glowWire' },
-  { label: 'Housing Material', value: 'housingMaterial' },
-  { label: 'Optics / Diffuser Material', value: 'diffuserMaterial' },
-  { label: 'Operating Temperature (°C)', value: 'operatingTemperature' },
-  { label: 'Symbols / Certifications', value: 'symbols' },
-];
+export { DATASHEET_PARAMETER_OPTIONS };
 
 export const Families: CollectionConfig = {
   slug: 'families',
@@ -150,21 +119,7 @@ export const Families: CollectionConfig = {
       admin: {
         description: 'Select which parameters/specifications are active for this family. This controls both the visible dropdown filters and the Technical Configuration spreadsheet columns.',
       },
-      options: [
-        { label: 'MM Code', value: 'mmCode' },
-        { label: 'Model No.', value: 'modelNo' },
-        { label: 'Luminaire Finish / Colour', value: 'colour' },
-        { label: 'Power (Wattage)', value: 'wattage' },
-        { label: 'Luminous Flux', value: 'luminousFlux' },
-        { label: 'CCT (Color Temperature)', value: 'colourTemperature' },
-        { label: 'CRI', value: 'cri' },
-        { label: 'Efficacy (lm/W)', value: 'efficacy' },
-        { label: 'IP Rating', value: 'ip' },
-        { label: 'Control Gear / Connector', value: 'connector' },
-        { label: 'Cap / Base', value: 'lampBase' },
-        { label: 'Voltage', value: 'voltage' },
-        { label: 'Symbols / Certifications', value: 'symbols' },
-      ],
+      options: DATASHEET_PARAMETER_OPTIONS,
       defaultValue: ['mmCode', 'modelNo', 'colour', 'wattage', 'luminousFlux', 'colourTemperature', 'cri', 'efficacy', 'ip', 'connector', 'symbols'],
     },
     {
@@ -228,16 +183,39 @@ export const Families: CollectionConfig = {
           },
         },
         {
+          name: 'sections',
+          type: 'blocks',
+          label: 'Datasheet Sections (Tables & Content Blocks)',
+          labels: {
+            singular: 'Section',
+            plural: 'Sections',
+          },
+          admin: {
+            description: 'Add specification tables, custom Word editor content, drawings, photometrics, or page breaks freely in any order. Drag to reorder sections.',
+            initCollapsed: false,
+          },
+          blocks: [
+            DatasheetTableBlock,
+            DatasheetCustomContentBlock,
+            DatasheetDrawingBlock,
+            DatasheetPhotometryBlock,
+            DatasheetFeaturesBlock,
+            DatasheetSymbolsBlock,
+            DatasheetTextBlock,
+            DatasheetPageBreakBlock,
+          ],
+        },
+        {
           name: 'pages',
           type: 'array',
-          label: 'Datasheet Pages',
+          label: 'Legacy Multi-Page Layout (Optional Fallback)',
           labels: {
             singular: 'Page',
             plural: 'Pages',
           },
           admin: {
-            description: 'Create and organize pages of the family datasheet.',
-            initCollapsed: false,
+            description: 'Older multi-page layout. The unified "Datasheet Sections" field above is recommended.',
+            initCollapsed: true,
           },
           fields: [
             {

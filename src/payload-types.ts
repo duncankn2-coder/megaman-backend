@@ -263,17 +263,63 @@ export interface Family {
     | (
         | 'mmCode'
         | 'modelNo'
+        | 'optionCode'
         | 'colour'
         | 'wattage'
         | 'luminousFlux'
         | 'colourTemperature'
         | 'cri'
         | 'efficacy'
-        | 'ip'
-        | 'connector'
-        | 'lampBase'
+        | 'beamAngle'
         | 'voltage'
+        | 'frequency'
+        | 'inputCurrent'
+        | 'powerFactor'
+        | 'displacementFactor'
+        | 'thd'
+        | 'inrushCurrent'
+        | 'inrushDuration'
+        | 'maxNoOfLuminaire'
+        | 'mcbB10'
+        | 'mcbB16'
+        | 'mcbC10'
+        | 'mcbC16'
+        | 'surgeProtection'
+        | 'outputVoltage'
+        | 'outputCurrent'
+        | 'colourConsistency'
+        | 'ugr'
+        | 'maxIntensity'
+        | 'cutoffAngle'
+        | 'flickerMetric'
+        | 'svm'
+        | 'photobiologicalRisk'
+        | 'controlGear'
+        | 'connector'
+        | 'dimmingType'
+        | 'dimmingRange'
+        | 'lampBase'
+        | 'dimensions'
+        | 'recessedCutOut'
+        | 'weight'
+        | 'shape'
+        | 'housingMaterial'
+        | 'diffuserMaterial'
+        | 'mounting'
+        | 'ip'
+        | 'ik'
+        | 'protectionClass'
+        | 'glowWire'
+        | 'operatingTemperature'
+        | 'lifetime'
+        | 'switchingCycles'
+        | 'energyClass'
+        | 'standards'
         | 'symbols'
+        | 'emergencyPower'
+        | 'emergencyDuration'
+        | 'emergencyBattery'
+        | 'emergencyLumen'
       )[]
     | null;
   layout?:
@@ -382,7 +428,238 @@ export interface Family {
      */
     headerImage?: (string | null) | Media;
     /**
-     * Create and organize pages of the family datasheet.
+     * Add specification tables, custom Word editor content, drawings, photometrics, or page breaks freely in any order. Drag to reorder sections.
+     */
+    sections?:
+      | (
+          | {
+              /**
+               * e.g. "Standard Luminaires", "Technical & Electrical Specifications", "General Characteristics"
+               */
+              tableName: string;
+              /**
+               * Horizontal (columns) or Vertical (rows).
+               */
+              tableType: 'horizontal' | 'vertical';
+              /**
+               * Optional footnote at the bottom of the table (e.g. "*Tolerance +/- 10% on luminous flux")
+               */
+              tableFootnote?: string | null;
+              /**
+               * Optional note displayed below the table title (e.g. "Operating at 220-240V, 50/60Hz, Ra80")
+               */
+              tableDescription?: string | null;
+              /**
+               * Select parameters to display. For horizontal tables, these are the column headers. For vertical tables, these are the row headers.
+               */
+              selectedParameters?:
+                | (
+                    | 'mmCode'
+                    | 'modelNo'
+                    | 'optionCode'
+                    | 'colour'
+                    | 'wattage'
+                    | 'luminousFlux'
+                    | 'colourTemperature'
+                    | 'cri'
+                    | 'efficacy'
+                    | 'beamAngle'
+                    | 'voltage'
+                    | 'frequency'
+                    | 'inputCurrent'
+                    | 'powerFactor'
+                    | 'displacementFactor'
+                    | 'thd'
+                    | 'inrushCurrent'
+                    | 'inrushDuration'
+                    | 'maxNoOfLuminaire'
+                    | 'mcbB10'
+                    | 'mcbB16'
+                    | 'mcbC10'
+                    | 'mcbC16'
+                    | 'surgeProtection'
+                    | 'outputVoltage'
+                    | 'outputCurrent'
+                    | 'colourConsistency'
+                    | 'ugr'
+                    | 'maxIntensity'
+                    | 'cutoffAngle'
+                    | 'flickerMetric'
+                    | 'svm'
+                    | 'photobiologicalRisk'
+                    | 'controlGear'
+                    | 'connector'
+                    | 'dimmingType'
+                    | 'dimmingRange'
+                    | 'lampBase'
+                    | 'dimensions'
+                    | 'recessedCutOut'
+                    | 'weight'
+                    | 'shape'
+                    | 'housingMaterial'
+                    | 'diffuserMaterial'
+                    | 'mounting'
+                    | 'ip'
+                    | 'ik'
+                    | 'protectionClass'
+                    | 'glowWire'
+                    | 'operatingTemperature'
+                    | 'lifetime'
+                    | 'switchingCycles'
+                    | 'energyClass'
+                    | 'standards'
+                    | 'symbols'
+                    | 'emergencyPower'
+                    | 'emergencyDuration'
+                    | 'emergencyBattery'
+                    | 'emergencyLumen'
+                  )[]
+                | null;
+              /**
+               * Optional custom parameter-value rows for vertical tables (Parameter header in 1st column, Value in 2nd column).
+               */
+              customRows?:
+                | {
+                    parameter: string;
+                    value: string;
+                    id?: string | null;
+                  }[]
+                | null;
+              id?: string | null;
+              blockName?: string | null;
+              blockType: 'datasheetTable';
+            }
+          | {
+              /**
+               * Optional heading displayed above your custom Word-style content.
+               */
+              title?: string | null;
+              /**
+               * Position relative to specification tables
+               */
+              placement?: ('auto' | 'top' | 'bottom') | null;
+              /**
+               * Lower number appears first on the page.
+               */
+              displayPriority?: number | null;
+              /**
+               * Word-style rich text editor. Create custom tables, format text, and paste/insert images.
+               */
+              content: {
+                root: {
+                  type: string;
+                  children: {
+                    type: string;
+                    version: number;
+                    [k: string]: unknown;
+                  }[];
+                  direction: ('ltr' | 'rtl') | null;
+                  format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+                  indent: number;
+                  version: number;
+                };
+                [k: string]: unknown;
+              };
+              content_html?: string | null;
+              id?: string | null;
+              blockName?: string | null;
+              blockType: 'datasheetCustomContent';
+            }
+          | {
+              title?: string | null;
+              /**
+               * Position relative to specification tables
+               */
+              placement?: ('auto' | 'top' | 'bottom') | null;
+              /**
+               * Lower number appears first on the page.
+               */
+              displayPriority?: number | null;
+              image: string | Media;
+              caption?: string | null;
+              id?: string | null;
+              blockName?: string | null;
+              blockType: 'datasheetDrawing';
+            }
+          | {
+              title?: string | null;
+              /**
+               * Position relative to specification tables
+               */
+              placement?: ('auto' | 'top' | 'bottom') | null;
+              /**
+               * Lower number appears first on the page.
+               */
+              displayPriority?: number | null;
+              image: string | Media;
+              caption?: string | null;
+              id?: string | null;
+              blockName?: string | null;
+              blockType: 'datasheetPhotometry';
+            }
+          | {
+              title?: string | null;
+              /**
+               * Position relative to specification tables
+               */
+              placement?: ('auto' | 'top' | 'bottom') | null;
+              /**
+               * Lower number appears first on the page.
+               */
+              displayPriority?: number | null;
+              items?:
+                | {
+                    feature: string;
+                    id?: string | null;
+                  }[]
+                | null;
+              id?: string | null;
+              blockName?: string | null;
+              blockType: 'datasheetFeatures';
+            }
+          | {
+              title?: string | null;
+              /**
+               * Position relative to specification tables
+               */
+              placement?: ('auto' | 'top' | 'bottom') | null;
+              /**
+               * Lower number appears first on the page.
+               */
+              displayPriority?: number | null;
+              symbols?: (string | Symbol)[] | null;
+              id?: string | null;
+              blockName?: string | null;
+              blockType: 'datasheetSymbols';
+            }
+          | {
+              title?: string | null;
+              /**
+               * Position relative to specification tables
+               */
+              placement?: ('auto' | 'top' | 'bottom') | null;
+              /**
+               * Lower number appears first on the page.
+               */
+              displayPriority?: number | null;
+              content: string;
+              id?: string | null;
+              blockName?: string | null;
+              blockType: 'datasheetText';
+            }
+          | {
+              /**
+               * Inserts an explicit A4 page break here. Content added below this section will start on the next page.
+               */
+              note?: string | null;
+              id?: string | null;
+              blockName?: string | null;
+              blockType: 'datasheetPageBreak';
+            }
+        )[]
+      | null;
+    /**
+     * Older multi-page layout. The unified "Datasheet Sections" field above is recommended.
      */
     pages?:
       | {
@@ -427,29 +704,55 @@ export interface Family {
                       | 'cri'
                       | 'efficacy'
                       | 'beamAngle'
-                      | 'ip'
-                      | 'ik'
-                      | 'controlGear'
-                      | 'connector'
-                      | 'dimmingType'
-                      | 'dimmingRange'
                       | 'voltage'
                       | 'frequency'
                       | 'inputCurrent'
                       | 'powerFactor'
+                      | 'displacementFactor'
+                      | 'thd'
+                      | 'inrushCurrent'
+                      | 'inrushDuration'
+                      | 'maxNoOfLuminaire'
+                      | 'mcbB10'
+                      | 'mcbB16'
+                      | 'mcbC10'
+                      | 'mcbC16'
+                      | 'surgeProtection'
+                      | 'outputVoltage'
+                      | 'outputCurrent'
+                      | 'colourConsistency'
+                      | 'ugr'
+                      | 'maxIntensity'
+                      | 'cutoffAngle'
+                      | 'flickerMetric'
+                      | 'svm'
+                      | 'photobiologicalRisk'
+                      | 'controlGear'
+                      | 'connector'
+                      | 'dimmingType'
+                      | 'dimmingRange'
                       | 'lampBase'
                       | 'dimensions'
                       | 'recessedCutOut'
                       | 'weight'
+                      | 'shape'
+                      | 'housingMaterial'
+                      | 'diffuserMaterial'
+                      | 'mounting'
+                      | 'ip'
+                      | 'ik'
+                      | 'protectionClass'
+                      | 'glowWire'
+                      | 'operatingTemperature'
                       | 'lifetime'
                       | 'switchingCycles'
                       | 'energyClass'
-                      | 'protectionClass'
-                      | 'glowWire'
-                      | 'housingMaterial'
-                      | 'diffuserMaterial'
-                      | 'operatingTemperature'
+                      | 'standards'
                       | 'symbols'
+                      | 'emergencyPower'
+                      | 'emergencyDuration'
+                      | 'emergencyBattery'
+                      | 'emergencyLumen'
                     )[]
                   | null;
                 /**
@@ -1116,6 +1419,103 @@ export interface FamiliesSelect<T extends boolean = true> {
         title?: T;
         subtitle?: T;
         headerImage?: T;
+        sections?:
+          | T
+          | {
+              datasheetTable?:
+                | T
+                | {
+                    tableName?: T;
+                    tableType?: T;
+                    tableFootnote?: T;
+                    tableDescription?: T;
+                    selectedParameters?: T;
+                    customRows?:
+                      | T
+                      | {
+                          parameter?: T;
+                          value?: T;
+                          id?: T;
+                        };
+                    id?: T;
+                    blockName?: T;
+                  };
+              datasheetCustomContent?:
+                | T
+                | {
+                    title?: T;
+                    placement?: T;
+                    displayPriority?: T;
+                    content?: T;
+                    content_html?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+              datasheetDrawing?:
+                | T
+                | {
+                    title?: T;
+                    placement?: T;
+                    displayPriority?: T;
+                    image?: T;
+                    caption?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+              datasheetPhotometry?:
+                | T
+                | {
+                    title?: T;
+                    placement?: T;
+                    displayPriority?: T;
+                    image?: T;
+                    caption?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+              datasheetFeatures?:
+                | T
+                | {
+                    title?: T;
+                    placement?: T;
+                    displayPriority?: T;
+                    items?:
+                      | T
+                      | {
+                          feature?: T;
+                          id?: T;
+                        };
+                    id?: T;
+                    blockName?: T;
+                  };
+              datasheetSymbols?:
+                | T
+                | {
+                    title?: T;
+                    placement?: T;
+                    displayPriority?: T;
+                    symbols?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+              datasheetText?:
+                | T
+                | {
+                    title?: T;
+                    placement?: T;
+                    displayPriority?: T;
+                    content?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+              datasheetPageBreak?:
+                | T
+                | {
+                    note?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+            };
         pages?:
           | T
           | {

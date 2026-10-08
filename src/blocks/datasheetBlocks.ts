@@ -10,11 +10,229 @@ import {
   HTMLConverterFeature,
 } from '@payloadcms/richtext-lexical';
 
+export const DATASHEET_PARAMETER_OPTIONS = [
+  // Identification
+  { label: 'MM Code', value: 'mmCode' },
+  { label: 'Model No.', value: 'modelNo' },
+  { label: 'Product Code / Option Code', value: 'optionCode' },
+  { label: 'Luminaire Finish / Colour', value: 'colour' },
+
+  // Electrical & Performance
+  { label: 'Power (W)', value: 'wattage' },
+  { label: 'Luminous Flux (lm)', value: 'luminousFlux' },
+  { label: 'CCT (K)', value: 'colourTemperature' },
+  { label: 'CRI (Ra)', value: 'cri' },
+  { label: 'Efficacy (lm/W)', value: 'efficacy' },
+  { label: 'Beam Angle (°)', value: 'beamAngle' },
+  { label: 'Rated Voltage (V)', value: 'voltage' },
+  { label: 'Frequency (Hz)', value: 'frequency' },
+  { label: 'Input Current (mA)', value: 'inputCurrent' },
+  { label: 'Power Factor', value: 'powerFactor' },
+  { label: 'Displacement Factor', value: 'displacementFactor' },
+  { label: 'THD (%)', value: 'thd' },
+
+  // General Data: Inrush & MCB
+  { label: 'Inrush Current (A)', value: 'inrushCurrent' },
+  { label: 'Inrush Duration (µs)', value: 'inrushDuration' },
+  { label: 'Max. No. of Luminaire connection on MCB', value: 'maxNoOfLuminaire' },
+  { label: 'Max. Luminaires on MCB Type B10', value: 'mcbB10' },
+  { label: 'Max. Luminaires on MCB Type B16', value: 'mcbB16' },
+  { label: 'Max. Luminaires on MCB Type C10', value: 'mcbC10' },
+  { label: 'Max. Luminaires on MCB Type C16', value: 'mcbC16' },
+
+  // General Data: Surge & Driver Output
+  { label: 'Surge Protection (V)', value: 'surgeProtection' },
+  { label: 'Output Voltage (V)', value: 'outputVoltage' },
+  { label: 'Output Current (mA)', value: 'outputCurrent' },
+
+  // General Data: Photometrics & Optical Quality
+  { label: 'Colour Consistency (SDCM)', value: 'colourConsistency' },
+  { label: 'Unified Glare Rating (UGR)', value: 'ugr' },
+  { label: 'Max. Luminous Intensity (cd)', value: 'maxIntensity' },
+  { label: 'Cut-off Angle (°)', value: 'cutoffAngle' },
+  { label: 'Flicker Metric (Pst LM)', value: 'flickerMetric' },
+  { label: 'Stroboscopic Effect (SVM)', value: 'svm' },
+  { label: 'Photobiological Safety', value: 'photobiologicalRisk' },
+
+  // Control & Connection
+  { label: 'Control Gear / Driver', value: 'controlGear' },
+  { label: 'Connector / Terminal Block', value: 'connector' },
+  { label: 'Dimming Type', value: 'dimmingType' },
+  { label: 'Dimming Range', value: 'dimmingRange' },
+  { label: 'Cap / Base', value: 'lampBase' },
+
+  // Physical & Mechanical
+  { label: 'Dimensions (mm)', value: 'dimensions' },
+  { label: 'Recessed Cut-out (mm)', value: 'recessedCutOut' },
+  { label: 'Weight (g)', value: 'weight' },
+  { label: 'Shape', value: 'shape' },
+  { label: 'Housing Material', value: 'housingMaterial' },
+  { label: 'Optics / Diffuser Material', value: 'diffuserMaterial' },
+  { label: 'Mounting / Installation', value: 'mounting' },
+
+  // Reliability & Protection
+  { label: 'IP Rating', value: 'ip' },
+  { label: 'IK Rating', value: 'ik' },
+  { label: 'Protection Class', value: 'protectionClass' },
+  { label: 'Glow Wire (°C)', value: 'glowWire' },
+  { label: 'Operating Temperature (°C)', value: 'operatingTemperature' },
+  { label: 'Lifetime (h)', value: 'lifetime' },
+  { label: 'Switching Cycles', value: 'switchingCycles' },
+  { label: 'Energy Class', value: 'energyClass' },
+  { label: 'Standards Compliance', value: 'standards' },
+  { label: 'Symbols / Certifications', value: 'symbols' },
+
+  // Emergency Specifications
+  { label: 'Emergency Power (W)', value: 'emergencyPower' },
+  { label: 'Emergency Duration (h)', value: 'emergencyDuration' },
+  { label: 'Emergency Battery Type', value: 'emergencyBattery' },
+  { label: 'Emergency Luminous Flux (lm)', value: 'emergencyLumen' },
+];
+
+export const DatasheetTableBlock: Block = {
+  slug: 'datasheetTable',
+  labels: {
+    singular: 'Specification Table',
+    plural: 'Specification Tables',
+  },
+  fields: [
+    {
+      name: 'tableName',
+      type: 'text',
+      required: true,
+      label: 'Table Name / Title',
+      defaultValue: 'Technical Specifications',
+      admin: {
+        description: 'e.g. "Standard Luminaires", "Technical & Electrical Specifications", "General Characteristics"',
+      },
+    },
+    {
+      type: 'row',
+      fields: [
+        {
+          name: 'tableType',
+          type: 'select',
+          label: 'Table Type',
+          defaultValue: 'horizontal',
+          required: true,
+          admin: {
+            width: '50%',
+            description: 'Horizontal (columns) or Vertical (rows).',
+          },
+          options: [
+            {
+              label: 'Horizontal Table (Parameter headers in top row, multiple models)',
+              value: 'horizontal',
+            },
+            {
+              label: 'Vertical Table (Parameter headers in 1st column, single value column)',
+              value: 'vertical',
+            },
+          ],
+        },
+        {
+          name: 'tableFootnote',
+          type: 'text',
+          label: 'Table Footnote / Legend',
+          admin: {
+            width: '50%',
+            description: 'Optional footnote at the bottom of the table (e.g. "*Tolerance +/- 10% on luminous flux")',
+          },
+        },
+      ],
+    },
+    {
+      name: 'tableDescription',
+      type: 'textarea',
+      label: 'Table Subtitle / Note',
+      admin: {
+        description: 'Optional note displayed below the table title (e.g. "Operating at 220-240V, 50/60Hz, Ra80")',
+      },
+    },
+    {
+      name: 'selectedParameters',
+      type: 'select',
+      hasMany: true,
+      label: 'Selected Parameters',
+      admin: {
+        description: 'Select parameters to display. For horizontal tables, these are the column headers. For vertical tables, these are the row headers.',
+      },
+      defaultValue: [
+        'mmCode',
+        'modelNo',
+        'colour',
+        'wattage',
+        'luminousFlux',
+        'colourTemperature',
+        'cri',
+        'efficacy',
+        'ip',
+        'controlGear',
+        'symbols',
+      ],
+      options: DATASHEET_PARAMETER_OPTIONS,
+    },
+    {
+      name: 'customRows',
+      type: 'array',
+      label: 'Custom Parameter Rows',
+      labels: {
+        singular: 'Custom Row',
+        plural: 'Custom Rows',
+      },
+      admin: {
+        condition: (data, siblingData) => siblingData?.tableType === 'vertical',
+        description: 'Optional custom parameter-value rows for vertical tables (Parameter header in 1st column, Value in 2nd column).',
+      },
+      fields: [
+        {
+          type: 'row',
+          fields: [
+            {
+              name: 'parameter',
+              type: 'text',
+              required: true,
+              label: 'Parameter Header (1st Column)',
+              admin: { width: '50%' },
+            },
+            {
+              name: 'value',
+              type: 'text',
+              required: true,
+              label: 'Value (2nd Column)',
+              admin: { width: '50%' },
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};
+
+export const DatasheetPageBreakBlock: Block = {
+  slug: 'datasheetPageBreak',
+  labels: {
+    singular: 'Page Break (Start New Page)',
+    plural: 'Page Breaks',
+  },
+  fields: [
+    {
+      name: 'note',
+      type: 'text',
+      label: 'Page Break Note / Label (Optional)',
+      admin: {
+        placeholder: 'e.g. New Page - Photometrics & Drawing',
+        description: 'Inserts an explicit A4 page break here. Content added below this section will start on the next page.',
+      },
+    },
+  ],
+};
+
 const sectionOrderingFields: Field[] = [
   {
     name: 'placement',
     type: 'select',
-    label: 'Placement on Page',
+    label: 'Placement on Page (Legacy)',
     defaultValue: 'auto',
     admin: {
       width: '50%',
@@ -29,7 +247,7 @@ const sectionOrderingFields: Field[] = [
   {
     name: 'displayPriority',
     type: 'number',
-    label: 'Display Priority / Order',
+    label: 'Display Priority / Order (Legacy)',
     admin: {
       width: '50%',
       placeholder: 'e.g. 5, 15, 25...',
