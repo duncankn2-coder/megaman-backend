@@ -62,6 +62,10 @@ export const DATASHEET_PARAMETER_OPTIONS = [
   { label: 'Cap / Base', value: 'lampBase' },
 
   // Physical & Mechanical
+  { label: 'Length (mm)', value: 'length' },
+  { label: 'Width (mm)', value: 'width' },
+  { label: 'Height (mm)', value: 'height' },
+  { label: 'Diameter (mm)', value: 'diameter' },
   { label: 'Dimensions (mm)', value: 'dimensions' },
   { label: 'Recessed Cut-out (mm)', value: 'recessedCutOut' },
   { label: 'Weight (g)', value: 'weight' },
