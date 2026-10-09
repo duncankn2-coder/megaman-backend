@@ -232,6 +232,10 @@ export interface Family {
   id: string;
   name: string;
   /**
+   * URL-friendly identifier (e.g. "fonda-xchange"). Auto-generated from name if left blank.
+   */
+  slug: string;
+  /**
    * Display priority on the catalog page. Higher numbers appear first (e.g. 100 before 10). Default is 0.
    */
   priority?: number | null;
@@ -1303,6 +1307,7 @@ export interface CategoriesSelect<T extends boolean = true> {
  */
 export interface FamiliesSelect<T extends boolean = true> {
   name?: T;
+  slug?: T;
   priority?: T;
   description?: T;
   categories?: T;

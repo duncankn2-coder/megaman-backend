@@ -18,7 +18,7 @@ export const Families: CollectionConfig = {
   slug: 'families',
   admin: {
     useAsTitle: 'name', // Displays family name in admin UI
-    defaultColumns: ['name', 'priority', 'categories', 'updatedAt'],
+    defaultColumns: ['name', 'slug', 'priority', 'categories', 'updatedAt'],
   },
   defaultSort: '-priority',
   access: {
@@ -27,11 +27,36 @@ export const Families: CollectionConfig = {
     update: ({ req }) => !!req.user, // Only authenticated users can update
     delete: ({ req }) => !!req.user, // Only authenticated users can delete
   },
+  hooks: {
+    beforeValidate: [
+      ({ data }) => {
+        if (data && !data.slug && data.name) {
+          data.slug = data.name
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)+/g, '');
+        }
+        return data;
+      },
+    ],
+  },
   fields: [
     {
       name: 'name',
       type: 'text',
       required: true,
+    },
+    {
+      name: 'slug',
+      type: 'text',
+      required: true,
+      unique: true,
+      index: true,
+      admin: {
+        position: 'sidebar',
+        description: 'URL-friendly identifier (e.g. "fonda-xchange"). Auto-generated from name if left blank.',
+      },
     },
     {
       name: 'priority',
