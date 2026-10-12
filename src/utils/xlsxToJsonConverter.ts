@@ -194,6 +194,18 @@ export function cleanValue(val: any, key: string): any {
     return unique.length === 1 ? unique[0] : unique.join('/');
   }
 
+  // Beam angle specific validation and cleanup (preserves multi/dual beam angles like "24/36")
+  if (key === 'beam_angle') {
+    if (typeof val === 'number') return val;
+    if (strVal.includes('/')) {
+      const parts = strVal.split('/').map(p => p.replace(/[^\d.-]/g, '').trim()).filter(Boolean);
+      return parts.join('/');
+    }
+    const cleanedNumStr = strVal.replace(/[^\d.-]/g, '');
+    const parsed = Number(cleanedNumStr);
+    return (!isNaN(parsed) && cleanedNumStr !== '') ? parsed : (strVal.trim() || null);
+  }
+
   // List of fields that MUST be numbers in the target JSON schema
   const numericFields = new Set([
     "input_current_ma",
@@ -201,7 +213,6 @@ export function cleanValue(val: any, key: string): any {
     "ra",
     "colour_consistency",
     "maximum_intensity_cd",
-    "beam_angle",
     "cutoff_angle",
     "ugr",
     "power_factor",
