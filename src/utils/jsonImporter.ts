@@ -183,10 +183,12 @@ export async function processJsonImport(
           });
         } else {
           logs.push(`- Family "${familyName}" not found. Creating dynamically...`);
+          const famSlug = familyName.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
           const newFam = await payload.create({
             collection: 'families',
             data: {
               name: familyName,
+              slug: famSlug,
               description: `A collection of premium Megaman ${familyName} products.`,
               media: placeholderImageId ? [placeholderImageId] : [],
               categories: finalCategoryIds,
