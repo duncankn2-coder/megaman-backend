@@ -12,8 +12,6 @@ function cleanModel(model: string): string {
   return model
     .toLowerCase()
     .replace(/\s+/g, '')
-    .replace(/v\d+/g, '') // remove version numbers
-    .replace(/v(?=\D|$)/g, '') // remove standalone v followed by non-digit or end of string
     .replace(/[-_]/g, '')
     .replace(/\//g, '')
     .replace(/dl/g, '')
