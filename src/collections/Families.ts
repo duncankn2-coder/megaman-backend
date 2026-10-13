@@ -95,6 +95,100 @@ export const Families: CollectionConfig = {
       hasMany: true,
     },
     {
+      name: 'accessories',
+      type: 'array',
+      label: 'Accessories / Optional Parts',
+      labels: {
+        singular: 'Accessory',
+        plural: 'Accessories',
+      },
+      admin: {
+        description: 'Add optional accessories for this product series. An accessory table is displayed below the Technical Configurations table on the website if accessories are added.',
+        initCollapsed: true,
+      },
+      fields: [
+        {
+          type: 'row',
+          fields: [
+            {
+              name: 'modelNumber',
+              type: 'text',
+              label: 'Model No.',
+              admin: {
+                width: '30%',
+                placeholder: 'e.g. LA10217, LA6043',
+              },
+            },
+            {
+              name: 'mmCode',
+              type: 'text',
+              label: 'MM Code / Order Code',
+              admin: {
+                width: '30%',
+                placeholder: 'e.g. MM10555, 710555',
+              },
+            },
+            {
+              name: 'colour',
+              type: 'text',
+              label: 'Colour / Finish',
+              admin: {
+                width: '40%',
+                placeholder: 'e.g. White, Black, Silver',
+              },
+            },
+          ],
+        },
+        {
+          type: 'row',
+          fields: [
+            {
+              name: 'name',
+              type: 'text',
+              label: 'Title / Item Name',
+              admin: {
+                width: '50%',
+                placeholder: 'e.g. Battery for Emergency Module, Microwave Sensor',
+              },
+            },
+            {
+              name: 'image',
+              type: 'upload',
+              relationTo: 'media',
+              label: 'Accessory Image (Optional)',
+              admin: {
+                width: '50%',
+              },
+            },
+          ],
+        },
+        {
+          type: 'row',
+          fields: [
+            {
+              name: 'product',
+              type: 'relationship',
+              relationTo: 'products',
+              hasMany: false,
+              label: 'Linked Product (Optional)',
+              admin: {
+                width: '50%',
+                description: 'Optionally link an existing product model in the database.',
+              },
+            },
+            {
+              name: 'description',
+              type: 'textarea',
+              label: 'Detailed Description / Notes (Optional)',
+              admin: {
+                width: '50%',
+              },
+            },
+          ],
+        },
+      ],
+    },
+    {
       name: 'features',
       type: 'array',
       label: 'Key Features',
