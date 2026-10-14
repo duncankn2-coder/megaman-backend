@@ -231,6 +231,31 @@ export const Families: CollectionConfig = {
       },
     },
     {
+      type: 'row',
+      fields: [
+        {
+          name: 'lineDrawing',
+          type: 'upload',
+          relationTo: 'media',
+          label: 'Default Line Drawing / CAD Image',
+          admin: {
+            width: '50%',
+            description: 'Default dimensional line drawing image for this family. Automatically used in the product drawer if not individually specified on a product model.',
+          },
+        },
+        {
+          name: 'lightSpectrumGraph',
+          type: 'upload',
+          relationTo: 'media',
+          label: 'Default Spectrum Image / Light Spectrum Graph',
+          admin: {
+            width: '50%',
+            description: 'Default visible light spectrum (SPD) image for this family. Automatically used in the product drawer if not individually specified on a product model.',
+          },
+        },
+      ],
+    },
+    {
       name: 'selectedParameters',
       type: 'select',
       label: 'Visible Parameters (Filters & Columns)',

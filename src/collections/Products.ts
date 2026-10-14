@@ -655,6 +655,15 @@ export const Products: CollectionConfig = {
                 doc.images = firstShot;
               }
             }
+            // Auto-default line drawing to family's default line drawing if not set
+            if (!doc.lineDrawing && fam.lineDrawing) {
+              doc.lineDrawing = fam.lineDrawing;
+            }
+            // Auto-default light spectrum graph to family's default spectrum image if not set
+            const famSpectrum = fam.lightSpectrumGraph || fam.spectrumImage;
+            if (!doc.lightSpectrumGraph && famSpectrum) {
+              doc.lightSpectrumGraph = famSpectrum;
+            }
           }
         } catch (err) {
           // ignore error during hook execution

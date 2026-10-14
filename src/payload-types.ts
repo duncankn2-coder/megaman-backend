@@ -260,6 +260,8 @@ export interface Family {
    * Uploaded PDF for Market Surveillance Dismantle Instruction. Automatically merged into Technical Document - Light Source and Technical Document - Control Gear for all products in this family.
    */
   dismantleInstructionPdf?: (string | null) | Media;
+  lineDrawing?: (string | null) | Media;
+  lightSpectrumGraph?: (string | null) | Media;
   /**
    * Select which parameters/specifications are active for this family. This controls both the visible dropdown filters and the Technical Configuration spreadsheet columns.
    */
