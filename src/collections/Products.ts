@@ -636,10 +636,23 @@ export const Products: CollectionConfig = {
       async ({ doc }) => {
         try {
           if (doc.families && typeof doc.families === 'object' && doc.families !== null) {
-            const famDi = (doc.families as any).dismantleInstructionPdf;
+            const fam = doc.families as any;
+            const famDi = fam.dismantleInstructionPdf;
             if (famDi) {
               if (!doc.techDocLightSource) {
                 doc.techDocLightSource = famDi;
+              }
+            }
+            // Auto-default product image to the family's first product shot if not set
+            if (!doc.images && Array.isArray(fam.media) && fam.media.length > 0) {
+              const firstShot = fam.media.find((m: any) => {
+                if (!m) return false;
+                if (m.type === 'video') return false;
+                if (m.mimeType && typeof m.mimeType === 'string' && !m.mimeType.startsWith('image/')) return false;
+                return true;
+              }) || fam.media[0];
+              if (firstShot) {
+                doc.images = firstShot;
               }
             }
           }
@@ -710,7 +723,10 @@ export const Products: CollectionConfig = {
       name: 'images',
       type: 'upload',
       relationTo: 'media',
-      required: true,
+      required: false,
+      admin: {
+        description: 'Product shot image. Optional — if omitted, defaults to the first product shot of the family.',
+      },
     },
     {
       name: 'datasheetPdf',

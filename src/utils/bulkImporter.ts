@@ -250,7 +250,7 @@ export async function processBulkImport(
       fallbackBeamAngleDiagrams.push(`${m}_beam.png`, `${m}_beam.jpg`, `${m}_beam.svg`, `${m}_cone.png`, `${m}_cone.svg`);
     }
 
-    // 1. Upload Primary Image (Required)
+    // 1. Upload Primary Image (Optional - defaults to family product shot if omitted)
     const imageId = await uploadAssetFromZip(
       imageFile,
       fallbackImages,
@@ -258,8 +258,7 @@ export async function processBulkImport(
       'image'
     );
     if (!imageId) {
-      warnings.push(`Row ${rowNum} (${modelNumber}): Skipped because product primary image could not be resolved. Expected specified filename or ZIP auto-match like "${modelNumber}.jpg" or "${modelNumber}.png".`);
-      continue;
+      warnings.push(`Row ${rowNum} (${modelNumber}): Product primary image not specified or found in ZIP. Will default to the family's first product shot.`);
     }
 
     // 2. Upload Optional Assets
@@ -454,7 +453,7 @@ export async function processBulkImport(
       const productData: any = {
         name: modelNumber,
         description: description,
-        images: imageId,
+        images: imageId || undefined,
         colour: color || undefined,
         power: power || undefined,
         colourTemperature: colorTemp || undefined,
