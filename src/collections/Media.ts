@@ -13,6 +13,8 @@ export const Media: CollectionConfig = {
       'application/octet-stream',
       'application/zip',
       'application/x-zip-compressed',
+      'application/x-zip',
+      'multipart/x-zip',
     ],
     adminThumbnail: ({ doc }) => (doc?.mimeType === 'image/svg+xml' ? (doc.url as string) : null),
   },

@@ -256,6 +256,31 @@ export const Families: CollectionConfig = {
       ],
     },
     {
+      type: 'row',
+      fields: [
+        {
+          name: 'photometryLdt',
+          type: 'upload',
+          relationTo: 'media',
+          label: 'DIALux LDT Photometrics File (.ZIP)',
+          admin: {
+            width: '50%',
+            description: 'Upload DIALux LDT photometric files packaged in a .ZIP archive for customer download. Automatically used in product downloads if not individually specified on a product model.',
+          },
+        },
+        {
+          name: 'photometryIes',
+          type: 'upload',
+          relationTo: 'media',
+          label: 'IES Photometrics File (.ZIP)',
+          admin: {
+            width: '50%',
+            description: 'Upload IES photometric calculation files packaged in a .ZIP archive for customer download. Automatically used in product downloads if not individually specified on a product model.',
+          },
+        },
+      ],
+    },
+    {
       name: 'selectedParameters',
       type: 'select',
       label: 'Visible Parameters (Filters & Columns)',

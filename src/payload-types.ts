@@ -262,6 +262,8 @@ export interface Family {
   dismantleInstructionPdf?: (string | null) | Media;
   lineDrawing?: (string | null) | Media;
   lightSpectrumGraph?: (string | null) | Media;
+  photometryLdt?: (string | null) | Media;
+  photometryIes?: (string | null) | Media;
   /**
    * Select which parameters/specifications are active for this family. This controls both the visible dropdown filters and the Technical Configuration spreadsheet columns.
    */

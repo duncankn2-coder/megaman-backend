@@ -664,6 +664,15 @@ export const Products: CollectionConfig = {
             if (!doc.lightSpectrumGraph && famSpectrum) {
               doc.lightSpectrumGraph = famSpectrum;
             }
+            // Auto-default photometry LDT and IES to family's default if not set
+            const famLdt = fam.photometryLdt || (fam as any).photometryLdtZip;
+            if (!doc.photometryLdt && famLdt) {
+              doc.photometryLdt = famLdt;
+            }
+            const famIes = fam.photometryIes || (fam as any).photometryIesZip;
+            if (!doc.photometryIes && famIes) {
+              doc.photometryIes = famIes;
+            }
           }
         } catch (err) {
           // ignore error during hook execution
