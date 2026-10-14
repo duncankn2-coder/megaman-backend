@@ -352,9 +352,9 @@ export const Products: CollectionConfig = {
             targetMediaField = product.techDocLightSource;
           }
 
-          // Resolve family dismantle instruction PDF
+          // Resolve family dismantle instruction PDF (only for technical documents, not datasheet)
           const familyObj = typeof product.families === 'object' && product.families !== null ? product.families : null;
-          const familyDiMediaField: any = familyObj?.dismantleInstructionPdf || null;
+          const familyDiMediaField: any = type === 'datasheet' ? null : (familyObj?.dismantleInstructionPdf || null);
 
           const fs = await import('fs');
           const path = await import('path');
