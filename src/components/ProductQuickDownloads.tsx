@@ -21,9 +21,11 @@ interface ProductData {
   techDocControlGear?: MediaObj | string | null;
   techDocContainingProduct?: MediaObj | string | null;
   datasheetPdf?: MediaObj | string | null;
+  userManual?: MediaObj | string | null;
   families?: {
     id?: string;
     name?: string;
+    userManual?: MediaObj | string | null;
     dismantleInstructionPdf?: MediaObj | string | null;
   } | string | null;
 }
@@ -98,6 +100,10 @@ export const ProductQuickDownloads: React.FC = () => {
   
   const familyObj = typeof product?.families === 'object' && product?.families !== null ? product.families : null;
   const dismantlePdfUrl = getMediaUrl(familyObj?.dismantleInstructionPdf);
+  const productManualUrl = getMediaUrl(product?.userManual);
+  const familyManualUrl = getMediaUrl(familyObj?.userManual);
+  const manualUrl = productManualUrl || familyManualUrl;
+  const isFamilyDefaultManual = !productManualUrl && Boolean(familyManualUrl);
 
   const buttonStyle: React.CSSProperties = {
     display: 'flex',
@@ -333,6 +339,30 @@ export const ProductQuickDownloads: React.FC = () => {
             <span>Download Dismantle Instruction PDF</span>
             <span>↓</span>
           </a>
+        )}
+
+        {manualUrl ? (
+          <a 
+            href={manualUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            download
+            style={{
+              ...buttonStyle,
+              color: '#a78bfa',
+              backgroundColor: 'rgba(167, 139, 250, 0.08)',
+              borderColor: 'rgba(167, 139, 250, 0.25)',
+            }}
+          >
+            <span>
+              Download User Manual {isFamilyDefaultManual ? '(Family Default)' : '(Product Attached)'}
+            </span>
+            <span>↓</span>
+          </a>
+        ) : (
+          <div style={{ fontSize: '0.7rem', color: '#64748b', fontStyle: 'italic', marginBottom: '0.4rem' }}>
+            No User Manual uploaded (Product or Family)
+          </div>
         )}
 
         {lineDrawingUrl && (

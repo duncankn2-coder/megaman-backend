@@ -222,13 +222,29 @@ export const Families: CollectionConfig = {
       label: 'Symbols / Certifications',
     },
     {
-      name: 'dismantleInstructionPdf',
-      type: 'upload',
-      relationTo: 'media',
-      label: 'Dismantle Instruction PDF ([family_name]_di.pdf)',
-      admin: {
-        description: 'Uploaded PDF for Market Surveillance Dismantle Instruction. Automatically merged into Technical Document - Light Source and Technical Document - Control Gear for all products in this family.',
-      },
+      type: 'row',
+      fields: [
+        {
+          name: 'userManual',
+          type: 'upload',
+          relationTo: 'media',
+          label: 'Default User Manual / Installation Manual (PDF)',
+          admin: {
+            width: '50%',
+            description: 'Default user manual or installation guide for this product family. Automatically used across all product models if a product does not have its own manual attached.',
+          },
+        },
+        {
+          name: 'dismantleInstructionPdf',
+          type: 'upload',
+          relationTo: 'media',
+          label: 'Dismantle Instruction PDF ([family_name]_di.pdf)',
+          admin: {
+            width: '50%',
+            description: 'Uploaded PDF for Market Surveillance Dismantle Instruction. Automatically merged into Technical Document - Light Source and Technical Document - Control Gear for all products in this family.',
+          },
+        },
+      ],
     },
     {
       type: 'row',

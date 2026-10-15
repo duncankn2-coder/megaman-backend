@@ -127,6 +127,12 @@ export function getTechnicalDocumentFilename(type: 'light-source' | 'containing-
   if (type === 'containing-product') {
     return `${customerModel}_CP_TD.pdf`;
   }
+  if (type === 'user-manual' || type === 'manual') {
+    return `${customerModel}_User_Manual.pdf`;
+  }
+  if (type === 'datasheet') {
+    return `${customerModel}_Datasheet.pdf`;
+  }
   return `${customerModel}_${modelId}_LS_TD.pdf`;
 }
 

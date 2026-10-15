@@ -195,8 +195,15 @@ export interface Product {
    * Select symbols / certifications applicable to this specific product model.
    */
   symbols?: (string | Symbol)[] | null;
-  images: string | Media;
+  /**
+   * Product shot image. Optional — if omitted, defaults to the first product shot of the family.
+   */
+  images?: (string | null) | Media;
   datasheetPdf?: (string | null) | Media;
+  /**
+   * Upload product-specific user manual or installation guide. If left empty, will automatically fall back to the family default user manual.
+   */
+  userManual?: (string | null) | Media;
   photometryLdt?: (string | null) | Media;
   photometryIes?: (string | null) | Media;
   lightSpectrumGraph?: (string | null) | Media;
@@ -243,6 +250,24 @@ export interface Family {
   categories: (string | Category)[];
   media: (string | Media)[];
   products?: (string | Product)[] | null;
+  /**
+   * Add optional accessories for this product series. An accessory table is displayed below the Technical Configurations table on the website if accessories are added.
+   */
+  accessories?:
+    | {
+        modelNumber?: string | null;
+        mmCode?: string | null;
+        colour?: string | null;
+        name?: string | null;
+        image?: (string | null) | Media;
+        /**
+         * Optionally link an existing product model in the database.
+         */
+        product?: (string | null) | Product;
+        description?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   features?:
     | {
         feature: string;
@@ -257,12 +282,28 @@ export interface Family {
     | null;
   symbols?: (string | Symbol)[] | null;
   /**
+   * Default user manual or installation guide for this product family. Automatically used across all product models if a product does not have its own manual attached.
+   */
+  userManual?: (string | null) | Media;
+  /**
    * Uploaded PDF for Market Surveillance Dismantle Instruction. Automatically merged into Technical Document - Light Source and Technical Document - Control Gear for all products in this family.
    */
   dismantleInstructionPdf?: (string | null) | Media;
+  /**
+   * Default dimensional line drawing image for this family. Automatically used in the product drawer if not individually specified on a product model.
+   */
   lineDrawing?: (string | null) | Media;
+  /**
+   * Default visible light spectrum (SPD) image for this family. Automatically used in the product drawer if not individually specified on a product model.
+   */
   lightSpectrumGraph?: (string | null) | Media;
+  /**
+   * Upload DIALux LDT photometric files packaged in a .ZIP archive for customer download. Automatically used in product downloads if not individually specified on a product model.
+   */
   photometryLdt?: (string | null) | Media;
+  /**
+   * Upload IES photometric calculation files packaged in a .ZIP archive for customer download. Automatically used in product downloads if not individually specified on a product model.
+   */
   photometryIes?: (string | null) | Media;
   /**
    * Select which parameters/specifications are active for this family. This controls both the visible dropdown filters and the Technical Configuration spreadsheet columns.
@@ -307,6 +348,10 @@ export interface Family {
         | 'dimmingType'
         | 'dimmingRange'
         | 'lampBase'
+        | 'length'
+        | 'width'
+        | 'height'
+        | 'diameter'
         | 'dimensions'
         | 'recessedCutOut'
         | 'weight'
@@ -500,6 +545,10 @@ export interface Family {
                     | 'dimmingType'
                     | 'dimmingRange'
                     | 'lampBase'
+                    | 'length'
+                    | 'width'
+                    | 'height'
+                    | 'diameter'
                     | 'dimensions'
                     | 'recessedCutOut'
                     | 'weight'
@@ -740,6 +789,10 @@ export interface Family {
                       | 'dimmingType'
                       | 'dimmingRange'
                       | 'lampBase'
+                      | 'length'
+                      | 'width'
+                      | 'height'
+                      | 'diameter'
                       | 'dimensions'
                       | 'recessedCutOut'
                       | 'weight'
@@ -1025,6 +1078,10 @@ export interface Skus {
   outerBoxItf?: string | null;
   packingMethod?: string | null;
   remark?: string | null;
+  /**
+   * Optional SKU-level user manual override. If empty, falls back to product and family default user manuals.
+   */
+  userManual?: (string | null) | Media;
   photometryLdt?: (string | null) | Media;
   photometryIes?: (string | null) | Media;
   lightSpectrumGraph?: (string | null) | Media;
@@ -1254,6 +1311,7 @@ export interface ProductsSelect<T extends boolean = true> {
   symbols?: T;
   images?: T;
   datasheetPdf?: T;
+  userManual?: T;
   photometryLdt?: T;
   photometryIes?: T;
   lightSpectrumGraph?: T;
@@ -1317,6 +1375,18 @@ export interface FamiliesSelect<T extends boolean = true> {
   categories?: T;
   media?: T;
   products?: T;
+  accessories?:
+    | T
+    | {
+        modelNumber?: T;
+        mmCode?: T;
+        colour?: T;
+        name?: T;
+        image?: T;
+        product?: T;
+        description?: T;
+        id?: T;
+      };
   features?:
     | T
     | {
@@ -1330,7 +1400,12 @@ export interface FamiliesSelect<T extends boolean = true> {
         id?: T;
       };
   symbols?: T;
+  userManual?: T;
   dismantleInstructionPdf?: T;
+  lineDrawing?: T;
+  lightSpectrumGraph?: T;
+  photometryLdt?: T;
+  photometryIes?: T;
   selectedParameters?: T;
   layout?:
     | T
@@ -1676,6 +1751,7 @@ export interface SkusSelect<T extends boolean = true> {
   outerBoxItf?: T;
   packingMethod?: T;
   remark?: T;
+  userManual?: T;
   photometryLdt?: T;
   photometryIes?: T;
   lightSpectrumGraph?: T;

@@ -340,6 +340,8 @@ export const Products: CollectionConfig = {
             return new Response(JSON.stringify({ error: 'Product not found' }), { status: 404 });
           }
 
+          const familyObj = typeof product.families === 'object' && product.families !== null ? product.families : null;
+
           // Resolve primary target document field
           let targetMediaField: any = null;
           if (type === 'control-gear') {
@@ -348,13 +350,15 @@ export const Products: CollectionConfig = {
             targetMediaField = product.techDocContainingProduct;
           } else if (type === 'datasheet') {
             targetMediaField = product.datasheetPdf;
+          } else if (type === 'user-manual' || type === 'manual') {
+            targetMediaField = product.userManual || (product as any).userManualPdf || familyObj?.userManual || (familyObj as any)?.userManualPdf;
           } else {
             targetMediaField = product.techDocLightSource;
           }
 
-          // Resolve family dismantle instruction PDF (only for technical documents, not datasheet)
-          const familyObj = typeof product.families === 'object' && product.families !== null ? product.families : null;
-          const familyDiMediaField: any = type === 'datasheet' ? null : (familyObj?.dismantleInstructionPdf || null);
+          // Resolve family dismantle instruction PDF (only for technical documents, not datasheet or user-manual)
+          const isNonMergeDoc = type === 'datasheet' || type === 'user-manual' || type === 'manual';
+          const familyDiMediaField: any = isNonMergeDoc ? null : (familyObj?.dismantleInstructionPdf || null);
 
           const fs = await import('fs');
           const path = await import('path');
@@ -751,6 +755,15 @@ export const Products: CollectionConfig = {
       type: 'upload',
       relationTo: 'media',
       label: 'PDF Datasheet / Leaflet',
+    },
+    {
+      name: 'userManual',
+      type: 'upload',
+      relationTo: 'media',
+      label: 'User Manual / Installation Manual (PDF)',
+      admin: {
+        description: 'Upload product-specific user manual or installation guide. If left empty, will automatically fall back to the family default user manual.',
+      },
     },
     {
       name: 'photometryLdt',

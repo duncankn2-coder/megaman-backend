@@ -95,6 +95,15 @@ export const Skus: CollectionConfig = {
       type: 'textarea',
     },
     {
+      name: 'userManual',
+      type: 'upload',
+      relationTo: 'media',
+      label: 'User Manual / Installation Manual (PDF)',
+      admin: {
+        description: 'Optional SKU-level user manual override. If empty, falls back to product and family default user manuals.',
+      },
+    },
+    {
       name: 'photometryLdt',
       type: 'upload',
       relationTo: 'media',
