@@ -500,12 +500,21 @@ export const bulkImportHtml = `
                 <div id="skuGuidelines" class="tab-guideline">
                     <div style="display:flex; flex-direction:column; gap:16px;">
                         <div>
-                            <h3 style="font-size:13px; font-weight:600; margin-bottom:6px; color:var(--primary);">📦 Product & SKU Import</h3>
+                            <h3 style="font-size:13px; font-weight:600; margin-bottom:6px; color:var(--primary);">📦 Product & SKU Import Instructions</h3>
                             <ul style="list-style-type: none; display: flex; flex-direction: column; gap: 8px;">
                                 <li><strong>General Data:</strong> Upload the Excel sheet defining product dimensions, housing, shape, and wattage.</li>
                                 <li><strong>SKU MM Codes:</strong> Upload the Excel sheet listing individual ordering codes (MM CODE), color temps (CCT), casing colors, EAN barcodes, and packaging logistics.</li>
-                                <li><strong>Linking:</strong> The importer automatically links variants (SKUs) to parent product pages using the Model No column in both sheets.</li>
+                                <li><strong>Model Linking:</strong> The importer automatically links variants (SKUs) to parent products using the exact Model Number in both sheets.</li>
                             </ul>
+                            <div style="margin-top: 12px; padding: 10px 12px; border-radius: 6px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); font-size: 11px; line-height: 1.5; color: #cbd5e1;">
+                                <strong style="color: #38bdf8; display: block; margin-bottom: 4px;">⚠️ General Data Formatting Rules (To Prevent Frontend Display Errors):</strong>
+                                <ul style="margin: 0; padding-left: 16px; display: flex; flex-direction: column; gap: 3px;">
+                                    <li><strong>Numbers Only:</strong> Do not append units to numbers (e.g. enter <code>14</code> not <code>14W</code>; <code>1200</code> not <code>1200lm</code>; <code>120</code> not <code>120mm</code>).</li>
+                                    <li><strong>CCT Format:</strong> Single Kelvin: <code>3000</code>, <code>4000</code>. Multi-CCT: <code>3000/4000/6500K</code>. Never concatenate numbers without slashes (e.g. <code>300040006500</code> ❌).</li>
+                                    <li><strong>Colour vs CCT:</strong> Never put color temperature (e.g. <code>3000K</code>) into the Fitting Colour column. Use <code>White</code>, <code>Black</code>, <code>Silver</code>.</li>
+                                    <li><strong>Barcodes:</strong> Format EAN (13-digit) and ITF (14-digit) cells as <code>Text</code> in Excel to prevent exponential notation (<code>4.89E+12</code> ❌).</li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </div>
