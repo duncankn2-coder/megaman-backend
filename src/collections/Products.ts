@@ -157,10 +157,10 @@ export const Products: CollectionConfig = {
             });
           }
 
-          const generalXlsxBuffer = hasGeneral 
+          const generalXlsxBuffer = hasGeneral
             ? Buffer.from(await (generalXlsxFile as Blob).arrayBuffer())
             : undefined;
-          const skuXlsxBuffer = hasSku 
+          const skuXlsxBuffer = hasSku
             ? Buffer.from(await (skuXlsxFile as Blob).arrayBuffer())
             : undefined;
           const zipBuffer = hasZip
@@ -364,7 +364,7 @@ export const Products: CollectionConfig = {
           const path = await import('path');
           const { PDFDocument } = await import('pdf-lib');
 
-          const payloadUrl = process.env.PAYLOAD_PUBLIC_SERVER_URL 
+          const payloadUrl = process.env.PAYLOAD_PUBLIC_SERVER_URL
             || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
 
           const getMediaBuffer = async (mediaObj: any): Promise<Buffer | null> => {
@@ -458,11 +458,11 @@ export const Products: CollectionConfig = {
           } else {
             // When no pre-uploaded static PDF document exists for this product,
             // redirect to the full dynamic technical document web page which renders all pages + dismantle instruction.
-            const frontendUrl = process.env.PAYLOAD_PUBLIC_FRONTEND_URL 
-              || process.env.NEXT_PUBLIC_FRONTEND_URL 
+            const frontendUrl = process.env.PAYLOAD_PUBLIC_FRONTEND_URL
+              || process.env.NEXT_PUBLIC_FRONTEND_URL
               || 'https://megaman-frontend.vercel.app';
-            const pagePath = type === 'datasheet' 
-              ? 'datasheet' 
+            const pagePath = type === 'datasheet'
+              ? 'datasheet'
               : (type === 'control-gear' ? 'control-gear' : (type === 'containing-product' ? 'containing-product' : 'eprel-light-source'));
             return Response.redirect(`${frontendUrl}/products/${id}/${pagePath}`, 302);
           }
@@ -566,7 +566,7 @@ export const Products: CollectionConfig = {
           if (specs) {
             // Update the incoming data with the fetched specifications
             data.specifications = specs;
-            
+
             // Map power, colourTemperature, and colour if not explicitly set
             if (specs.on_mode_power_w && (data.power === undefined || data.power === null)) {
               data.power = String(specs.on_mode_power_w);
@@ -749,11 +749,11 @@ export const Products: CollectionConfig = {
     },
 
     {
-        name: 'families', // New field for product families
-        type: 'relationship',
-        relationTo: 'families',
-        hasMany: false, // Typically one family per product, but adjust if needed
-        required: false, // Optional, depending on your needs
+      name: 'families', // New field for product families
+      type: 'relationship',
+      relationTo: 'families',
+      hasMany: false, // Typically one family per product, but adjust if needed
+      required: false, // Optional, depending on your needs
     },
     {
       name: 'symbols',

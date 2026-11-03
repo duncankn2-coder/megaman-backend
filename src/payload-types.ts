@@ -251,7 +251,11 @@ export interface Family {
   media: (string | Media)[];
   products?: (string | Product)[] | null;
   /**
-   * Add optional accessories for this product series. An accessory table is displayed below the Technical Configurations table on the website if accessories are added.
+   * Select existing accessory products directly (just like Products above). Selected items are displayed in the Accessories table below Technical Configurations on the website.
+   */
+  accessoryProducts?: (string | Product)[] | null;
+  /**
+   * Optionally add custom accessories manually if they are not in Products, or override display details.
    */
   accessories?:
     | {
@@ -1375,6 +1379,7 @@ export interface FamiliesSelect<T extends boolean = true> {
   categories?: T;
   media?: T;
   products?: T;
+  accessoryProducts?: T;
   accessories?:
     | T
     | {
