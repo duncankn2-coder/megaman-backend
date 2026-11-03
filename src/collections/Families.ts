@@ -95,15 +95,25 @@ export const Families: CollectionConfig = {
       hasMany: true,
     },
     {
+      name: 'accessoryProducts',
+      type: 'relationship',
+      relationTo: 'products',
+      hasMany: true,
+      label: 'Accessories / Optional Parts',
+      admin: {
+        description: 'Select existing accessory products directly (just like Products above). Selected items are displayed in the Accessories table below Technical Configurations on the website.',
+      },
+    },
+    {
       name: 'accessories',
       type: 'array',
-      label: 'Accessories / Optional Parts',
+      label: 'Manual Accessories / Optional Parts',
       labels: {
         singular: 'Accessory',
         plural: 'Accessories',
       },
       admin: {
-        description: 'Add optional accessories for this product series. An accessory table is displayed below the Technical Configurations table on the website if accessories are added.',
+        description: 'Optionally add custom accessories manually if they are not in Products, or override display details.',
         initCollapsed: true,
       },
       fields: [

@@ -631,6 +631,30 @@ export const Products: CollectionConfig = {
             });
             console.log(`Removed product ID ${id} from family: ${family.id}`);
           }
+
+          const familiesWithAccessory = await req.payload.find({
+            collection: 'families',
+            where: {
+              accessoryProducts: {
+                equals: id,
+              },
+            },
+          });
+
+          for (const family of familiesWithAccessory.docs) {
+            const updatedAccessoryProducts = ((family as any).accessoryProducts || [])
+              .map((p: any) => (typeof p === 'object' && p !== null) ? p.id : p)
+              .filter((pId: any) => pId !== id);
+
+            await req.payload.update({
+              collection: 'families',
+              id: family.id,
+              data: {
+                accessoryProducts: updatedAccessoryProducts,
+              } as any,
+            });
+            console.log(`Removed accessory product ID ${id} from family: ${family.id}`);
+          }
         } catch (error) {
           console.error(`Error removing product ID ${id} from family relationships:`, error);
         }
