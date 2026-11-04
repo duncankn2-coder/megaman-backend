@@ -1,6 +1,6 @@
 import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 import { mongooseAdapter } from '@payloadcms/db-mongodb'
-import { nodemailerAdapter } from '@payloadcms/email-nodemailer'
+import { resendAdapter } from '@payloadcms/email-resend'
 import { payloadCloudPlugin } from '@payloadcms/payload-cloud'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
@@ -55,25 +55,10 @@ export default buildConfig({
   db: mongooseAdapter({
     url: process.env.DATABASE_URI || '',
   }),
-  email: nodemailerAdapter({
-    defaultFromAddress: process.env.SMTP_FROM_ADDRESS || 'noreply@megaman.cc',
-    defaultFromName: process.env.SMTP_FROM_NAME || 'MEGAMAN® Lighting CMS',
-    transportOptions: process.env.SMTP_HOST
-      ? ({
-          host: process.env.SMTP_HOST,
-          port: process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587,
-          secure: process.env.SMTP_SECURE === 'true' || process.env.SMTP_PORT === '465',
-          auth: process.env.SMTP_USER
-            ? {
-                user: process.env.SMTP_USER,
-                pass: process.env.SMTP_PASS || '',
-              }
-            : undefined,
-          tls: {
-            ciphers: 'SSLv3',
-          },
-        } as any)
-      : undefined,
+  email: resendAdapter({
+    defaultFromAddress: process.env.RESEND_DEFAULT_FROM_ADDRESS || 'noreply@neonlite.com.hk',
+    defaultFromName: process.env.RESEND_DEFAULT_FROM_NAME || 'MEGAMAN® Lighting CMS',
+    apiKey: process.env.RESEND_API_KEY || '',
   }),
   sharp,
   plugins: [
