@@ -24,6 +24,29 @@ export const Media: CollectionConfig = {
     update: ({ req }) => !!req.user, // Only authenticated users can update
     delete: ({ req }) => !!req.user, // Only authenticated users can delete
   },
+  hooks: {
+    beforeValidate: [
+      ({ data, req }) => {
+        const MAX_PDF_SIZE = 15 * 1024 * 1024; // 15MB
+        const file = (req as any)?.file;
+        const mimeType = file?.mimetype || data?.mimeType;
+        const fileSize = file?.size || data?.filesize;
+
+        if (mimeType === 'application/pdf' && fileSize && fileSize > MAX_PDF_SIZE) {
+          const sizeMB = (fileSize / (1024 * 1024)).toFixed(1);
+          throw new Error(
+            `The uploaded PDF is ${sizeMB}MB, which exceeds the 15MB limit. Please upload a PDF smaller than 15MB.`
+          );
+        }
+
+        if (mimeType === 'application/pdf' && data && !data.type) {
+          data.type = 'document';
+        }
+
+        return data;
+      },
+    ],
+  },
   fields: [
     {
       name: 'alt',

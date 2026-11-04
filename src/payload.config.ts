@@ -55,6 +55,12 @@ export default buildConfig({
   db: mongooseAdapter({
     url: process.env.DATABASE_URI || '',
   }),
+  upload: {
+    limits: {
+      fileSize: 30 * 1024 * 1024, // 30MB max multipart body size to comfortably support 15MB uploads
+    },
+    useTempFiles: true,
+  },
   email: resendAdapter({
     defaultFromAddress: process.env.RESEND_DEFAULT_FROM_ADDRESS || 'noreply@neonlite.com.hk',
     defaultFromName: process.env.RESEND_DEFAULT_FROM_NAME || 'MEGAMAN® Lighting CMS',
@@ -69,6 +75,7 @@ export default buildConfig({
         media: true,
       },
       token: process.env.BLOB_READ_WRITE_TOKEN || '',
+      clientUploads: true,
     }),
   ],
 })
