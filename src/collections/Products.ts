@@ -692,6 +692,9 @@ export const Products: CollectionConfig = {
             if (!doc.lightSpectrumGraph && famSpectrum) {
               doc.lightSpectrumGraph = famSpectrum;
             }
+            if ((!doc.lightSpectrumGraphs || doc.lightSpectrumGraphs.length === 0) && Array.isArray(fam.lightSpectrumGraphs) && fam.lightSpectrumGraphs.length > 0) {
+              doc.lightSpectrumGraphs = fam.lightSpectrumGraphs;
+            }
             // Auto-default photometry LDT and IES to family's default if not set
             const famLdt = fam.photometryLdt || (fam as any).photometryLdtZip;
             if (!doc.photometryLdt && famLdt) {
@@ -806,6 +809,16 @@ export const Products: CollectionConfig = {
       type: 'upload',
       relationTo: 'media',
       label: 'Light Spectrum Graph Image',
+    },
+    {
+      name: 'lightSpectrumGraphs',
+      type: 'relationship',
+      relationTo: 'media',
+      hasMany: true,
+      label: 'Light Spectrum Graphs (Multi-CCT)',
+      admin: {
+        description: 'Upload or select multiple light spectrum graph images for switchable / multi-CCT products (e.g. 3000K, 4000K, 6500K).',
+      },
     },
     {
       name: 'lineDrawing',

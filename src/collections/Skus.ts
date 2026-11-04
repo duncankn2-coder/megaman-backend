@@ -122,6 +122,16 @@ export const Skus: CollectionConfig = {
       label: 'Light Spectrum Graph Image',
     },
     {
+      name: 'lightSpectrumGraphs',
+      type: 'relationship',
+      relationTo: 'media',
+      hasMany: true,
+      label: 'Light Spectrum Graphs (Multi-CCT)',
+      admin: {
+        description: 'Optional SKU-level spectrum graphs override (e.g. for Multi-CCT SKUs).',
+      },
+    },
+    {
       name: 'lineDrawing',
       type: 'upload',
       relationTo: 'media',

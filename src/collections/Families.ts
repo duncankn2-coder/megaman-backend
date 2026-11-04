@@ -282,6 +282,16 @@ export const Families: CollectionConfig = {
       ],
     },
     {
+      name: 'lightSpectrumGraphs',
+      type: 'relationship',
+      relationTo: 'media',
+      hasMany: true,
+      label: 'Default Light Spectrum Graphs (Multi-CCT)',
+      admin: {
+        description: 'Upload or select multiple visible light spectrum (SPD) graphs for Multi-CCT / switchable color temperature luminaires (e.g. 3000K, 4000K, 6500K). Automatically displayed in the product drawer.',
+      },
+    },
+    {
       type: 'row',
       fields: [
         {

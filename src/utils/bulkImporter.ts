@@ -482,6 +482,7 @@ export async function processBulkImport(
       }
       if (lightSpectrumGraphId) {
         productData.lightSpectrumGraph = lightSpectrumGraphId;
+        productData.lightSpectrumGraphs = [lightSpectrumGraphId];
       }
       if (lineDrawingId) {
         productData.lineDrawing = lineDrawingId;

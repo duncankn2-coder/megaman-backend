@@ -14,6 +14,7 @@ interface ProductData {
   id: string;
   name: string;
   lightSpectrumGraph?: MediaObj | string | null;
+  lightSpectrumGraphs?: (MediaObj | string)[] | null;
   lineDrawing?: MediaObj | string | null;
   photometricPolarDiagram?: MediaObj | string | null;
   beamAngleDiagram?: MediaObj | string | null;
@@ -291,37 +292,62 @@ export const ProductQuickDownloads: React.FC = () => {
         🌈 Spectrum Graph & Image Assets
       </div>
       <div style={{ display: 'flex', flexDirection: 'column' }}>
-        {spectrumUrl ? (
-          <div>
-            <a 
-              href={spectrumUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              download
-              style={{
-                ...buttonStyle,
-                color: '#4ade80',
-                backgroundColor: 'rgba(74, 222, 128, 0.08)',
-                borderColor: 'rgba(74, 222, 128, 0.25)',
-              }}
-            >
-              <span>Download Spectrum Graph Image</span>
-              <span>↓</span>
-            </a>
-            {/* Image Preview Thumbnail */}
-            <div style={{ marginTop: '0.25rem', marginBottom: '0.5rem', borderRadius: '6px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.1)', background: '#000', textAlign: 'center', padding: '4px' }}>
-              <img 
-                src={spectrumUrl} 
-                alt="Light Spectrum Graph" 
-                style={{ maxHeight: '100px', maxWidth: '100%', objectFit: 'contain' }}
-              />
+        {/* 3. LIGHT SPECTRUM GRAPH(S) */}
+        {(() => {
+          const list: { url: string; label: string }[] = [];
+          if (Array.isArray(product?.lightSpectrumGraphs)) {
+            product.lightSpectrumGraphs.forEach((item, idx) => {
+              const u = getMediaUrl(item);
+              if (u) {
+                const label = (typeof item === 'object' && item && (item.alt || item.filename))
+                  ? String(item.alt || item.filename)
+                  : `Spectrum Graph ${idx + 1}`;
+                list.push({ url: u, label });
+              }
+            });
+          }
+          if (list.length === 0 && spectrumUrl) {
+            list.push({ url: spectrumUrl, label: 'Download Spectrum Graph Image' });
+          }
+
+          if (list.length === 0) {
+            return (
+              <div style={{ fontSize: '0.7rem', color: '#64748b', fontStyle: 'italic', marginBottom: '0.4rem' }}>
+                No Spectrum Graph Image uploaded
+              </div>
+            );
+          }
+
+          return list.map((item, idx) => (
+            <div key={idx} style={{ marginBottom: '0.5rem' }}>
+              <a 
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                download
+                style={{
+                  ...buttonStyle,
+                  color: '#4ade80',
+                  backgroundColor: 'rgba(74, 222, 128, 0.08)',
+                  borderColor: 'rgba(74, 222, 128, 0.25)',
+                }}
+              >
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {item.label.startsWith('Download') ? item.label : `Download Spectrum: ${item.label}`}
+                </span>
+                <span>↓</span>
+              </a>
+              {/* Image Preview Thumbnail */}
+              <div style={{ marginTop: '0.25rem', marginBottom: '0.5rem', borderRadius: '6px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.1)', background: '#000', textAlign: 'center', padding: '4px' }}>
+                <img 
+                  src={item.url} 
+                  alt={item.label} 
+                  style={{ maxHeight: '100px', maxWidth: '100%', objectFit: 'contain' }}
+                />
+              </div>
             </div>
-          </div>
-        ) : (
-          <div style={{ fontSize: '0.7rem', color: '#64748b', fontStyle: 'italic', marginBottom: '0.4rem' }}>
-            No Spectrum Graph Image uploaded
-          </div>
-        )}
+          ));
+        })()}
 
         {dismantlePdfUrl && (
           <a 

@@ -207,6 +207,10 @@ export interface Product {
   photometryLdt?: (string | null) | Media;
   photometryIes?: (string | null) | Media;
   lightSpectrumGraph?: (string | null) | Media;
+  /**
+   * Upload or select multiple light spectrum graph images for switchable / multi-CCT products (e.g. 3000K, 4000K, 6500K).
+   */
+  lightSpectrumGraphs?: (string | Media)[] | null;
   lineDrawing?: (string | null) | Media;
   photometricPolarDiagram?: (string | null) | Media;
   beamAngleDiagram?: (string | null) | Media;
@@ -301,6 +305,10 @@ export interface Family {
    * Default visible light spectrum (SPD) image for this family. Automatically used in the product drawer if not individually specified on a product model.
    */
   lightSpectrumGraph?: (string | null) | Media;
+  /**
+   * Upload or select multiple visible light spectrum (SPD) graphs for Multi-CCT / switchable color temperature luminaires (e.g. 3000K, 4000K, 6500K). Automatically displayed in the product drawer.
+   */
+  lightSpectrumGraphs?: (string | Media)[] | null;
   /**
    * Upload DIALux LDT photometric files packaged in a .ZIP archive for customer download. Automatically used in product downloads if not individually specified on a product model.
    */
@@ -1089,6 +1097,10 @@ export interface Skus {
   photometryLdt?: (string | null) | Media;
   photometryIes?: (string | null) | Media;
   lightSpectrumGraph?: (string | null) | Media;
+  /**
+   * Optional SKU-level spectrum graphs override (e.g. for Multi-CCT SKUs).
+   */
+  lightSpectrumGraphs?: (string | Media)[] | null;
   lineDrawing?: (string | null) | Media;
   photometricPolarDiagram?: (string | null) | Media;
   beamAngleDiagram?: (string | null) | Media;
@@ -1319,6 +1331,7 @@ export interface ProductsSelect<T extends boolean = true> {
   photometryLdt?: T;
   photometryIes?: T;
   lightSpectrumGraph?: T;
+  lightSpectrumGraphs?: T;
   lineDrawing?: T;
   photometricPolarDiagram?: T;
   beamAngleDiagram?: T;
@@ -1409,6 +1422,7 @@ export interface FamiliesSelect<T extends boolean = true> {
   dismantleInstructionPdf?: T;
   lineDrawing?: T;
   lightSpectrumGraph?: T;
+  lightSpectrumGraphs?: T;
   photometryLdt?: T;
   photometryIes?: T;
   selectedParameters?: T;
@@ -1760,6 +1774,7 @@ export interface SkusSelect<T extends boolean = true> {
   photometryLdt?: T;
   photometryIes?: T;
   lightSpectrumGraph?: T;
+  lightSpectrumGraphs?: T;
   lineDrawing?: T;
   photometricPolarDiagram?: T;
   beamAngleDiagram?: T;
