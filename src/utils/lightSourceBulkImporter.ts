@@ -82,7 +82,7 @@ export async function processLightSourceBulkImport(
     } else {
       const base64Png = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
       const buffer = Buffer.from(base64Png, 'base64');
-      
+
       const newMedia = await payload.create({
         collection: 'media',
         data: {
@@ -166,7 +166,7 @@ export async function processLightSourceBulkImport(
 
     const fileBuffer = zipEntry.getData();
     const size = fileBuffer.length;
-    
+
     let mimetype = 'application/octet-stream';
     const ext = path.extname(cleanName).toLowerCase();
     if (ext === '.png') mimetype = 'image/png';
@@ -226,11 +226,11 @@ export async function processLightSourceBulkImport(
   const idxModelNo = cleanKeys.indexOf('new_erp_model_no');
   const idxMmCode = cleanKeys.indexOf('mm_code');
   const idxProductCode = cleanKeys.indexOf('product_code');
-  const idxDescription = cleanKeys.indexOf('supplier_description') !== -1 
-    ? cleanKeys.indexOf('supplier_description') 
+  const idxDescription = cleanKeys.indexOf('supplier_description') !== -1
+    ? cleanKeys.indexOf('supplier_description')
     : cleanKeys.indexOf('description');
-  const idxFamily = cleanKeys.indexOf('shape') !== -1 
-    ? cleanKeys.indexOf('shape') 
+  const idxFamily = cleanKeys.indexOf('shape') !== -1
+    ? cleanKeys.indexOf('shape')
     : cleanKeys.indexOf('series');
   const idxCategory1 = cleanKeys.indexOf('category1');
   const idxCategory2 = cleanKeys.indexOf('category2');
