@@ -74,7 +74,7 @@ export async function processSkuBulkImport(
     } else {
       const base64Png = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
       const buffer = Buffer.from(base64Png, 'base64');
-      
+
       const newMedia = await payload.create({
         collection: 'media',
         data: {
@@ -159,7 +159,7 @@ export async function processSkuBulkImport(
 
     const fileBuffer = zipEntry.getData();
     const size = fileBuffer.length;
-    
+
     let mimetype = 'application/octet-stream';
     const ext = path.extname(cleanName).toLowerCase();
     if (ext === '.png') mimetype = 'image/png';
@@ -221,23 +221,23 @@ export async function processSkuBulkImport(
     try {
       generalSpecs = await processXlsxToJson(generalXlsxBuffer);
       logs.push(`Successfully parsed ${generalSpecs.length} specification rows using schema converter.`);
-      
+
       // Connect to MongoDB to sync generalSpecs to general_data.luminaire
       try {
         const mongoClient = await getMongoClient();
         const db = mongoClient.db('general_data');
         const luminaireCollection = db.collection('luminaire');
         logs.push('Connected to general_data MongoDB database for syncing specifications.');
-        
+
         if (generalSpecs.length > 0) {
           logs.push(`Syncing ${generalSpecs.length} specification rows to MongoDB...`);
           for (const spec of generalSpecs) {
             const modelNumber = spec.customer_model_no_new || spec.yk_model_no;
             if (!modelNumber) continue;
-            
+
             const cleanItem = { ...spec };
             delete cleanItem._id;
-            
+
             await luminaireCollection.updateOne(
               { customer_model_no_new: modelNumber },
               { $set: cleanItem },
@@ -289,19 +289,21 @@ export async function processSkuBulkImport(
       return -1;
     };
 
-    const idxModelNo = findColIndex(genHeaders, [
-      'customer_model_no_new',
-      'Customer Model No.  (NEW ErP)',
-      'Customer Model No.(NEW ErP)',
-      'New ErP Model No.',
-      'New ErP Model No',
-      'model_number',
-      'Model Number',
-      'Customer Model No.(new)',
-      'customer_model_no_new',
-      'Product Code',
-      'MM Code'
-    ]);
+    const idxModelNo = (genHeaders.length > 8 && genHeaders[8] && (genHeaders[8].toLowerCase().includes('model') || genHeaders[8].toLowerCase().includes('customer')))
+      ? 8
+      : findColIndex(genHeaders, [
+        'customer_model_no_new',
+        'Customer Model No.  (NEW ErP)',
+        'Customer Model No.(NEW ErP)',
+        'New ErP Model No.',
+        'New ErP Model No',
+        'Customer Model No.(new)',
+        'model_number',
+        'Model Number',
+        'customer_model_no_new',
+        'Product Code',
+        'MM Code'
+      ]);
     const idxDescription = findColIndex(genHeaders, ['description', 'desc', '描述']);
     const idxFamily = findColIndex(genHeaders, ['series name', 'series_name', 'series', 'family', '系列名']);
     const idxCategory = findColIndex(genHeaders, ['product_type', 'product type', 'category1', 'category2', 'category', '产品类型']);
@@ -446,7 +448,7 @@ export async function processSkuBulkImport(
         // Find specifications
         let productSpecs: any = null;
         if (generalSpecs.length > 0) {
-          productSpecs = generalSpecs.find(specs => 
+          productSpecs = generalSpecs.find(specs =>
             specs && normalizeModelNumber(specs.customer_model_no_new) === normalizeModelNumber(modelNo)
           );
         }
@@ -472,7 +474,7 @@ export async function processSkuBulkImport(
             id: existing.id,
             data: productData,
           });
-          parentProductsMap.set(normalizeModelNumber(modelNo), existing.id);
+          parentProductsMap.set(modelNo.trim().toLowerCase(), existing.id);
           parentProductNamesMap.set(existing.id, modelNo);
           productsUpdated++;
         } else {
@@ -480,7 +482,7 @@ export async function processSkuBulkImport(
             collection: 'products',
             data: productData,
           });
-          parentProductsMap.set(normalizeModelNumber(modelNo), created.id);
+          parentProductsMap.set(modelNo.trim().toLowerCase(), created.id);
           parentProductNamesMap.set(created.id, modelNo);
           productsCreated++;
         }
@@ -535,7 +537,7 @@ export async function processSkuBulkImport(
       const ean = getField(row, ['EAN13 barcode', 'barcode']);
       const innerItf = getField(row, ['Inner box ITF14', 'inner_itf']);
       const outerItf = getField(row, ['Outer box ITF14', 'outer_itf']);
-      
+
       let remark = getField(row, ['备注']);
       const remarkField = getField(row, ['Remark']);
       if (remarkField) {
@@ -561,309 +563,259 @@ export async function processSkuBulkImport(
         continue;
       }
 
-      // Attempt to match parent product
-      let parentProductId = parentProductsMap.get(normalizeModelNumber(modelNoVariant));
-      
-      // Fallback: search parentProductsMap using cleanModel
-      if (!parentProductId) {
-        const cleanVar = cleanModel(modelNoVariant);
-        for (const [key, val] of parentProductsMap.entries()) {
-          if (cleanModel(key) === cleanVar) {
-            parentProductId = val;
-            break;
-          }
+        // Rule 1: "there are no rows related with the products start with XCD, so nothing to match."
+        if (/^xcd/i.test(modelNoVariant.trim())) {
+          logs.push(`SKU Row ${rowNum} (${mmCode}): Model "${modelNoVariant}" starts with XCD. Per business rule, products starting with XCD have no rows in product MM code and are not matched.`);
+          continue;
         }
-      }
 
-      let parentProductName = parentProductId ? parentProductNamesMap.get(parentProductId) : '';
-      
-      if (!parentProductId) {
-        // Direct lookup from database in case it was created previously
-        const dbMatch = await payload.find({
-          collection: 'products',
-          where: { name: { equals: modelNoVariant } },
-          limit: 1,
-        });
-        if (dbMatch.docs.length > 0) {
-          parentProductId = dbMatch.docs[0].id;
-          parentProductName = dbMatch.docs[0].name;
-        } else {
-          // Fuzzy DB lookup using prefix-based query
-          const prefix = getModelPrefix(modelNoVariant);
-          if (prefix) {
-            const fuzzyMatch = await payload.find({
-              collection: 'products',
-              where: {
-                name: {
-                  like: prefix,
-                },
-              },
-              limit: 100,
-            });
-            // Try normalized match first
-            let matched = fuzzyMatch.docs.find(
-              p => normalizeModelNumber(p.name) === normalizeModelNumber(modelNoVariant)
-            );
-            // Fallback to clean match
-            if (!matched) {
-              const cleanVar = cleanModel(modelNoVariant);
-              matched = fuzzyMatch.docs.find(
-                p => cleanModel(p.name) === cleanVar
-              );
-            }
-            if (matched) {
-              parentProductId = matched.id;
-              parentProductName = matched.name;
-            }
-          }
-        }
-      } else if (!parentProductName) {
-        // If parentProductId is found but parentProductName is not in map (e.g. not created in this run), fetch it
-        try {
-          const parentProd = await payload.findByID({
+        // Rule 2: "Column I of the general data is indexing column C of product mm code. if this 2 cells are same, please use the mm code on column J in product mm code"
+        const exactModelKey = modelNoVariant.trim().toLowerCase();
+        let parentProductId = parentProductsMap.get(exactModelKey);
+        let parentProductName = parentProductId ? parentProductNamesMap.get(parentProductId) : '';
+
+
+        if (!parentProductId) {
+          // Direct exact match from database in case it was created previously
+          const dbMatch = await payload.find({
             collection: 'products',
-            id: parentProductId,
+            where: { name: { equals: modelNoVariant.trim() } },
+            limit: 1,
           });
-          parentProductName = parentProd.name;
-        } catch (err) {
-          // Ignore and fallback
+          if (dbMatch.docs.length > 0) {
+            parentProductId = dbMatch.docs[0].id;
+            parentProductName = dbMatch.docs[0].name;
+          }
         }
-      }
 
-      if (!parentProductId) {
-        warnings.push(`SKU Row ${rowNum} (${mmCode}): Warning — could not link to parent base product "${modelNoVariant}". Skipped SKU.`);
-        continue;
-      }
+        if (!parentProductId) {
+          warnings.push(`SKU Row ${rowNum} (${mmCode}): Column C "${modelNoVariant}" does not match Column I of any General Data product. Skipped SKU.`);
+          continue;
+        }
 
-      logs.push(`Processing SKU variant "${mmCode}" linking to parent model "${modelNoVariant}"...`);
+        logs.push(`Processing SKU variant "${mmCode}" linking to parent model "${modelNoVariant}"...`);
 
-      // Find the matching specifications row from the General Data Excel
-      const cctClean = colourTemp ? String(colourTemp).replace(/[^\d]/g, '') : '';
-      let matchingSpecs: any = null;
-      if (generalSpecs.length > 0) {
-        // 1. Try matching by model number AND clean CCT if available
-        if (cctClean) {
-          matchingSpecs = generalSpecs.find(specs => 
-            specs && 
-            normalizeModelNumber(specs.customer_model_no_new) === normalizeModelNumber(modelNoVariant) &&
-            (specs.cct_k ? String(specs.cct_k).replace(/[^\d]/g, '') === cctClean : false)
+        // Find the matching specifications row from the General Data Excel (exact match on customer_model_no_new)
+        let matchingSpecs: any = null;
+        if (generalSpecs.length > 0) {
+          matchingSpecs = generalSpecs.find(specs =>
+            specs && specs.customer_model_no_new &&
+            specs.customer_model_no_new.trim().toLowerCase() === exactModelKey
           );
         }
-        // 2. Fallback: match by model number alone
+
+        // Fallback: Query the general_data MongoDB database if not found in memory
         if (!matchingSpecs) {
-          matchingSpecs = generalSpecs.find(specs => 
-            specs && (
-              normalizeModelNumber(specs.customer_model_no_new) === normalizeModelNumber(modelNoVariant) ||
-              cleanModel(specs.customer_model_no_new) === cleanModel(modelNoVariant) ||
-              (specs.yk_model_no && normalizeModelNumber(specs.yk_model_no) === normalizeModelNumber(modelNoVariant))
-            )
-          );
-        }
-      }
-      
-      // Fallback: Query the general_data MongoDB database if not found in memory
-      if (!matchingSpecs) {
-        try {
-          matchingSpecs = await fetchSpecifications(modelNoVariant, mmCode);
-        } catch (err: any) {
-          // Ignore
-        }
-      }
-
-      // Fallback: Check parent product specifications
-      if (!matchingSpecs && parentProductId) {
-        try {
-          const parentDoc = await payload.findByID({
-            collection: 'products',
-            id: parentProductId,
-          });
-          if (parentDoc?.specifications) {
-            matchingSpecs = parentDoc.specifications;
+          try {
+            const client = await getMongoClient();
+            const db = client.db('general_data');
+            const luminaireCollection = db.collection('luminaire');
+            const specDoc = await luminaireCollection.findOne({
+              customer_model_no_new: { $regex: new RegExp('^' + modelNoVariant.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i') }
+            });
+            if (specDoc) {
+              const { _id, __v, ...specs } = specDoc;
+              matchingSpecs = specs;
+            }
+          } catch (err: any) {
+            // Ignore
           }
-        } catch (err: any) {
-          // Ignore
         }
-      }
 
-      if (matchingSpecs) {
-        logs.push(`Found specifications for SKU "${mmCode}" (Model: "${modelNoVariant}").`);
-      }
-
-      // Format CCT from General Data (e.g. 3000400050006500 -> 3000/4000/5000/6500K)
-      const formatGeneralCct = (rawCct: any): string => {
-        if (!rawCct) return '';
-        const str = String(rawCct).trim();
-        if (/^\d{8,16}$/.test(str) && str.length % 4 === 0) {
-          const parts = [];
-          for (let k = 0; k < str.length; k += 4) {
-            parts.push(str.substring(k, k + 4));
+        // Fallback: Check parent product specifications
+        if (!matchingSpecs && parentProductId) {
+          try {
+            const parentDoc = await payload.findByID({
+              collection: 'products',
+              id: parentProductId,
+            });
+            if (parentDoc?.specifications) {
+              matchingSpecs = parentDoc.specifications;
+            }
+          } catch (err: any) {
+            // Ignore
           }
-          return parts.join('/') + 'K';
         }
-        if (/^\d{4}$/.test(str)) {
-          return str + 'K';
+
+        if (matchingSpecs) {
+          logs.push(`Found specifications for SKU "${mmCode}" (Model: "${modelNoVariant}").`);
         }
-        return str;
-      };
 
-      // Extract color from General Data description or fitting_colour
-      const extractGeneralColor = (specs: any): string => {
-        if (!specs) return '';
-        if (specs.fitting_colour && specs.fitting_colour !== 'null' && specs.fitting_colour !== null) {
-          return String(specs.fitting_colour).trim();
-        }
-        if (specs.description) {
-          const match = String(specs.description).match(/Colou?r\s*:\s*([^/,\r\n]+)/i);
-          if (match) return match[1].trim();
-        }
-        return '';
-      };
-
-      // USE GENERAL DATA AS THE CORRECT DATA (General Data takes precedence)
-      const finalWattage = (matchingSpecs?.on_mode_power_w ? String(matchingSpecs.on_mode_power_w) : '')
-        || watt
-        || undefined;
-
-      const generalCctFormatted = matchingSpecs?.cct_k ? formatGeneralCct(matchingSpecs.cct_k) : '';
-      const finalColourTemp = generalCctFormatted || colourTemp || undefined;
-
-      const generalColor = extractGeneralColor(matchingSpecs);
-      // If table colour is actually a CCT (e.g. 3000/4000/6500K) or missing, ignore it
-      const isColourActuallyCct = colour ? /^\d{4}/.test(String(colour).trim()) : false;
-      const finalColour = generalColor || (!isColourActuallyCct ? colour : undefined) || undefined;
-
-      const finalVoltage = (matchingSpecs?.rated_voltage_v ? String(matchingSpecs.rated_voltage_v) : '')
-        || voltage
-        || undefined;
-
-      const finalIp = (matchingSpecs?.ip || matchingSpecs?.ip_rating ? String(matchingSpecs.ip || matchingSpecs.ip_rating) : '')
-        || ip
-        || undefined;
-
-      const finalPacking = (matchingSpecs?.packaging ? String(matchingSpecs.packaging) : '')
-        || packing
-        || undefined;
-
-      const finalLampBase = (matchingSpecs?.cap_type || matchingSpecs?.lamp_holder_type || matchingSpecs?.lamp_source ? String(matchingSpecs.cap_type || matchingSpecs.lamp_holder_type || matchingSpecs.lamp_source) : '')
-        || lampBase
-        || undefined;
-
-      const finalConnector = (matchingSpecs?.['type_terminal block'] || matchingSpecs?.control_gear || matchingSpecs?.driver_type || matchingSpecs?.dimming_type ? String(matchingSpecs?.['type_terminal block'] || matchingSpecs?.control_gear || matchingSpecs?.driver_type || matchingSpecs?.dimming_type) : '')
-        || connector
-        || undefined;
-
-      // Photometry file auto-matching from ZIP
-      const ldtId = await uploadAssetFromZip(undefined, [`${mmCode}.ldt`, `${modelNoVariant}.ldt`], `LDT Photometrics for ${mmCode}`, 'document');
-      const iesId = await uploadAssetFromZip(undefined, [`${mmCode}.ies`, `${modelNoVariant}.ies`], `IES Photometrics for ${mmCode}`, 'document');
-      const spectrumId = await uploadAssetFromZip(undefined, [`${mmCode}_spectrum.png`, `${mmCode}_spectrum.jpg`, `${modelNoVariant}_spectrum.png`], `Light Spectrum Graph for ${mmCode}`, 'image');
-      const drawingId = await uploadAssetFromZip(undefined, [`${mmCode}_drawing.png`, `${mmCode}_drawing.jpg`, `${modelNoVariant}_drawing.png`], `Line Drawing for ${mmCode}`, 'image');
-      const polarId = await uploadAssetFromZip(undefined, [`${mmCode}_polar.png`, `${mmCode}_polar.jpg`, `${modelNoVariant}_polar.png`], `Photometric Polar Diagram for ${mmCode}`, 'image');
-      const beamId = await uploadAssetFromZip(undefined, [`${mmCode}_beam.png`, `${mmCode}_beam.jpg`, `${modelNoVariant}_beam.png`], `Beam Angle Diagram for ${mmCode}`, 'image');
-
-      try {
-        const query = await payload.find({
-          collection: 'skus',
-          where: { name: { equals: mmCode } },
-          limit: 1,
-        });
-
-        const skuData: any = {
-          name: mmCode,
-          product: parentProductId,
-          modelNumber: parentProductName || modelNoVariant,
-          colour: finalColour,
-          specialFeatures: specialFeatures || undefined,
-          wattage: finalWattage,
-          lampBase: finalLampBase,
-          colourTemperature: finalColourTemp,
-          voltage: finalVoltage,
-          ip: finalIp,
-          connector: finalConnector,
-          packingMethod: finalPacking,
-          eanBarcode: ean || undefined,
-          innerBoxItf: innerItf || undefined,
-          outerBoxItf: outerItf || undefined,
-          remark: remark || undefined,
-          specifications: matchingSpecs || undefined,
+        // Format CCT from General Data (e.g. 3000400050006500 -> 3000/4000/5000/6500K)
+        const formatGeneralCct = (rawCct: any): string => {
+          if (!rawCct) return '';
+          const str = String(rawCct).trim();
+          if (/^\d{8,16}$/.test(str) && str.length % 4 === 0) {
+            const parts = [];
+            for (let k = 0; k < str.length; k += 4) {
+              parts.push(str.substring(k, k + 4));
+            }
+            return parts.join('/') + 'K';
+          }
+          if (/^\d{4}$/.test(str)) {
+            return str + 'K';
+          }
+          return str;
         };
 
-        if (ldtId) skuData.photometryLdt = ldtId;
-        if (iesId) skuData.photometryIes = iesId;
-        if (spectrumId) skuData.lightSpectrumGraph = spectrumId;
-        if (drawingId) skuData.lineDrawing = drawingId;
-        if (polarId) skuData.photometricPolarDiagram = polarId;
-        if (beamId) skuData.beamAngleDiagram = beamId;
+        // Extract color from General Data description or fitting_colour
+        const extractGeneralColor = (specs: any): string => {
+          if (!specs) return '';
+          if (specs.fitting_colour && specs.fitting_colour !== 'null' && specs.fitting_colour !== null) {
+            return String(specs.fitting_colour).trim();
+          }
+          if (specs.description) {
+            const match = String(specs.description).match(/Colou?r\s*:\s*([^/,\r\n]+)/i);
+            if (match) return match[1].trim();
+          }
+          return '';
+        };
 
-        if (query.docs.length > 0) {
-          const existing = query.docs[0];
+        // USE GENERAL DATA AS THE CORRECT DATA (General Data takes precedence)
+        const finalWattage = (matchingSpecs?.on_mode_power_w ? String(matchingSpecs.on_mode_power_w) : '')
+          || watt
+          || undefined;
+
+        const generalCctFormatted = matchingSpecs?.cct_k ? formatGeneralCct(matchingSpecs.cct_k) : '';
+        const finalColourTemp = generalCctFormatted || colourTemp || undefined;
+
+        const generalColor = extractGeneralColor(matchingSpecs);
+        // If table colour is actually a CCT (e.g. 3000/4000/6500K) or missing, ignore it
+        const isColourActuallyCct = colour ? /^\d{4}/.test(String(colour).trim()) : false;
+        const finalColour = generalColor || (!isColourActuallyCct ? colour : undefined) || undefined;
+
+        const finalVoltage = (matchingSpecs?.rated_voltage_v ? String(matchingSpecs.rated_voltage_v) : '')
+          || voltage
+          || undefined;
+
+        const finalIp = (matchingSpecs?.ip || matchingSpecs?.ip_rating ? String(matchingSpecs.ip || matchingSpecs.ip_rating) : '')
+          || ip
+          || undefined;
+
+        const finalPacking = (matchingSpecs?.packaging ? String(matchingSpecs.packaging) : '')
+          || packing
+          || undefined;
+
+        const finalLampBase = (matchingSpecs?.cap_type || matchingSpecs?.lamp_holder_type || matchingSpecs?.lamp_source ? String(matchingSpecs.cap_type || matchingSpecs.lamp_holder_type || matchingSpecs.lamp_source) : '')
+          || lampBase
+          || undefined;
+
+        const finalConnector = (matchingSpecs?.['type_terminal block'] || matchingSpecs?.control_gear || matchingSpecs?.driver_type || matchingSpecs?.dimming_type ? String(matchingSpecs?.['type_terminal block'] || matchingSpecs?.control_gear || matchingSpecs?.driver_type || matchingSpecs?.dimming_type) : '')
+          || connector
+          || undefined;
+
+        // Photometry file auto-matching from ZIP
+        const ldtId = await uploadAssetFromZip(undefined, [`${mmCode}.ldt`, `${modelNoVariant}.ldt`], `LDT Photometrics for ${mmCode}`, 'document');
+        const iesId = await uploadAssetFromZip(undefined, [`${mmCode}.ies`, `${modelNoVariant}.ies`], `IES Photometrics for ${mmCode}`, 'document');
+        const spectrumId = await uploadAssetFromZip(undefined, [`${mmCode}_spectrum.png`, `${mmCode}_spectrum.jpg`, `${modelNoVariant}_spectrum.png`], `Light Spectrum Graph for ${mmCode}`, 'image');
+        const drawingId = await uploadAssetFromZip(undefined, [`${mmCode}_drawing.png`, `${mmCode}_drawing.jpg`, `${modelNoVariant}_drawing.png`], `Line Drawing for ${mmCode}`, 'image');
+        const polarId = await uploadAssetFromZip(undefined, [`${mmCode}_polar.png`, `${mmCode}_polar.jpg`, `${modelNoVariant}_polar.png`], `Photometric Polar Diagram for ${mmCode}`, 'image');
+        const beamId = await uploadAssetFromZip(undefined, [`${mmCode}_beam.png`, `${mmCode}_beam.jpg`, `${modelNoVariant}_beam.png`], `Beam Angle Diagram for ${mmCode}`, 'image');
+
+        try {
+          const query = await payload.find({
+            collection: 'skus',
+            where: { name: { equals: mmCode } },
+            limit: 1,
+          });
+
+          const skuData: any = {
+            name: mmCode,
+            product: parentProductId,
+            modelNumber: parentProductName || modelNoVariant,
+            colour: finalColour,
+            specialFeatures: specialFeatures || undefined,
+            wattage: finalWattage,
+            lampBase: finalLampBase,
+            colourTemperature: finalColourTemp,
+            voltage: finalVoltage,
+            ip: finalIp,
+            connector: finalConnector,
+            packingMethod: finalPacking,
+            eanBarcode: ean || undefined,
+            innerBoxItf: innerItf || undefined,
+            outerBoxItf: outerItf || undefined,
+            remark: remark || undefined,
+            specifications: matchingSpecs || undefined,
+          };
+
+          if (ldtId) skuData.photometryLdt = ldtId;
+          if (iesId) skuData.photometryIes = iesId;
+          if (spectrumId) skuData.lightSpectrumGraph = spectrumId;
+          if (drawingId) skuData.lineDrawing = drawingId;
+          if (polarId) skuData.photometricPolarDiagram = polarId;
+          if (beamId) skuData.beamAngleDiagram = beamId;
+
+          if (query.docs.length > 0) {
+            const existing = query.docs[0];
+            await payload.update({
+              collection: 'skus',
+              id: existing.id,
+              data: skuData,
+            });
+            skusUpdated++;
+          } else {
+            await payload.create({
+              collection: 'skus',
+              data: skuData,
+            });
+            skusCreated++;
+          }
+        } catch (err: any) {
+          warnings.push(`SKU Error for "${mmCode}": ${err.message}`);
+        }
+      }
+    } else {
+      logs.push('No SKU MM Code spreadsheet provided. SKU variant import phase will be skipped.');
+    }
+
+    // Synchronize family-to-product relationships
+    logs.push('Synchronizing family-to-product relationships...');
+    try {
+      const allProducts = await payload.find({
+        collection: 'products',
+        limit: 10000,
+      });
+
+      const familyToProductsMap = new Map<string, string[]>();
+      for (const p of allProducts.docs) {
+        const familyId = typeof p.families === 'object' ? (p.families as any)?.id : p.families;
+        if (familyId) {
+          if (!familyToProductsMap.has(familyId)) {
+            familyToProductsMap.set(familyId, []);
+          }
+          familyToProductsMap.get(familyId)!.push(p.id);
+        }
+      }
+
+      for (const [familyId, prodIds] of familyToProductsMap.entries()) {
+        try {
           await payload.update({
-            collection: 'skus',
-            id: existing.id,
-            data: skuData,
+            collection: 'families',
+            id: familyId,
+            data: {
+              products: prodIds,
+            },
           });
-          skusUpdated++;
-        } else {
-          await payload.create({
-            collection: 'skus',
-            data: skuData,
-          });
-          skusCreated++;
+          logs.push(`Synchronized family "${familyId}" with ${prodIds.length} products.`);
+        } catch (err: any) {
+          warnings.push(`Could not synchronize family "${familyId}" with products: ${err.message}`);
         }
-      } catch (err: any) {
-        warnings.push(`SKU Error for "${mmCode}": ${err.message}`);
       }
+    } catch (err: any) {
+      warnings.push(`Failed to synchronize family-to-product relationships: ${err.message}`);
     }
-  } else {
-    logs.push('No SKU MM Code spreadsheet provided. SKU variant import phase will be skipped.');
+
+
+    logs.push(`SKU Bulk import completed: Products (Created: ${productsCreated}, Updated: ${productsUpdated}), SKUs (Created: ${skusCreated}, Updated: ${skusUpdated}).`);
+
+    return {
+      success: true,
+      productsCreated,
+      productsUpdated,
+      skusCreated,
+      skusUpdated,
+      warnings,
+      logs,
+    };
   }
-
-  // Synchronize family-to-product relationships
-  logs.push('Synchronizing family-to-product relationships...');
-  try {
-    const allProducts = await payload.find({
-      collection: 'products',
-      limit: 10000,
-    });
-    
-    const familyToProductsMap = new Map<string, string[]>();
-    for (const p of allProducts.docs) {
-      const familyId = typeof p.families === 'object' ? (p.families as any)?.id : p.families;
-      if (familyId) {
-        if (!familyToProductsMap.has(familyId)) {
-          familyToProductsMap.set(familyId, []);
-        }
-        familyToProductsMap.get(familyId)!.push(p.id);
-      }
-    }
-    
-    for (const [familyId, prodIds] of familyToProductsMap.entries()) {
-      try {
-        await payload.update({
-          collection: 'families',
-          id: familyId,
-          data: {
-            products: prodIds,
-          },
-        });
-        logs.push(`Synchronized family "${familyId}" with ${prodIds.length} products.`);
-      } catch (err: any) {
-        warnings.push(`Could not synchronize family "${familyId}" with products: ${err.message}`);
-      }
-    }
-  } catch (err: any) {
-    warnings.push(`Failed to synchronize family-to-product relationships: ${err.message}`);
-  }
-
-
-  logs.push(`SKU Bulk import completed: Products (Created: ${productsCreated}, Updated: ${productsUpdated}), SKUs (Created: ${skusCreated}, Updated: ${skusUpdated}).`);
-  
-  return {
-    success: true,
-    productsCreated,
-    productsUpdated,
-    skusCreated,
-    skusUpdated,
-    warnings,
-    logs,
-  };
-}

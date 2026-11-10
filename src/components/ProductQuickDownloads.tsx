@@ -88,17 +88,17 @@ export const ProductQuickDownloads: React.FC = () => {
     return null;
   };
 
-  const frontendUrl = process.env.NEXT_PUBLIC_FRONTEND_URL 
-    || process.env.PAYLOAD_PUBLIC_FRONTEND_URL 
-    || (typeof window !== 'undefined' && window.location.hostname.includes('localhost') 
-        ? 'http://localhost:3001' 
-        : 'https://megaman-frontend.vercel.app');
+  const frontendUrl = process.env.NEXT_PUBLIC_FRONTEND_URL
+    || process.env.PAYLOAD_PUBLIC_FRONTEND_URL
+    || (typeof window !== 'undefined' && window.location.hostname.includes('localhost')
+      ? 'http://localhost:3001'
+      : 'https://megaman-frontend.vercel.app');
 
   const spectrumUrl = getMediaUrl(product?.lightSpectrumGraph);
   const lineDrawingUrl = getMediaUrl(product?.lineDrawing);
   const polarUrl = getMediaUrl(product?.photometricPolarDiagram);
   const beamUrl = getMediaUrl(product?.beamAngleDiagram);
-  
+
   const familyObj = typeof product?.families === 'object' && product?.families !== null ? product.families : null;
   const dismantlePdfUrl = getMediaUrl(familyObj?.dismantleInstructionPdf);
   const productManualUrl = getMediaUrl(product?.userManual);
@@ -136,9 +136,9 @@ export const ProductQuickDownloads: React.FC = () => {
     gap: '4px',
   };
 
-  const modelIdentifier = (product as any)?.specifications?.model_identifier 
-    || (product as any)?.specifications?.light_source_model_no 
-    || product?.name 
+  const modelIdentifier = (product as any)?.specifications?.model_identifier
+    || (product as any)?.specifications?.light_source_model_no
+    || product?.name
     || '';
 
   const handleDownloadEprelXml = () => {
@@ -168,12 +168,12 @@ export const ProductQuickDownloads: React.FC = () => {
       <div style={sectionHeaderStyle}>
         📦 EPREL Bulk Upload XML
       </div>
-      <div style={{ 
-        background: 'rgba(15, 23, 42, 0.6)', 
-        border: '1px solid rgba(56, 189, 248, 0.25)', 
-        borderRadius: '8px', 
-        padding: '0.75rem', 
-        marginBottom: '0.85rem' 
+      <div style={{
+        background: 'rgba(15, 23, 42, 0.6)',
+        border: '1px solid rgba(56, 189, 248, 0.25)',
+        borderRadius: '8px',
+        padding: '0.75rem',
+        marginBottom: '0.85rem'
       }}>
         {modelIdentifier && (
           <div style={{ fontSize: '0.68rem', color: '#94a3b8', marginBottom: '0.5rem' }}>
@@ -186,8 +186,8 @@ export const ProductQuickDownloads: React.FC = () => {
           <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 600, color: '#cbd5e1', marginBottom: '0.2rem' }}>
             EPREL Reg Number:
           </label>
-          <input 
-            type="text" 
+          <input
+            type="text"
             placeholder="e.g. 2820811"
             value={eprelRegNo}
             onChange={(e) => setEprelRegNo(e.target.value)}
@@ -209,8 +209,8 @@ export const ProductQuickDownloads: React.FC = () => {
           <label style={{ display: 'block', fontSize: '0.65rem', fontWeight: 600, color: '#cbd5e1', marginBottom: '0.2rem' }}>
             On Market Start Date:
           </label>
-          <input 
-            type="date" 
+          <input
+            type="date"
             value={onMarketStartDate}
             onChange={(e) => setOnMarketStartDate(e.target.value)}
             style={{
@@ -258,7 +258,7 @@ export const ProductQuickDownloads: React.FC = () => {
         📄 Full Technical Documents (Web & Print PDF)
       </div>
       <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <a 
+        <a
           href={`${frontendUrl}/products/${id}/eprel-light-source`}
           target="_blank"
           rel="noopener noreferrer"
@@ -267,7 +267,7 @@ export const ProductQuickDownloads: React.FC = () => {
           <span>Tech Doc - Light Source</span>
           <span>↗</span>
         </a>
-        <a 
+        <a
           href={`${frontendUrl}/products/${id}/control-gear`}
           target="_blank"
           rel="noopener noreferrer"
@@ -276,7 +276,7 @@ export const ProductQuickDownloads: React.FC = () => {
           <span>Tech Doc - Control Gear</span>
           <span>↗</span>
         </a>
-        <a 
+        <a
           href={`${frontendUrl}/products/${id}/containing-product`}
           target="_blank"
           rel="noopener noreferrer"
@@ -320,7 +320,7 @@ export const ProductQuickDownloads: React.FC = () => {
 
           return list.map((item, idx) => (
             <div key={idx} style={{ marginBottom: '0.5rem' }}>
-              <a 
+              <a
                 href={item.url}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -339,9 +339,9 @@ export const ProductQuickDownloads: React.FC = () => {
               </a>
               {/* Image Preview Thumbnail */}
               <div style={{ marginTop: '0.25rem', marginBottom: '0.5rem', borderRadius: '6px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.1)', background: '#000', textAlign: 'center', padding: '4px' }}>
-                <img 
-                  src={item.url} 
-                  alt={item.label} 
+                <img
+                  src={item.url}
+                  alt={item.label}
                   style={{ maxHeight: '100px', maxWidth: '100%', objectFit: 'contain' }}
                 />
               </div>
@@ -350,7 +350,7 @@ export const ProductQuickDownloads: React.FC = () => {
         })()}
 
         {dismantlePdfUrl && (
-          <a 
+          <a
             href={dismantlePdfUrl}
             target="_blank"
             rel="noopener noreferrer"
@@ -368,7 +368,7 @@ export const ProductQuickDownloads: React.FC = () => {
         )}
 
         {manualUrl ? (
-          <a 
+          <a
             href={manualUrl}
             target="_blank"
             rel="noopener noreferrer"
@@ -392,7 +392,7 @@ export const ProductQuickDownloads: React.FC = () => {
         )}
 
         {lineDrawingUrl && (
-          <a 
+          <a
             href={lineDrawingUrl}
             target="_blank"
             rel="noopener noreferrer"
@@ -405,7 +405,7 @@ export const ProductQuickDownloads: React.FC = () => {
         )}
 
         {polarUrl && (
-          <a 
+          <a
             href={polarUrl}
             target="_blank"
             rel="noopener noreferrer"
@@ -418,7 +418,7 @@ export const ProductQuickDownloads: React.FC = () => {
         )}
 
         {beamUrl && (
-          <a 
+          <a
             href={beamUrl}
             target="_blank"
             rel="noopener noreferrer"

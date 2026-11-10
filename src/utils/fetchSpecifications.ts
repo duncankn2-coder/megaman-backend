@@ -23,7 +23,7 @@ export async function fetchSpecifications(modelNumber: string, mmCode?: string) 
   const client = await getMongoClient();
   try {
     const db = client.db('general_data');
-    
+
     // 1. Try to find by MM Code first if provided
     if (mmCode) {
       const cleanMm = mmCode.trim().toUpperCase();
@@ -39,7 +39,7 @@ export async function fetchSpecifications(modelNumber: string, mmCode?: string) 
         }
         return specs;
       }
-      
+
       // Search in luminaire by Art_Nr or customer_model_no_new
       const luminaireCollection = db.collection('luminaire');
       specDoc = await luminaireCollection.findOne({
@@ -65,61 +65,62 @@ export async function fetchSpecifications(modelNumber: string, mmCode?: string) 
     if (!specDoc) {
       const lightSourceCollection = db.collection('light_source');
       specDoc = await lightSourceCollection.findOne({ new_erp_model_no: modelNumber });
-      
+
       if (!specDoc) {
         specDoc = await lightSourceCollection.findOne({ yk_model_no: modelNumber });
       }
     }
 
     // 4. Fuzzy database-level fallback (using prefix + cleanModel matching)
-    if (!specDoc) {
-      const prefix = getModelPrefix(modelNumber);
-      if (prefix) {
-        const cleanTarget = cleanModel(modelNumber);
-        
-        // Search luminaire candidates
-        const lumCandidates = await luminaireCollection.find({
-          customer_model_no_new: { $regex: new RegExp('^' + prefix, 'i') }
-        }).toArray();
-        
-        specDoc = lumCandidates.find(c => cleanModel(c.customer_model_no_new) === cleanTarget) || null;
-        
-        // Search light_source candidates if still not found
-        if (!specDoc) {
-          const lightSourceCollection = db.collection('light_source');
-          const lsCandidates = await lightSourceCollection.find({
-            $or: [
-              { new_erp_model_no: { $regex: new RegExp('^' + prefix, 'i') } },
-              { yk_model_no: { $regex: new RegExp('^' + prefix, 'i') } }
-            ]
+      // Note: Do not fuzzy match XCD products as versions (v00, v01) must remain distinct and have no MM code match
+      if (!specDoc && !modelNumber.toLowerCase().startsWith('xcd')) {
+        const prefix = getModelPrefix(modelNumber);
+        if (prefix) {
+          const cleanTarget = cleanModel(modelNumber);
+
+          // Search luminaire candidates
+          const lumCandidates = await luminaireCollection.find({
+            customer_model_no_new: { $regex: new RegExp('^' + prefix, 'i') }
           }).toArray();
-          
-          specDoc = lsCandidates.find(c => 
-            cleanModel(c.new_erp_model_no) === cleanTarget || 
-            cleanModel(c.yk_model_no) === cleanTarget
-          ) || null;
+
+          specDoc = lumCandidates.find(c => cleanModel(c.customer_model_no_new) === cleanTarget) || null;
+
+          // Search light_source candidates if still not found
+          if (!specDoc) {
+            const lightSourceCollection = db.collection('light_source');
+            const lsCandidates = await lightSourceCollection.find({
+              $or: [
+                { new_erp_model_no: { $regex: new RegExp('^' + prefix, 'i') } },
+                { yk_model_no: { $regex: new RegExp('^' + prefix, 'i') } }
+              ]
+            }).toArray();
+
+            specDoc = lsCandidates.find(c =>
+              cleanModel(c.new_erp_model_no) === cleanTarget ||
+              cleanModel(c.yk_model_no) === cleanTarget
+            ) || null;
+          }
         }
       }
-    }
 
-    if (!specDoc) {
-      console.warn(`No specifications found in database for: ${modelNumber} (mmCode: ${mmCode})`);
+      if (!specDoc) {
+        console.warn(`No specifications found in database for: ${modelNumber} (mmCode: ${mmCode})`);
+        return null;
+      }
+
+      // Extract all specifications, removing MongoDB internal fields
+      const { _id, __v, ...specs } = specDoc;
+
+      // Map product_type or Category/Subcategory to categories for backward compatibility
+      if (specDoc.product_type !== undefined) {
+        specs.categories = specDoc.product_type;
+      } else if (specDoc.category1 !== undefined) {
+        specs.categories = specDoc.category1;
+      }
+
+      return specs;
+    } catch (error) {
+      console.error('Error fetching specifications:', error);
       return null;
     }
-
-    // Extract all specifications, removing MongoDB internal fields
-    const { _id, __v, ...specs } = specDoc;
-
-    // Map product_type or Category/Subcategory to categories for backward compatibility
-    if (specDoc.product_type !== undefined) {
-      specs.categories = specDoc.product_type;
-    } else if (specDoc.category1 !== undefined) {
-      specs.categories = specDoc.category1;
-    }
-
-    return specs;
-  } catch (error) {
-    console.error('Error fetching specifications:', error);
-    return null;
   }
-}
