@@ -1,5 +1,22 @@
 import { Payload } from 'payload';
+import { ObjectId } from 'mongodb';
 import { getMongoClient } from './mongoClient';
+
+function toObjectId(id: any): ObjectId {
+  if (id instanceof ObjectId) return id;
+  const str = String(typeof id === 'object' && id !== null ? (id._id || id.id || id) : id).trim();
+  return ObjectId.isValid(str) ? new ObjectId(str) : (id as any);
+}
+
+function cleanUndefined(obj: Record<string, any>): Record<string, any> {
+  const result: Record<string, any> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v !== undefined) {
+      result[k] = v;
+    }
+  }
+  return result;
+}
 
 export interface ImportResult {
   success: boolean;
@@ -85,6 +102,46 @@ export async function processJsonImport(
     warnings.push(`Could not check or create placeholder media: ${e.message}`);
   }
 
+  const mongoClient = await getMongoClient();
+  const payloadDb = (payload.db as any)?.connection?.db || mongoClient.db();
+  const productsCollection = payloadDb.collection('products');
+  const familiesCollection = payloadDb.collection('families');
+  const categoriesCollection = payloadDb.collection('categories');
+  const mediaCollection = payloadDb.collection('media');
+
+  const categoryCache = new Map<string, string>();
+  const familyCache = new Map<string, any>();
+  const existingProductsMap = new Map<string, any>();
+  const mediaList: any[] = [];
+
+  try {
+    const [existingCats, existingFams, existingProds, allMedia] = await Promise.all([
+      categoriesCollection.find({}, { projection: { _id: 1, name: 1 } }).toArray(),
+      familiesCollection.find({}, { projection: { _id: 1, name: 1, categories: 1 } }).toArray(),
+      productsCollection.find({}, { projection: { _id: 1, name: 1, images: 1 } }).toArray(),
+      mediaCollection.find({}, { projection: { _id: 1, filename: 1 } }).toArray(),
+    ]);
+    existingCats.forEach((c: any) => {
+      if (c.name) categoryCache.set(String(c.name).toLowerCase().trim(), String(c._id));
+    });
+    existingFams.forEach((f: any) => {
+      if (f.name) familyCache.set(String(f.name).toLowerCase().trim(), { ...f, id: String(f._id) });
+    });
+    existingProds.forEach((p: any) => {
+      if (p.name) existingProductsMap.set(String(p.name).toLowerCase().trim(), { ...p, id: String(p._id) });
+    });
+    allMedia.forEach((m: any) => {
+      if (m.filename) mediaList.push({ id: String(m._id), filename: String(m.filename).toLowerCase() });
+    });
+  } catch (e: any) {
+    warnings.push(`Pre-fetch cache warning: ${e.message}`);
+  }
+
+  const lumBulkOps: any[] = [];
+  const productBulkOps: any[] = [];
+  const now = new Date();
+  const seenModels = new Set<string>();
+
   // Process each product item in the JSON
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
@@ -96,56 +153,46 @@ export async function processJsonImport(
       continue;
     }
 
+    const modelKey = String(modelNumber).toLowerCase().trim();
+    if (seenModels.has(modelKey)) continue;
+    seenModels.add(modelKey);
+
     logs.push(`Processing item ${itemIndex}/${items.length}: Model "${modelNumber}"...`);
 
     // 1. Sync specifications in MongoDB
     if (luminaireCollection) {
-      try {
-        const cleanItem = { ...item };
-        delete cleanItem._id; // Remove _id if it was present
-        
-        await luminaireCollection.updateOne(
-          { customer_model_no_new: modelNumber },
-          { $set: cleanItem },
-          { upsert: true }
-        );
-        logs.push(`- Upserted specifications into MongoDB 'luminaire' collection.`);
-      } catch (err: any) {
-        warnings.push(`Item ${itemIndex} (${modelNumber}): Failed to sync spec in MongoDB. Error: ${err.message}`);
-      }
+      const cleanItem = { ...item };
+      delete cleanItem._id;
+      lumBulkOps.push({
+        updateOne: {
+          filter: { customer_model_no_new: modelNumber },
+          update: { $set: cleanItem },
+          upsert: true,
+        },
+      });
     }
 
     // 2. Resolve Categories (from product_type)
     const categoryName = item.product_type || 'Uncategorized';
     const finalCategoryIds: string[] = [];
     const catNames = categoryName.split(',').map((s: string) => s.trim()).filter(Boolean);
-    
-    for (const cName of catNames) {
-      try {
-        const catQuery = await payload.find({
-          collection: 'categories',
-          where: {
-            name: { equals: cName },
-          },
-          limit: 1,
-        });
 
-        if (catQuery.docs.length > 0) {
-          finalCategoryIds.push(catQuery.docs[0].id as string);
-        } else {
-          logs.push(`- Category "${cName}" not found. Creating dynamically...`);
-          const newCat = await payload.create({
-            collection: 'categories',
-            data: {
-              name: cName,
-            },
-          });
-          finalCategoryIds.push(newCat.id as string);
-          logs.push(`  Successfully created category "${cName}".`);
-        }
-      } catch (err: any) {
-        warnings.push(`Item ${itemIndex} (${modelNumber}): Error resolving category "${cName}": ${err.message}`);
+    for (const cName of catNames) {
+      const catKey = cName.toLowerCase().trim();
+      let catId = categoryCache.get(catKey);
+      if (!catId) {
+        const newCatId = new ObjectId();
+        await categoriesCollection.insertOne({
+          _id: newCatId,
+          name: cName,
+          createdAt: now,
+          updatedAt: now,
+          __v: 0,
+        });
+        catId = String(newCatId);
+        categoryCache.set(catKey, catId);
       }
+      finalCategoryIds.push(catId);
     }
 
     if (finalCategoryIds.length === 0) {
@@ -158,43 +205,31 @@ export async function processJsonImport(
     const familyName = item.series_name;
     if (familyName && String(familyName).trim() !== 'N/A' && String(familyName).trim() !== '') {
       try {
-        const famQuery = await payload.find({
-          collection: 'families',
-          where: {
-            name: { equals: familyName },
-          },
-          limit: 1,
-        });
+        const famKey = String(familyName).toLowerCase().trim();
+        const famDoc = familyCache.get(famKey);
 
-        if (famQuery.docs.length > 0) {
-          finalFamilyId = famQuery.docs[0].id as string;
-          
-          // Merge categories on existing family
-          const existingCategories = (famQuery.docs[0].categories || []) as (string | any)[];
-          const existingCatIds = existingCategories.map(c => typeof c === 'object' ? c.id : c);
-          const unionCatIds = Array.from(new Set([...existingCatIds, ...finalCategoryIds]));
-          
-          await payload.update({
-            collection: 'families',
-            id: finalFamilyId,
-            data: {
-              categories: unionCatIds,
-            },
-          });
+        if (famDoc) {
+          finalFamilyId = String(famDoc.id || famDoc._id);
         } else {
           logs.push(`- Family "${familyName}" not found. Creating dynamically...`);
-          const famSlug = familyName.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-          const newFam = await payload.create({
-            collection: 'families',
-            data: {
-              name: familyName,
-              slug: famSlug,
-              description: `A collection of premium Megaman ${familyName} products.`,
-              media: placeholderImageId ? [placeholderImageId] : [],
-              categories: finalCategoryIds,
-            },
-          });
-          finalFamilyId = newFam.id as string;
+          const famSlug = String(familyName).toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+          const newFamId = new ObjectId();
+          const newFamData: any = {
+            _id: newFamId,
+            name: familyName,
+            slug: famSlug,
+            priority: 0,
+            description: `A collection of premium Megaman ${familyName} products.`,
+            media: placeholderImageId ? [toObjectId(placeholderImageId)] : [],
+            categories: finalCategoryIds.map(id => toObjectId(id)),
+            products: [],
+            createdAt: now,
+            updatedAt: now,
+            __v: 0,
+          };
+          await familiesCollection.insertOne(newFamData);
+          finalFamilyId = String(newFamId);
+          familyCache.set(famKey, { ...newFamData, id: finalFamilyId });
           logs.push(`  Successfully created family "${familyName}".`);
         }
       } catch (err: any) {
@@ -202,95 +237,90 @@ export async function processJsonImport(
       }
     }
 
-    // 4. Resolve Product Image
+    // 4. Resolve Product Image in memory
     let imageId = placeholderImageId;
-    try {
-      // Find a media record that matches modelNumber (supporting slashes replaced by dashes/spaces/underscores)
-      const candidates = [
-        modelNumber,
-        modelNumber.replace(/\//g, '-'),
-        modelNumber.replace(/\//g, '_'),
-        modelNumber.replace(/\//g, ' '),
-        modelNumber.replace(/-/g, ' '),
-        modelNumber.replace(/\//g, '-').replace(/-/g, ' '),
-      ];
-      const uniqueCandidates = Array.from(new Set(candidates)).filter(Boolean);
-      
-      const orConditions = uniqueCandidates.map(cand => ({
-        filename: {
-          like: cand
-        }
-      }));
+    const candidates = [
+      String(modelNumber),
+      String(modelNumber).replace(/\//g, '-'),
+      String(modelNumber).replace(/\//g, '_'),
+      String(modelNumber).replace(/\//g, ' '),
+      String(modelNumber).replace(/-/g, ' '),
+      String(modelNumber).replace(/\//g, '-').replace(/-/g, ' '),
+    ].map(c => c.toLowerCase()).filter(Boolean);
 
-      const mediaQuery = await payload.find({
-        collection: 'media',
-        where: {
-          or: orConditions
-        },
-        limit: 1,
-      });
-
-      if (mediaQuery.docs.length > 0) {
-        imageId = mediaQuery.docs[0].id as string;
-        logs.push(`- Found matching media record for "${modelNumber}" (ID: ${imageId}).`);
-      } else {
-        logs.push(`- No custom media record found for "${modelNumber}". Falling back to default placeholder image.`);
-      }
-    } catch (err: any) {
-      warnings.push(`Item ${itemIndex} (${modelNumber}): Error searching media collection: ${err.message}`);
+    const matchedMedia = mediaList.find(m => candidates.some(cand => m.filename.includes(cand)));
+    if (matchedMedia) {
+      imageId = matchedMedia.id;
     }
 
-    // 5. Create or Update Product in PayloadCMS
+    // 5. Queue Product upsert for bulkWrite
     try {
-      const existingProducts = await payload.find({
-        collection: 'products',
-        where: {
-          name: { equals: modelNumber },
-        },
-        limit: 1,
-      });
+      const existing = existingProductsMap.get(modelKey);
+      const cleanSpecs = { ...item };
+      delete cleanSpecs._id;
 
-      const productData: any = {
+      const setFields: Record<string, any> = {
         name: modelNumber,
         description: item.description || '',
-        colour: item.fitting_colour && item.fitting_colour !== 'N/A' ? item.fitting_colour : undefined,
+        colour: item.fitting_colour && item.fitting_colour !== 'N/A' ? String(item.fitting_colour) : undefined,
         power: item.on_mode_power_w && item.on_mode_power_w !== 'N/A' ? String(item.on_mode_power_w) : undefined,
         colourTemperature: item.cct_k && item.cct_k !== 'N/A' ? String(item.cct_k) : undefined,
+        specifications: cleanSpecs,
+        updatedAt: now,
       };
 
-      if (imageId) {
-        productData.images = imageId;
+      if (matchedMedia) {
+        setFields.images = toObjectId(matchedMedia.id);
+      } else if (!existing?.images && imageId) {
+        setFields.images = toObjectId(imageId);
       }
       if (finalFamilyId) {
-        productData.families = finalFamilyId;
+        setFields.families = toObjectId(finalFamilyId);
       }
 
-      if (existingProducts.docs.length > 0) {
-        const prevDoc = existingProducts.docs[0];
-        logs.push(`- Product SKU "${modelNumber}" already exists in CMS. Updating details...`);
-        
-        await payload.update({
-          collection: 'products',
-          id: prevDoc.id,
-          data: productData,
+      if (existing) {
+        productBulkOps.push({
+          updateOne: {
+            filter: { _id: toObjectId(existing._id || existing.id) },
+            update: { $set: cleanUndefined(setFields) },
+          },
         });
-        
         updatedCount++;
-        logs.push(`  Successfully updated Product SKU "${modelNumber}".`);
       } else {
-        logs.push(`- Product SKU "${modelNumber}" does not exist in CMS. Creating...`);
-        
-        await payload.create({
-          collection: 'products',
-          data: productData,
+        const newProdId = new ObjectId();
+        productBulkOps.push({
+          updateOne: {
+            filter: { _id: newProdId },
+            update: {
+              $set: cleanUndefined({
+                ...setFields,
+                sites: ['international', 'hk', 'uk'],
+              }),
+              $setOnInsert: {
+                createdAt: now,
+                __v: 0,
+              },
+            },
+            upsert: true,
+          },
         });
-        
+        existingProductsMap.set(modelKey, { _id: newProdId, id: String(newProdId), ...setFields });
         createdCount++;
-        logs.push(`  Successfully created Product SKU "${modelNumber}".`);
       }
     } catch (err: any) {
       warnings.push(`Item ${itemIndex} (${modelNumber}): Failed to create/update Product. Error: ${err.message}`);
     }
+  }
+
+  if (luminaireCollection && lumBulkOps.length > 0) {
+    try {
+      await luminaireCollection.bulkWrite(lumBulkOps, { ordered: false });
+    } catch (err: any) {
+      warnings.push(`Failed to sync specs in MongoDB luminaire: ${err.message}`);
+    }
+  }
+  if (productBulkOps.length > 0) {
+    await productsCollection.bulkWrite(productBulkOps, { ordered: false });
   }
 
   logs.push(`JSON import completed: ${createdCount} created, ${updatedCount} updated.`);

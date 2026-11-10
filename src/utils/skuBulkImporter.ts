@@ -2,9 +2,26 @@ import { Payload } from 'payload';
 import * as xlsx from 'xlsx';
 import AdmZip from 'adm-zip';
 import path from 'path';
+import { ObjectId } from 'mongodb';
 import { processXlsxToJson, findHeadersRowIndex } from './xlsxToJsonConverter';
 import { fetchSpecifications } from './fetchSpecifications';
 import { getMongoClient } from './mongoClient';
+
+function toObjectId(id: any): ObjectId {
+  if (id instanceof ObjectId) return id;
+  const str = String(typeof id === 'object' && id !== null ? (id._id || id.id || id) : id).trim();
+  return ObjectId.isValid(str) ? new ObjectId(str) : (id as any);
+}
+
+function cleanUndefined(obj: Record<string, any>): Record<string, any> {
+  const result: Record<string, any> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v !== undefined) {
+      result[k] = v;
+    }
+  }
+  return result;
+}
 
 function getModelPrefix(model: string): string {
   if (!model) return '';
@@ -57,19 +74,24 @@ export async function processSkuBulkImport(
   let skusCreated = 0;
   let skusUpdated = 0;
 
+  const mongoClient = await getMongoClient();
+  const payloadDb = (payload.db as any)?.connection?.db || mongoClient.db();
+  const productsCollection = payloadDb.collection('products');
+  const skusCollection = payloadDb.collection('skus');
+  const familiesCollection = payloadDb.collection('families');
+  const categoriesCollection = payloadDb.collection('categories');
+  const mediaCollection = payloadDb.collection('media');
+
   // Find or create default placeholder image in Media collection
   let placeholderImageId: string | null = null;
   try {
-    const existingPlaceholder = await payload.find({
-      collection: 'media',
-      where: {
-        alt: { equals: 'Placeholder Image' },
-      },
-      limit: 1,
-    });
+    const existingPlaceholder = await mediaCollection.findOne(
+      { alt: 'Placeholder Image' },
+      { projection: { _id: 1 } }
+    );
 
-    if (existingPlaceholder.docs.length > 0) {
-      placeholderImageId = existingPlaceholder.docs[0].id as string;
+    if (existingPlaceholder) {
+      placeholderImageId = String(existingPlaceholder._id);
       logs.push(`Found existing default placeholder image (ID: ${placeholderImageId}).`);
     } else {
       const base64Png = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
@@ -88,7 +110,7 @@ export async function processSkuBulkImport(
           mimetype: 'image/png',
         },
       });
-      placeholderImageId = newMedia.id as string;
+      placeholderImageId = String(newMedia.id);
       logs.push(`Created a new default placeholder media document (ID: ${placeholderImageId}).`);
     }
   } catch (e: any) {
@@ -211,9 +233,61 @@ export async function processSkuBulkImport(
 
   const parentProductsMap = new Map<string, string>(); // modelNumber -> ProductID
   const parentProductNamesMap = new Map<string, string>(); // productID -> originalName
+  const productSpecsByIdMap = new Map<string, any>(); // productID -> specifications
   const touchedFamilyIds = new Set<string>(); // families affected by this import (only these get re-synced)
   const diCheckedFamilies = new Set<string>(); // families already checked for a DI PDF in the ZIP
   let generalSpecs: any[] = [];
+  const generalSpecsListMap = new Map<string, any[]>(); // modelKey -> list of generalSpecs rows (supports multi-colour variants)
+
+  // Extract color from General Data description or fitting_colour
+  const extractGeneralColor = (specs: any): string => {
+    if (!specs) return '';
+    if (specs.fitting_colour && specs.fitting_colour !== 'null' && specs.fitting_colour !== null) {
+      return String(specs.fitting_colour).trim();
+    }
+    if (specs.description) {
+      const match = String(specs.description).match(/Colou?r\s*:\s*([^/,\r\n]+)/i);
+      if (match) return match[1].trim();
+    }
+    return '';
+  };
+
+  // Match the right General Data row when multiple rows share the same customer_model_no_new (e.g. White vs Nickel brushed)
+  const findBestMatchingSpec = (candidates: any[] | undefined, skuColour?: string): any => {
+    if (!candidates || candidates.length === 0) return null;
+    if (candidates.length === 1 || !skuColour) return candidates[0];
+    const cleanSkuCol = skuColour.trim().toLowerCase();
+    if (!cleanSkuCol || cleanSkuCol === '/' || /^\d{4}/.test(cleanSkuCol)) return candidates[0];
+
+    const matchesColorToken = (spec: any): boolean => {
+      const genCol = extractGeneralColor(spec).toLowerCase();
+      const optCode = String(spec?.option_code || '').toLowerCase();
+      const ykModel = String(spec?.yk_model_no || '').toLowerCase();
+      const haystack = `${genCol} | ${optCode} | ${ykModel}`;
+
+      if (genCol && (genCol === cleanSkuCol || genCol.includes(cleanSkuCol) || cleanSkuCol.includes(genCol))) {
+        return true;
+      }
+      if (/^(wh|wt|white|白)$/i.test(cleanSkuCol)) {
+        return genCol.includes('white') || /\b(wh|wt)\b/i.test(haystack);
+      }
+      if (/^(ni|nb|nickel|nickel\s*brushed)$/i.test(cleanSkuCol)) {
+        return genCol.includes('nickel') || /\b(ni|nb)\b/i.test(haystack);
+      }
+      if (/^(bk|bl|black|黑)$/i.test(cleanSkuCol)) {
+        return genCol.includes('black') || /\b(bk|bl)\b/i.test(haystack);
+      }
+      if (/^(sv|si|silver|银)$/i.test(cleanSkuCol)) {
+        return genCol.includes('silver') || /\b(sv|si)\b/i.test(haystack);
+      }
+      if (/^(gr|gy|grey|gray|灰)$/i.test(cleanSkuCol)) {
+        return genCol.includes('grey') || genCol.includes('gray') || /\b(gr|gy)\b/i.test(haystack);
+      }
+      return haystack.includes(cleanSkuCol);
+    };
+
+    return candidates.find(matchesColorToken) || candidates[0];
+  };
 
   // ==========================================
   // PHASE 1: Parse General Data & Create Parent Products
@@ -224,33 +298,44 @@ export async function processSkuBulkImport(
       generalSpecs = await processXlsxToJson(generalXlsxBuffer);
       logs.push(`Successfully parsed ${generalSpecs.length} specification rows using schema converter.`);
 
-      // Connect to MongoDB to sync generalSpecs to general_data.luminaire
+      for (const spec of generalSpecs) {
+        const key = String(spec?.customer_model_no_new || '').toLowerCase().trim();
+        if (!key) continue;
+        const list = generalSpecsListMap.get(key) || [];
+        list.push(spec);
+        generalSpecsListMap.set(key, list);
+      }
+
+      // Sync generalSpecs to general_data.luminaire via single bulkWrite (deduplicated by customer_model_no_new)
       try {
-        const mongoClient = await getMongoClient();
         const db = mongoClient.db('general_data');
         const luminaireCollection = db.collection('luminaire');
         logs.push('Connected to general_data MongoDB database for syncing specifications.');
 
         if (generalSpecs.length > 0) {
-          logs.push(`Syncing ${generalSpecs.length} specification rows to MongoDB...`);
-          const bulkOps = generalSpecs
-            .map(spec => {
-              const modelNumber = spec.customer_model_no_new || spec.yk_model_no;
-              if (!modelNumber) return null;
-              const cleanItem = { ...spec };
-              delete cleanItem._id;
-              return {
-                updateOne: {
-                  filter: { customer_model_no_new: modelNumber },
-                  update: { $set: cleanItem },
-                  upsert: true,
-                },
-              };
-            })
-            .filter(Boolean);
+          const seenLumModels = new Set<string>();
+          const bulkOps: any[] = [];
+          for (const spec of generalSpecs) {
+            const modelNumber = spec.customer_model_no_new || spec.yk_model_no;
+            if (!modelNumber) continue;
+            const normKey = String(modelNumber).toLowerCase().trim();
+            if (seenLumModels.has(normKey)) continue;
+            seenLumModels.add(normKey);
+
+            const cleanItem = { ...spec };
+            delete cleanItem._id;
+            bulkOps.push({
+              updateOne: {
+                filter: { customer_model_no_new: modelNumber },
+                update: { $set: cleanItem },
+                upsert: true,
+              },
+            });
+          }
 
           if (bulkOps.length > 0) {
-            await luminaireCollection.bulkWrite(bulkOps as any, { ordered: false });
+            logs.push(`Syncing ${bulkOps.length} unique model specification rows to MongoDB...`);
+            await luminaireCollection.bulkWrite(bulkOps, { ordered: false });
           }
           logs.push('Successfully synced specifications to MongoDB general_data.luminaire.');
         }
@@ -315,47 +400,52 @@ export async function processSkuBulkImport(
     const idxDescription = findColIndex(genHeaders, ['description', 'desc', '描述']);
     const idxFamily = findColIndex(genHeaders, ['series name', 'series_name', 'series', 'family', '系列名']);
     const idxCategory = findColIndex(genHeaders, ['product_type', 'product type', 'category1', 'category2', 'category', '产品类型']);
-    const idxShape = findColIndex(genHeaders, ['shape', '形状']);
-    const idxDimensions = findColIndex(genHeaders, ['dimensions', 'height (h)', 'width (w)', 'depth (d)', 'diameter_mm']);
-    const idxHousingMaterial = findColIndex(genHeaders, ['housing_material', 'housing material', 'material', '外壳材质']);
-    const idxCoverMaterial = findColIndex(genHeaders, ['diffuser_material', 'cover_material', 'cover material', 'cover finish', 'cover design', '透光罩材质']);
-    const idxBeamAngle = findColIndex(genHeaders, ['beam_angle', 'beam angle', 'beam', '光束角']);
-    const idxWattage = findColIndex(genHeaders, ['on_mode_power_w', 'on mode power', 'on-mode power', 'wattage', 'watt', 'power', '工作功率']);
-    const idxInputVoltage = findColIndex(genHeaders, ['rated_voltage_v', 'input_voltage', 'voltage', 'voltage map', '额定电压']);
-    const idxDimmingType = findColIndex(genHeaders, ['dimming_type', 'dimming type', 'dimming', 'dimmable']);
 
     if (idxModelNo === -1) {
       throw new Error('Could not find Model Number column in General Data Excel.');
     }
 
-    // In-memory caches to prevent repeated DB round-trips
+    // Pre-fetch families, categories, and existing products in parallel via native MongoDB queries
     const familyCache = new Map<string, any>(); // familyName.toLowerCase() -> familyDoc
     const categoryCache = new Map<string, string>(); // categoryName.toLowerCase() -> categoryId
+    const existingProductsMap = new Map<string, any>(); // modelNo.toLowerCase() -> productDoc
+    const allGenModelNos = Array.from(
+      new Set(
+        rawGeneralRows
+          .slice(4)
+          .map(r => String(r?.[idxModelNo] || '').trim())
+          .filter(m => m && m.toLowerCase() !== 'n/a' && m !== 'undefined')
+      )
+    );
+
     try {
-      const existingFams = await payload.find({ collection: 'families', limit: 1000, depth: 0, pagination: false });
-      existingFams.docs.forEach((f: any) => familyCache.set(f.name.toLowerCase().trim(), f));
-      const existingCats = await payload.find({ collection: 'categories', limit: 1000, depth: 0, pagination: false });
-      existingCats.docs.forEach((c: any) => categoryCache.set(c.name.toLowerCase().trim(), c.id));
-    } catch (e) {
-      // Fallback
+      const [existingFams, existingCats, existingProds] = await Promise.all([
+        familiesCollection.find({}, { projection: { _id: 1, name: 1, dismantleInstructionPdf: 1 } }).toArray(),
+        categoriesCollection.find({}, { projection: { _id: 1, name: 1 } }).toArray(),
+        allGenModelNos.length > 0
+          ? productsCollection.find(
+              { name: { $in: allGenModelNos } },
+              { projection: { _id: 1, name: 1, images: 1, families: 1, power: 1, colourTemperature: 1, colour: 1, specifications: 1 } }
+            ).toArray()
+          : Promise.resolve([]),
+      ]);
+
+      existingFams.forEach((f: any) => {
+        if (f.name) familyCache.set(String(f.name).toLowerCase().trim(), { ...f, id: String(f._id) });
+      });
+      existingCats.forEach((c: any) => {
+        if (c.name) categoryCache.set(String(c.name).toLowerCase().trim(), String(c._id));
+      });
+      existingProds.forEach((p: any) => {
+        if (p.name) existingProductsMap.set(String(p.name).toLowerCase().trim(), { ...p, id: String(p._id) });
+      });
+    } catch (e: any) {
+      warnings.push(`Pre-fetch cache warning: ${e.message}`);
     }
 
-    const allGenModelNos = rawGeneralRows.slice(4).map(r => String(r[idxModelNo] || '').trim()).filter(m => m && m.toLowerCase() !== 'n/a');
-    const existingProductsMap = new Map<string, any>();
-    if (allGenModelNos.length > 0) {
-      try {
-        const existingProds = await payload.find({
-          collection: 'products',
-          where: { name: { in: allGenModelNos } },
-          limit: 1000,
-          depth: 0,
-          pagination: false,
-        });
-        existingProds.docs.forEach((p: any) => existingProductsMap.set(p.name.toLowerCase().trim(), p));
-      } catch (e) {
-        // Fallback
-      }
-    }
+    const seenModelsInPhase1 = new Set<string>();
+    const productBulkOps: any[] = [];
+    const now = new Date();
 
     // Process general data rows (row index 4 onwards)
     for (let i = 4; i < rawGeneralRows.length; i++) {
@@ -365,33 +455,35 @@ export async function processSkuBulkImport(
       const modelNo = String(row[idxModelNo] || '').trim();
       if (!modelNo || modelNo.toLowerCase() === 'n/a' || modelNo === 'undefined') continue;
 
+      const modelKey = modelNo.toLowerCase().trim();
+      if (seenModelsInPhase1.has(modelKey)) {
+        // Duplicate model row in General Data (e.g. second colour variant of the same base model);
+        // its specs are already captured in generalSpecsListMap for SKU variant matching in Phase 2.
+        continue;
+      }
+      seenModelsInPhase1.add(modelKey);
+
       const desc = idxDescription !== -1 ? String(row[idxDescription] || '').trim() : '';
       const familyName = idxFamily !== -1 ? String(row[idxFamily] || '').trim() : '';
       const categoryName = idxCategory !== -1 ? String(row[idxCategory] || '').trim() : '';
-      const shape = idxShape !== -1 ? String(row[idxShape] || '').trim() : '';
-      const dimensions = idxDimensions !== -1 ? String(row[idxDimensions] || '').trim() : '';
-      const housing = idxHousingMaterial !== -1 ? String(row[idxHousingMaterial] || '').trim() : '';
-      const cover = idxCoverMaterial !== -1 ? String(row[idxCoverMaterial] || '').trim() : '';
-      const beam = idxBeamAngle !== -1 ? String(row[idxBeamAngle] || '').trim() : '';
-      const watt = idxWattage !== -1 ? String(row[idxWattage] || '').trim() : '';
-      const voltage = idxInputVoltage !== -1 ? String(row[idxInputVoltage] || '').trim() : '';
-      const dimming = idxDimmingType !== -1 ? String(row[idxDimmingType] || '').trim() : '';
 
       logs.push(`Processing base product model "${modelNo}"...`);
 
-      // Normalized file lookups for primary image
-      const normalizedModels = [
-        modelNo,
-        modelNo.replace(/\//g, '-'),
-        modelNo.replace(/\//g, '_'),
-        modelNo.replace(/\//g, ' '),
-      ];
-      const imageFallbacks: string[] = [];
-      for (const m of normalizedModels) {
-        imageFallbacks.push(`${m}.png`, `${m}.jpg`, `${m}.jpeg`);
+      // Normalized file lookups for primary image (only if ZIP archive was uploaded)
+      let imageId: string | null = null;
+      if (filesMap.size > 0) {
+        const normalizedModels = [
+          modelNo,
+          modelNo.replace(/\//g, '-'),
+          modelNo.replace(/\//g, '_'),
+          modelNo.replace(/\//g, ' '),
+        ];
+        const imageFallbacks: string[] = [];
+        for (const m of normalizedModels) {
+          imageFallbacks.push(`${m}.png`, `${m}.jpg`, `${m}.jpeg`);
+        }
+        imageId = await uploadAssetFromZip(undefined, imageFallbacks, `Primary image for ${modelNo}`, 'image');
       }
-
-      const imageId = await uploadAssetFromZip(undefined, imageFallbacks, `Primary image for ${modelNo}`, 'image');
 
       // Category match using in-memory cache
       const categoryIds: string[] = [];
@@ -399,12 +491,15 @@ export async function processSkuBulkImport(
         const catKey = categoryName.toLowerCase().trim();
         let catId = categoryCache.get(catKey);
         if (!catId) {
-          const newCat = await payload.create({
-            collection: 'categories',
-            data: { name: categoryName },
-            depth: 0,
+          const newCatId = new ObjectId();
+          await categoriesCollection.insertOne({
+            _id: newCatId,
+            name: categoryName,
+            createdAt: now,
+            updatedAt: now,
+            __v: 0,
           });
-          catId = newCat.id;
+          catId = String(newCatId);
           categoryCache.set(catKey, catId);
         }
         categoryIds.push(catId);
@@ -417,7 +512,7 @@ export async function processSkuBulkImport(
           const famKey = familyName.toLowerCase().trim();
           let famDoc = familyCache.get(famKey);
           if (famDoc) {
-            familyId = famDoc.id;
+            familyId = String(famDoc.id || famDoc._id);
             // Attach a Dismantle Instruction PDF from the ZIP to an existing family once, if it has none yet
             if (filesMap.size > 0 && !famDoc.dismantleInstructionPdf && !diCheckedFamilies.has(famKey)) {
               diCheckedFamilies.add(famKey);
@@ -430,72 +525,58 @@ export async function processSkuBulkImport(
                 `${familyName.toLowerCase()}-di.pdf`,
               ], `Dismantle Instruction PDF for ${familyName}`, 'document');
               if (diPdfId) {
-                await payload.update({
-                  collection: 'families',
-                  id: famDoc.id,
-                  data: { dismantleInstructionPdf: diPdfId },
-                  depth: 0,
-                });
+                await familiesCollection.updateOne(
+                  { _id: toObjectId(familyId) },
+                  { $set: { dismantleInstructionPdf: toObjectId(diPdfId), updatedAt: now } }
+                );
                 famDoc.dismantleInstructionPdf = diPdfId;
               }
             }
           } else {
-            const cleanFamName = familyName.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_');
-            const famSlugName = familyName.toLowerCase().replace(/\s+/g, '-');
-            const diFallbacks = [
-              `${cleanFamName}_di.pdf`,
-              `${famSlugName}_di.pdf`,
-              `${familyName.toLowerCase()}_di.pdf`,
-              `${familyName.toLowerCase()}-di.pdf`,
-            ];
-            const diPdfId = await uploadAssetFromZip(undefined, diFallbacks, `Dismantle Instruction PDF for ${familyName}`, 'document');
+            let diPdfId: string | null = null;
+            if (filesMap.size > 0) {
+              const cleanFamName = familyName.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_');
+              const famSlugName = familyName.toLowerCase().replace(/\s+/g, '-');
+              const diFallbacks = [
+                `${cleanFamName}_di.pdf`,
+                `${famSlugName}_di.pdf`,
+                `${familyName.toLowerCase()}_di.pdf`,
+                `${familyName.toLowerCase()}-di.pdf`,
+              ];
+              diPdfId = await uploadAssetFromZip(undefined, diFallbacks, `Dismantle Instruction PDF for ${familyName}`, 'document');
+            }
             const familyImageId = imageId || placeholderImageId;
-            const newFamData: any = {
+            const famSlug = familyName.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+            const newFamId = new ObjectId();
+            const newFamDoc: any = {
+              _id: newFamId,
               name: familyName,
+              slug: famSlug,
+              priority: 0,
               description: `A collection of premium Megaman ${familyName} products.`,
-              media: familyImageId ? [familyImageId] : [],
-              categories: categoryIds,
+              media: familyImageId ? [toObjectId(familyImageId)] : [],
+              categories: categoryIds.map(id => toObjectId(id)),
+              products: [],
+              createdAt: now,
+              updatedAt: now,
+              __v: 0,
             };
-            if (diPdfId) newFamData.dismantleInstructionPdf = diPdfId;
+            if (diPdfId) newFamDoc.dismantleInstructionPdf = toObjectId(diPdfId);
 
-            const newFam = await payload.create({
-              collection: 'families',
-              data: newFamData,
-              depth: 0,
-            });
-            familyId = newFam.id;
-            familyCache.set(famKey, newFam);
+            await familiesCollection.insertOne(newFamDoc);
+            familyId = String(newFamId);
+            familyCache.set(famKey, { ...newFamDoc, id: familyId });
           }
         } catch (err: any) {
           warnings.push(`Failed to resolve or create family "${familyName}": ${err.message}`);
         }
       }
 
-      // Upsert Product record using in-memory cache
+      // Queue Base Product upsert for bulkWrite
       try {
-        const modelKey = modelNo.toLowerCase().trim();
         const existing = existingProductsMap.get(modelKey);
 
-        const productData: any = {
-          name: modelNo,
-          description: desc,
-          shape: shape || undefined,
-          dimensions: dimensions || undefined,
-          housingMaterial: housing || undefined,
-          coverMaterial: cover || undefined,
-          beamAngle: beam || undefined,
-          wattage: watt || undefined,
-          inputVoltage: voltage || undefined,
-          dimmingType: dimming || undefined,
-        };
-
-        // Find specifications
-        let productSpecs: any = null;
-        if (generalSpecs.length > 0) {
-          productSpecs = generalSpecs.find(specs =>
-            specs && specs.customer_model_no_new && specs.customer_model_no_new.toLowerCase().trim() === modelKey
-          );
-        }
+        let productSpecs: any = (generalSpecsListMap.get(modelKey) || [])[0] || null;
         if (!productSpecs) {
           try {
             productSpecs = await fetchSpecifications(modelNo);
@@ -503,46 +584,81 @@ export async function processSkuBulkImport(
             // Ignore
           }
         }
+
+        const setFields: Record<string, any> = {
+          name: modelNo,
+          description: desc,
+          updatedAt: now,
+        };
+
         if (productSpecs) {
-          productData.specifications = productSpecs;
+          setFields.specifications = productSpecs;
+          if (productSpecs.on_mode_power_w) {
+            setFields.power = String(productSpecs.on_mode_power_w);
+          }
+          if (productSpecs.cct_k) {
+            setFields.colourTemperature = String(productSpecs.cct_k);
+          }
+          if (productSpecs.fitting_colour) {
+            setFields.colour = String(productSpecs.fitting_colour);
+          }
         }
 
-        // Only use the placeholder for new products / products without an image,
-        // so re-imports never overwrite a manually uploaded product image.
         if (imageId) {
-          productData.images = imageId;
+          setFields.images = toObjectId(imageId);
         } else if (!existing?.images && placeholderImageId) {
-          productData.images = placeholderImageId;
+          setFields.images = toObjectId(placeholderImageId);
         }
+
         if (familyId) {
-          productData.families = familyId;
+          setFields.families = toObjectId(familyId);
           touchedFamilyIds.add(String(familyId));
         }
 
         if (existing) {
-          await payload.update({
-            collection: 'products',
-            id: existing.id,
-            data: productData,
-            depth: 0,
+          const prodIdStr = String(existing._id || existing.id);
+          productBulkOps.push({
+            updateOne: {
+              filter: { _id: toObjectId(prodIdStr) },
+              update: { $set: cleanUndefined(setFields) },
+            },
           });
-          parentProductsMap.set(modelKey, existing.id);
-          parentProductNamesMap.set(existing.id, modelNo);
+          parentProductsMap.set(modelKey, prodIdStr);
+          parentProductNamesMap.set(prodIdStr, modelNo);
+          productSpecsByIdMap.set(prodIdStr, productSpecs || existing.specifications);
           productsUpdated++;
         } else {
-          const created = await payload.create({
-            collection: 'products',
-            data: productData,
-            depth: 0,
+          const newProdId = new ObjectId();
+          const prodIdStr = String(newProdId);
+          productBulkOps.push({
+            updateOne: {
+              filter: { _id: newProdId },
+              update: {
+                $set: cleanUndefined({
+                  ...setFields,
+                  sites: ['international', 'hk', 'uk'],
+                }),
+                $setOnInsert: {
+                  createdAt: now,
+                  __v: 0,
+                },
+              },
+              upsert: true,
+            },
           });
-          parentProductsMap.set(modelKey, created.id);
-          parentProductNamesMap.set(created.id, modelNo);
-          existingProductsMap.set(modelKey, created);
+          parentProductsMap.set(modelKey, prodIdStr);
+          parentProductNamesMap.set(prodIdStr, modelNo);
+          productSpecsByIdMap.set(prodIdStr, productSpecs);
+          existingProductsMap.set(modelKey, { _id: newProdId, id: prodIdStr, ...setFields });
           productsCreated++;
         }
       } catch (err: any) {
         warnings.push(`Base Product error for "${modelNo}": ${err.message}`);
       }
+    }
+
+    if (productBulkOps.length > 0) {
+      await productsCollection.bulkWrite(productBulkOps, { ordered: false });
     }
 
     logs.push(`Successfully loaded base models. Total active model mappings: ${parentProductsMap.size}`);
@@ -568,73 +684,106 @@ export async function processSkuBulkImport(
     }
 
     const skuSheet = skuWorkbook.Sheets[skuSheetName];
-    const skuRows = xlsx.utils.sheet_to_json<any>(skuSheet);
+    const skuRows = xlsx.utils.sheet_to_json<any>(skuSheet, { defval: null });
+    const rawSkuRows: any[][] = xlsx.utils.sheet_to_json(skuSheet, { header: 1 });
+    const skuHeadersRow = (rawSkuRows[0] || []).map(h => String(h || '').trim().toLowerCase());
+    const useColCForModel = skuHeadersRow.length > 2 && (skuHeadersRow[2].includes('model') || skuHeadersRow[2] === '');
+    const useColJForMmCode = skuHeadersRow.length > 9 && (skuHeadersRow[9].includes('mm') || skuHeadersRow[9].includes('code'));
     logs.push(`Found ${skuRows.length} SKU rows to process.`);
 
-    // In-memory lookup map for general specifications
-    const generalSpecsMap = new Map<string, any>();
-    generalSpecs.forEach(s => {
-      if (s.customer_model_no_new) {
-        generalSpecsMap.set(s.customer_model_no_new.toLowerCase().trim(), s);
+    const getRowModelNo = (row: any, rawRow?: any[]): string | undefined => {
+      if (useColCForModel && rawRow && rawRow[2] !== undefined && rawRow[2] !== null && String(rawRow[2]).trim() !== '') {
+        return String(rawRow[2]).trim();
       }
-    });
+      return getField(row, ['Model No', 'ModelNo', 'model']);
+    };
+
+    const getRowMmCode = (row: any, rawRow?: any[]): string | undefined => {
+      let raw: string | undefined;
+      if (useColJForMmCode && rawRow && rawRow[9] !== undefined && rawRow[9] !== null && String(rawRow[9]).trim() !== '') {
+        raw = String(rawRow[9]).trim();
+      } else {
+        raw = getField(row, ['MM CODE', 'mm_code', 'MMCODE']);
+      }
+      return (raw && /^\d{6}\//.test(raw)) ? raw.substring(7).trim() : raw?.trim();
+    };
 
     // Pre-cache parent products that were created in previous imports
-    const allSkuModelNos = skuRows.map(r => getField(r, ['Model No', 'ModelNo', 'model'])).filter(Boolean) as string[];
+    const allSkuModelNos = skuRows.map((r, idx) => getRowModelNo(r, rawSkuRows[idx + 1])).filter(Boolean) as string[];
     const missingModelNos = Array.from(new Set(allSkuModelNos.filter(m => !parentProductsMap.has(m.toLowerCase().trim()))));
     if (missingModelNos.length > 0) {
       try {
-        const dbMatches = await payload.find({
-          collection: 'products',
-          where: { name: { in: missingModelNos } },
-          limit: 1000,
-          depth: 0,
-          pagination: false,
-        });
-        dbMatches.docs.forEach((p: any) => {
-          parentProductsMap.set(p.name.toLowerCase().trim(), p.id);
-          parentProductNamesMap.set(p.id, p.name);
+        const dbMatches = await productsCollection.find(
+          { name: { $in: missingModelNos } },
+          { projection: { _id: 1, name: 1, specifications: 1 } }
+        ).toArray();
+        dbMatches.forEach((p: any) => {
+          const pid = String(p._id);
+          parentProductsMap.set(String(p.name).toLowerCase().trim(), pid);
+          parentProductNamesMap.set(pid, String(p.name));
+          if (p.specifications) productSpecsByIdMap.set(pid, p.specifications);
         });
       } catch (e) {
         // Fallback
       }
     }
 
-    // Pre-cache existing SKUs in a single query
-    const allMmCodes = skuRows.map(r => {
-      const raw = getField(r, ['MM CODE', 'mm_code', 'MMCODE']);
-      return (raw && /^\d{6}\//.test(raw)) ? raw.substring(7) : raw;
-    }).filter(Boolean) as string[];
+    // Pre-cache existing SKUs in a single native MongoDB query
+    const allMmCodes = Array.from(
+      new Set(
+        skuRows
+          .map((r, idx) => getRowMmCode(r, rawSkuRows[idx + 1]))
+          .filter(Boolean) as string[]
+      )
+    );
 
     const existingSkusMap = new Map<string, any>();
     if (allMmCodes.length > 0) {
       try {
-        const existingSkus = await payload.find({
-          collection: 'skus',
-          where: { name: { in: allMmCodes } },
-          limit: 2000,
-          depth: 0,
-          pagination: false,
+        const existingSkus = await skusCollection.find(
+          { name: { $in: allMmCodes } },
+          { projection: { _id: 1, name: 1 } }
+        ).toArray();
+        existingSkus.forEach((s: any) => {
+          if (s.name) existingSkusMap.set(String(s.name).toLowerCase().trim(), s);
         });
-        existingSkus.docs.forEach((s: any) => existingSkusMap.set(s.name.toLowerCase().trim(), s));
       } catch (e) {
         // Fallback
       }
     }
 
+    // Format CCT from General Data (e.g. 3000400050006500 -> 3000/4000/5000/6500K)
+    const formatGeneralCct = (rawCct: any): string => {
+      if (!rawCct) return '';
+      const str = String(rawCct).trim();
+      if (/^\d{8,16}$/.test(str) && str.length % 4 === 0) {
+        const parts = [];
+        for (let k = 0; k < str.length; k += 4) {
+          parts.push(str.substring(k, k + 4));
+        }
+        return parts.join('/') + 'K';
+      }
+      if (/^\d{4}$/.test(str)) {
+        return str + 'K';
+      }
+      return str;
+    };
+
+    const skuBulkOps: any[] = [];
+    const now = new Date();
+
     for (let i = 0; i < skuRows.length; i++) {
       const row = skuRows[i];
+      const rawRow = rawSkuRows[i + 1];
       const rowNum = i + 2;
 
-      const brand = getField(row, ['Brand', 'brand']);
-      const modelNoVariant = getField(row, ['Model No', 'ModelNo', 'model']);
+      const modelNoVariant = getRowModelNo(row, rawRow);
       const colour = getField(row, ['Luminaires color', 'Colour', 'Color', '灯具颜色']);
       const specialFeatures = getField(row, ['Special features', '灯特色']);
       const watt = getField(row, ['watt', 'Wattage']);
       const lampBase = getField(row, ['Lamp base', 'lamp base']);
       const colourTemp = getField(row, ['Colortemp.', 'Color Temp', 'colour_temp']);
-      const mmCodeRaw = getField(row, ['MM CODE', 'mm_code', 'MMCODE']);
-      const mmCode = (mmCodeRaw && /^\d{6}\//.test(mmCodeRaw)) ? mmCodeRaw.substring(7) : mmCodeRaw;
+      const mmCode = getRowMmCode(row, rawRow);
       const voltage = getField(row, ['Voltage', 'voltage']);
       const connector = getField(row, ['Connector', 'Terminal Block', '端子台']);
       const ip = getField(row, ['IPXX', 'IP']);
@@ -676,8 +825,8 @@ export async function processSkuBulkImport(
 
       // Rule 2: "Column I of the general data is indexing column C of product mm code. if this 2 cells are same, please use the mm code on column J in product mm code"
       const exactModelKey = modelNoVariant.trim().toLowerCase();
-      let parentProductId = parentProductsMap.get(exactModelKey);
-      let parentProductName = parentProductId ? parentProductNamesMap.get(parentProductId) : '';
+      const parentProductId = parentProductsMap.get(exactModelKey);
+      const parentProductName = parentProductId ? parentProductNamesMap.get(parentProductId) : '';
 
       if (!parentProductId) {
         warnings.push(`SKU Row ${rowNum} (${mmCode}): Column C "${modelNoVariant}" does not match Column I of any General Data product. Skipped SKU.`);
@@ -686,58 +835,14 @@ export async function processSkuBulkImport(
 
       logs.push(`Processing SKU variant "${mmCode}" linking to parent model "${modelNoVariant}"...`);
 
-      // Find the matching specifications row (instant in-memory lookup)
-      let matchingSpecs: any = generalSpecsMap.get(exactModelKey) || null;
-
-      // Fallback: Check parent product specifications
-      if (!matchingSpecs && parentProductId) {
-        try {
-          const parentDoc = await payload.findByID({
-            collection: 'products',
-            id: parentProductId,
-            depth: 0,
-          });
-          if (parentDoc?.specifications) {
-            matchingSpecs = parentDoc.specifications;
-          }
-        } catch (err: any) {
-          // Ignore
-        }
-      }
+      // Find the matching specifications row (disambiguating by colour when multiple General Data rows share the same model number)
+      let matchingSpecs: any = findBestMatchingSpec(generalSpecsListMap.get(exactModelKey), colour)
+        || productSpecsByIdMap.get(parentProductId)
+        || null;
 
       if (matchingSpecs) {
         logs.push(`Found specifications for SKU "${mmCode}" (Model: "${modelNoVariant}").`);
       }
-
-      // Format CCT from General Data (e.g. 3000400050006500 -> 3000/4000/5000/6500K)
-      const formatGeneralCct = (rawCct: any): string => {
-        if (!rawCct) return '';
-        const str = String(rawCct).trim();
-        if (/^\d{8,16}$/.test(str) && str.length % 4 === 0) {
-          const parts = [];
-          for (let k = 0; k < str.length; k += 4) {
-            parts.push(str.substring(k, k + 4));
-          }
-          return parts.join('/') + 'K';
-        }
-        if (/^\d{4}$/.test(str)) {
-          return str + 'K';
-        }
-        return str;
-      };
-
-      // Extract color from General Data description or fitting_colour
-      const extractGeneralColor = (specs: any): string => {
-        if (!specs) return '';
-        if (specs.fitting_colour && specs.fitting_colour !== 'null' && specs.fitting_colour !== null) {
-          return String(specs.fitting_colour).trim();
-        }
-        if (specs.description) {
-          const match = String(specs.description).match(/Colou?r\s*:\s*([^/,\r\n]+)/i);
-          if (match) return match[1].trim();
-        }
-        return '';
-      };
 
       // USE GENERAL DATA AS THE CORRECT DATA (General Data takes precedence)
       const finalWattage = (matchingSpecs?.on_mode_power_w ? String(matchingSpecs.on_mode_power_w) : '')
@@ -785,9 +890,9 @@ export async function processSkuBulkImport(
         const skuKey = mmCode.toLowerCase().trim();
         const existing = existingSkusMap.get(skuKey);
 
-        const skuData: any = {
+        const skuSetFields: Record<string, any> = {
           name: mmCode,
-          product: parentProductId,
+          product: toObjectId(parentProductId),
           modelNumber: parentProductName || modelNoVariant,
           colour: finalColour,
           specialFeatures: specialFeatures || undefined,
@@ -803,92 +908,105 @@ export async function processSkuBulkImport(
           outerBoxItf: outerItf || undefined,
           remark: remark || undefined,
           specifications: matchingSpecs || undefined,
+          updatedAt: now,
         };
 
-        if (ldtId) skuData.photometryLdt = ldtId;
-        if (iesId) skuData.photometryIes = iesId;
-        if (spectrumId) skuData.lightSpectrumGraph = spectrumId;
-        if (drawingId) skuData.lineDrawing = drawingId;
-        if (polarId) skuData.photometricPolarDiagram = polarId;
-        if (beamId) skuData.beamAngleDiagram = beamId;
+        if (ldtId) skuSetFields.photometryLdt = toObjectId(ldtId);
+        if (iesId) skuSetFields.photometryIes = toObjectId(iesId);
+        if (spectrumId) skuSetFields.lightSpectrumGraph = toObjectId(spectrumId);
+        if (drawingId) skuSetFields.lineDrawing = toObjectId(drawingId);
+        if (polarId) skuSetFields.photometricPolarDiagram = toObjectId(polarId);
+        if (beamId) skuSetFields.beamAngleDiagram = toObjectId(beamId);
 
         if (existing) {
-          await payload.update({
-            collection: 'skus',
-            id: existing.id,
-            data: skuData,
-            depth: 0,
+          skuBulkOps.push({
+            updateOne: {
+              filter: { _id: existing._id },
+              update: { $set: cleanUndefined(skuSetFields) },
+            },
           });
           skusUpdated++;
         } else {
-          const created = await payload.create({
-            collection: 'skus',
-            data: skuData,
-            depth: 0,
+          const newSkuId = new ObjectId();
+          skuBulkOps.push({
+            updateOne: {
+              filter: { name: mmCode },
+              update: {
+                $set: cleanUndefined(skuSetFields),
+                $setOnInsert: {
+                  createdAt: now,
+                  __v: 0,
+                },
+              },
+              upsert: true,
+            },
           });
-          existingSkusMap.set(skuKey, created);
+          existingSkusMap.set(skuKey, { _id: newSkuId, name: mmCode });
           skusCreated++;
         }
       } catch (err: any) {
         warnings.push(`SKU Error for "${mmCode}": ${err.message}`);
       }
     }
+
+    if (skuBulkOps.length > 0) {
+      await skusCollection.bulkWrite(skuBulkOps, { ordered: false });
+    }
   } else {
     logs.push('No SKU MM Code spreadsheet provided. SKU variant import phase will be skipped.');
   }
 
-    // Synchronize family-to-product relationships (only families touched by this import)
-    logs.push(`Synchronizing family-to-product relationships for ${touchedFamilyIds.size} famil${touchedFamilyIds.size === 1 ? 'y' : 'ies'}...`);
-    const toId = (v: any): string => String(typeof v === 'object' && v !== null ? v.id : v);
-    for (const familyId of touchedFamilyIds) {
-      try {
-        const [familyDoc, familyProducts] = await Promise.all([
-          payload.findByID({ collection: 'families', id: familyId, depth: 0 }),
-          payload.find({
-            collection: 'products',
-            where: { families: { equals: familyId } },
-            limit: 2000,
-            depth: 0,
-            pagination: false,
-          }),
-        ]);
+  // Synchronize family-to-product relationships (only families touched by this import)
+  logs.push(`Synchronizing family-to-product relationships for ${touchedFamilyIds.size} famil${touchedFamilyIds.size === 1 ? 'y' : 'ies'}...`);
+  const toId = (v: any): string => String(typeof v === 'object' && v !== null ? (v._id || v.id || v) : v);
+  for (const familyId of touchedFamilyIds) {
+    try {
+      const famObjId = toObjectId(familyId);
+      const [familyDoc, familyProducts] = await Promise.all([
+        familiesCollection.findOne({ _id: famObjId }, { projection: { _id: 1, name: 1, products: 1, accessoryProducts: 1 } }),
+        productsCollection.find({ families: { $in: [famObjId, String(familyId)] } }, { projection: { _id: 1 } }).toArray(),
+      ]);
 
-            const accessoryIds = new Set(((familyDoc as any).accessoryProducts || []).map(toId));
-            const currentIds: string[] = ((familyDoc as any).products || []).map(toId);
-            const merged = new Set(currentIds);
-            for (const p of familyProducts.docs) {
-              const pid = String(p.id);
-              // Keep accessories in their own table — never add them to the main products list
-              if (!accessoryIds.has(pid)) merged.add(pid);
-            }
+      if (!familyDoc) continue;
 
-              if (merged.size === currentIds.length) {
-                logs.push(`Family "${(familyDoc as any).name}" already up to date (${merged.size} products).`);
-                continue;
-              }
+      const accessoryIds = new Set(((familyDoc as any).accessoryProducts || []).map(toId));
+      const currentIds: string[] = ((familyDoc as any).products || []).map(toId);
+      const merged = new Set(currentIds);
+      for (const p of familyProducts) {
+        const pid = String(p._id);
+        // Keep accessories in their own table — never add them to the main products list
+        if (!accessoryIds.has(pid)) merged.add(pid);
+      }
 
-              await payload.update({
-                collection: 'families',
-                id: familyId,
-                data: { products: Array.from(merged) },
-                depth: 0,
-              });
-              logs.push(`Synchronized family "${(familyDoc as any).name}" with ${merged.size} products.`);
-            } catch (err: any) {
-              warnings.push(`Could not synchronize family "${familyId}" with products: ${err.message}`);
-            }
-          }
+      if (merged.size === currentIds.length) {
+        logs.push(`Family "${(familyDoc as any).name}" already up to date (${merged.size} products).`);
+        continue;
+      }
 
-
-          logs.push(`SKU Bulk import completed: Products (Created: ${productsCreated}, Updated: ${productsUpdated}), SKUs (Created: ${skusCreated}, Updated: ${skusUpdated}).`);
-
-          return {
-            success: true,
-            productsCreated,
-            productsUpdated,
-            skusCreated,
-            skusUpdated,
-            warnings,
-            logs,
-          };
+      await familiesCollection.updateOne(
+        { _id: famObjId },
+        {
+          $set: {
+            products: Array.from(merged).map(id => toObjectId(id)),
+            updatedAt: new Date(),
+          },
         }
+      );
+      logs.push(`Synchronized family "${(familyDoc as any).name}" with ${merged.size} products.`);
+    } catch (err: any) {
+      warnings.push(`Could not synchronize family "${familyId}" with products: ${err.message}`);
+    }
+  }
+
+  logs.push(`SKU Bulk import completed: Products (Created: ${productsCreated}, Updated: ${productsUpdated}), SKUs (Created: ${skusCreated}, Updated: ${skusUpdated}).`);
+
+  return {
+    success: true,
+    productsCreated,
+    productsUpdated,
+    skusCreated,
+    skusUpdated,
+    warnings,
+    logs,
+  };
+}

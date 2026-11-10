@@ -336,7 +336,7 @@ export const COLUMN_SYNONYMS: Record<string, string[]> = {
   series_name: ['series name', 'series', 'family', '系列名'],
   customer: ['customer', '客户'],
   customer_model_no_old: ['customer model no.(old)', 'customer model no old', 'old model no', 'old model number'],
-  customer_model_no_new: ['customer model no.  (new erp)', 'customer model no. (new)', 'customer model no new', 'new erp model no', 'new erp model number', 'model number', 'model_number'],
+  customer_model_no_new: ['customer model no. (new erp)', 'customer model no.(new erp)', 'customer model no.  (new erp)', 'customer model no. (new)', 'customer model no new', 'new erp model no', 'new erp model number', 'model number', 'model_number'],
   yk_product_code: ['yk product code', 'yk product_code', 'yk code', 'product code'],
   yk_model_no: ['yk model no', 'yk model_no', 'yk model', 'factory model', '工厂型号'],
   description: ['description', 'desc', '描述'],
@@ -412,7 +412,7 @@ export async function processXlsxToJson(xlsxBuffer: Buffer): Promise<any[]> {
   const rawHeaders = rawRows[headersRowIdx] || [];
   const headers: string[] = [];
   for (let i = 0; i < rawHeaders.length; i++) {
-    headers.push(String(rawHeaders[i] || '').trim().toLowerCase());
+    headers.push(String(rawHeaders[i] || '').replace(/\s+/g, ' ').trim().toLowerCase());
   }
 
   // Dynamically map LUMINAIRE_KEYS to sheet columns

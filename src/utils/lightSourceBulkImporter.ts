@@ -2,8 +2,25 @@ import { Payload } from 'payload';
 import * as xlsx from 'xlsx';
 import AdmZip from 'adm-zip';
 import path from 'path';
+import { ObjectId } from 'mongodb';
 import { getMongoClient } from './mongoClient';
 import { cleanValue } from './xlsxToJsonConverter';
+
+function toObjectId(id: any): ObjectId {
+  if (id instanceof ObjectId) return id;
+  const str = String(typeof id === 'object' && id !== null ? (id._id || id.id || id) : id).trim();
+  return ObjectId.isValid(str) ? new ObjectId(str) : (id as any);
+}
+
+function cleanUndefined(obj: Record<string, any>): Record<string, any> {
+  const result: Record<string, any> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v !== undefined) {
+      result[k] = v;
+    }
+  }
+  return result;
+}
 
 function normalizeModelNumber(model: string): string {
   if (!model) return '';
@@ -230,8 +247,49 @@ export async function processLightSourceBulkImport(
     throw new Error('Could not find "MM Code" column in spreadsheet.');
   }
 
+  const mongoClient = await getMongoClient();
+  const payloadDb = (payload.db as any)?.connection?.db || mongoClient.db();
+  const productsCollection = payloadDb.collection('products');
+  const skusCollection = payloadDb.collection('skus');
+  const familiesCollection = payloadDb.collection('families');
+  const categoriesCollection = payloadDb.collection('categories');
+
   const parentProductsMap = new Map<string, string>(); // modelNumber -> ProductID
   const parentProductNamesMap = new Map<string, string>(); // productID -> originalName
+
+  // Pre-fetch categories, families, products, and SKUs in parallel
+  const categoryCache = new Map<string, string>();
+  const familyCache = new Map<string, any>();
+  const existingProductsMap = new Map<string, any>();
+  const existingSkusMap = new Map<string, any>();
+
+  try {
+    const [existingCats, existingFams, existingProds, existingSkus] = await Promise.all([
+      categoriesCollection.find({}, { projection: { _id: 1, name: 1 } }).toArray(),
+      familiesCollection.find({}, { projection: { _id: 1, name: 1, dismantleInstructionPdf: 1 } }).toArray(),
+      productsCollection.find({}, { projection: { _id: 1, name: 1, images: 1 } }).toArray(),
+      skusCollection.find({}, { projection: { _id: 1, name: 1 } }).toArray(),
+    ]);
+    existingCats.forEach((c: any) => {
+      if (c.name) categoryCache.set(String(c.name).toLowerCase().trim(), String(c._id));
+    });
+    existingFams.forEach((f: any) => {
+      if (f.name) familyCache.set(String(f.name).toLowerCase().trim(), { ...f, id: String(f._id) });
+    });
+    existingProds.forEach((p: any) => {
+      if (p.name) existingProductsMap.set(String(p.name).toLowerCase().trim(), { ...p, id: String(p._id) });
+    });
+    existingSkus.forEach((s: any) => {
+      if (s.name) existingSkusMap.set(String(s.name).toLowerCase().trim(), s);
+    });
+  } catch (e: any) {
+    warnings.push(`Pre-fetch cache warning: ${e.message}`);
+  }
+
+  const lsBulkOps: any[] = [];
+  const productBulkOps: any[] = [];
+  const skuBulkOps: any[] = [];
+  const now = new Date();
 
   // Process rows from index 1 onwards
   for (let i = 1; i < rawRows.length; i++) {
@@ -263,17 +321,14 @@ export async function processLightSourceBulkImport(
       }
     }
 
-    // Sync specs to MongoDB
     if (lightSourceCollection) {
-      try {
-        await lightSourceCollection.updateOne(
-          { mm_code: mmCode },
-          { $set: specRecord },
-          { upsert: true }
-        );
-      } catch (err: any) {
-        warnings.push(`Failed to sync specs to MongoDB for MM Code "${mmCode}": ${err.message}`);
-      }
+      lsBulkOps.push({
+        updateOne: {
+          filter: { mm_code: mmCode },
+          update: { $set: specRecord },
+          upsert: true,
+        },
+      });
     }
 
     // Handle Category resolution
@@ -283,84 +338,93 @@ export async function processLightSourceBulkImport(
     const categoryIds: string[] = [];
 
     for (const catName of categoryNames) {
-      const query = await payload.find({
-        collection: 'categories',
-        where: { name: { equals: catName } },
-        limit: 1,
-      });
-      if (query.docs.length > 0) {
-        categoryIds.push(query.docs[0].id as string);
-      } else {
-        const newCat = await payload.create({
-          collection: 'categories',
-          data: { name: catName },
+      const catKey = catName.toLowerCase().trim();
+      let catId = categoryCache.get(catKey);
+      if (!catId) {
+        const newCatId = new ObjectId();
+        await categoriesCollection.insertOne({
+          _id: newCatId,
+          name: catName,
+          createdAt: now,
+          updatedAt: now,
+          __v: 0,
         });
-        categoryIds.push(newCat.id as string);
+        catId = String(newCatId);
+        categoryCache.set(catKey, catId);
       }
+      categoryIds.push(catId);
     }
 
     // Resolve Image from ZIP
-    const normalizedModels = [
-      modelNo,
-      modelNo.replace(/\//g, '-'),
-      modelNo.replace(/\//g, '_'),
-      modelNo.replace(/\//g, ' '),
-    ];
-    const imageFallbacks: string[] = [];
-    for (const m of normalizedModels) {
-      imageFallbacks.push(`${m}.png`, `${m}.jpg`, `${m}.jpeg`);
-    }
     const cleanMmForLookup = mmCode.replace(/\//g, '-').replace(/\s+/g, '');
-    imageFallbacks.unshift(`${cleanMmForLookup}.png`, `${cleanMmForLookup}.jpg`, `${cleanMmForLookup}.jpeg`);
-
-    const imageId = await uploadAssetFromZip(undefined, imageFallbacks, `Image for ${modelNo}`, 'image');
+    let imageId: string | null = null;
+    if (filesMap.size > 0) {
+      const normalizedModels = [
+        modelNo,
+        modelNo.replace(/\//g, '-'),
+        modelNo.replace(/\//g, '_'),
+        modelNo.replace(/\//g, ' '),
+      ];
+      const imageFallbacks: string[] = [];
+      for (const m of normalizedModels) {
+        imageFallbacks.push(`${m}.png`, `${m}.jpg`, `${m}.jpeg`);
+      }
+      imageFallbacks.unshift(`${cleanMmForLookup}.png`, `${cleanMmForLookup}.jpg`, `${cleanMmForLookup}.jpeg`);
+      imageId = await uploadAssetFromZip(undefined, imageFallbacks, `Image for ${modelNo}`, 'image');
+    }
 
     // Resolve Family (Series)
     const familyName = idxFamily !== -1 ? String(row[idxFamily] || '').trim() : '';
     let familyId: string | null = null;
     if (familyName && familyName.toLowerCase() !== 'n/a' && familyName !== '-') {
       try {
-        const query = await payload.find({
-          collection: 'families',
-          where: { name: { equals: familyName } },
-          limit: 1,
-        });
+        const famKey = familyName.toLowerCase().trim();
+        let famDoc = familyCache.get(famKey);
 
-        // Search ZIP for family dismantle instruction PDF (e.g. [family_name]_di.pdf)
-        const cleanFamName = familyName.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_');
-        const famSlugName = familyName.toLowerCase().replace(/\s+/g, '-');
-        const diFallbacks = [
-          `${cleanFamName}_di.pdf`,
-          `${famSlugName}_di.pdf`,
-          `${familyName.toLowerCase()}_di.pdf`,
-          `${familyName.toLowerCase()}-di.pdf`,
-        ];
-        const diPdfId = await uploadAssetFromZip(undefined, diFallbacks, `Dismantle Instruction PDF for ${familyName}`, 'document');
+        let diPdfId: string | null = null;
+        if (filesMap.size > 0) {
+          const cleanFamName = familyName.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_');
+          const famSlugName = familyName.toLowerCase().replace(/\s+/g, '-');
+          const diFallbacks = [
+            `${cleanFamName}_di.pdf`,
+            `${famSlugName}_di.pdf`,
+            `${familyName.toLowerCase()}_di.pdf`,
+            `${familyName.toLowerCase()}-di.pdf`,
+          ];
+          diPdfId = await uploadAssetFromZip(undefined, diFallbacks, `Dismantle Instruction PDF for ${familyName}`, 'document');
+        }
 
-        if (query.docs.length > 0) {
-          familyId = query.docs[0].id as string;
-          if (diPdfId && !query.docs[0].dismantleInstructionPdf) {
-            await payload.update({
-              collection: 'families',
-              id: familyId,
-              data: { dismantleInstructionPdf: diPdfId },
-            });
+        if (famDoc) {
+          familyId = String(famDoc.id || famDoc._id);
+          if (diPdfId && !famDoc.dismantleInstructionPdf) {
+            await familiesCollection.updateOne(
+              { _id: toObjectId(familyId) },
+              { $set: { dismantleInstructionPdf: toObjectId(diPdfId), updatedAt: now } }
+            );
+            famDoc.dismantleInstructionPdf = diPdfId;
           }
         } else {
           const familyImageId = imageId || placeholderImageId;
+          const famSlug = familyName.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+          const newFamId = new ObjectId();
           const newFamData: any = {
+            _id: newFamId,
             name: familyName,
+            slug: famSlug,
+            priority: 0,
             description: `A collection of premium Megaman ${familyName} light sources.`,
-            media: familyImageId ? [familyImageId] : [],
-            categories: categoryIds,
+            media: familyImageId ? [toObjectId(familyImageId)] : [],
+            categories: categoryIds.map(id => toObjectId(id)),
+            products: [],
+            createdAt: now,
+            updatedAt: now,
+            __v: 0,
           };
-          if (diPdfId) newFamData.dismantleInstructionPdf = diPdfId;
+          if (diPdfId) newFamData.dismantleInstructionPdf = toObjectId(diPdfId);
 
-          const newFam = await payload.create({
-            collection: 'families',
-            data: newFamData,
-          });
-          familyId = newFam.id as string;
+          await familiesCollection.insertOne(newFamData);
+          familyId = String(newFamId);
+          familyCache.set(famKey, { ...newFamData, id: familyId });
         }
       } catch (err: any) {
         warnings.push(`Failed to resolve or create family "${familyName}": ${err.message}`);
@@ -370,38 +434,54 @@ export async function processLightSourceBulkImport(
     // Resolve Parent Product
     let parentProductId = parentProductsMap.get(normalizedModel);
     if (!parentProductId) {
-      // Look up in database
-      const dbMatch = await payload.find({
-        collection: 'products',
-        where: { name: { equals: modelNo } },
-        limit: 1,
-      });
+      const modelKey = modelNo.toLowerCase().trim();
+      const existing = existingProductsMap.get(modelKey);
 
       const desc = idxDescription !== -1 ? String(row[idxDescription] || '').trim() : '';
-      const productData: any = {
+      const setFields: Record<string, any> = {
         name: modelNo,
         description: desc || undefined,
         specifications: specRecord,
+        updatedAt: now,
       };
-      const finalProductImage = imageId || placeholderImageId;
-      if (finalProductImage) productData.images = finalProductImage;
-      if (familyId) productData.families = familyId;
+      if (imageId) {
+        setFields.images = toObjectId(imageId);
+      } else if (!existing?.images && placeholderImageId) {
+        setFields.images = toObjectId(placeholderImageId);
+      }
+      if (familyId) {
+        setFields.families = toObjectId(familyId);
+      }
 
-      if (dbMatch.docs.length > 0) {
-        const existing = dbMatch.docs[0];
-        await payload.update({
-          collection: 'products',
-          id: existing.id,
-          data: productData,
+      if (existing) {
+        parentProductId = String(existing._id || existing.id);
+        productBulkOps.push({
+          updateOne: {
+            filter: { _id: toObjectId(parentProductId) },
+            update: { $set: cleanUndefined(setFields) },
+          },
         });
-        parentProductId = existing.id as string;
         productsUpdated++;
       } else {
-        const created = await payload.create({
-          collection: 'products',
-          data: productData,
+        const newProdId = new ObjectId();
+        parentProductId = String(newProdId);
+        productBulkOps.push({
+          updateOne: {
+            filter: { _id: newProdId },
+            update: {
+              $set: cleanUndefined({
+                ...setFields,
+                sites: ['international', 'hk', 'uk'],
+              }),
+              $setOnInsert: {
+                createdAt: now,
+                __v: 0,
+              },
+            },
+            upsert: true,
+          },
         });
-        parentProductId = created.id as string;
+        existingProductsMap.set(modelKey, { _id: newProdId, id: parentProductId, ...setFields });
         productsCreated++;
       }
       parentProductsMap.set(normalizedModel, parentProductId);
@@ -416,19 +496,16 @@ export async function processLightSourceBulkImport(
     const colourTemp = idxColourTemp !== -1 ? String(row[idxColourTemp] || '').trim() : '';
     const voltage = idxVoltage !== -1 ? String(row[idxVoltage] || '').trim() : '';
 
-    const ldtId = await uploadAssetFromZip(undefined, [`${cleanMmForLookup}.ldt`, `${normalizedModel}.ldt`], `LDT Photometrics for ${mmCode}`, 'document');
-    const iesId = await uploadAssetFromZip(undefined, [`${cleanMmForLookup}.ies`, `${normalizedModel}.ies`], `IES Photometrics for ${mmCode}`, 'document');
+    const ldtId = filesMap.size > 0 ? await uploadAssetFromZip(undefined, [`${cleanMmForLookup}.ldt`, `${normalizedModel}.ldt`], `LDT Photometrics for ${mmCode}`, 'document') : null;
+    const iesId = filesMap.size > 0 ? await uploadAssetFromZip(undefined, [`${cleanMmForLookup}.ies`, `${normalizedModel}.ies`], `IES Photometrics for ${mmCode}`, 'document') : null;
 
     try {
-      const query = await payload.find({
-        collection: 'skus',
-        where: { name: { equals: mmCode } },
-        limit: 1,
-      });
+      const skuKey = mmCode.toLowerCase().trim();
+      const existing = existingSkusMap.get(skuKey);
 
-      const skuData: any = {
+      const skuSetFields: Record<string, any> = {
         name: mmCode,
-        product: parentProductId,
+        product: toObjectId(parentProductId),
         modelNumber: modelNo,
         colour: colour || undefined,
         specialFeatures: productCode || undefined,
@@ -437,29 +514,55 @@ export async function processLightSourceBulkImport(
         colourTemperature: colourTemp || undefined,
         voltage: voltage || undefined,
         specifications: specRecord,
+        updatedAt: now,
       };
 
-      if (ldtId) skuData.photometryLdt = ldtId;
-      if (iesId) skuData.photometryIes = iesId;
+      if (ldtId) skuSetFields.photometryLdt = toObjectId(ldtId);
+      if (iesId) skuSetFields.photometryIes = toObjectId(iesId);
 
-      if (query.docs.length > 0) {
-        const existing = query.docs[0];
-        await payload.update({
-          collection: 'skus',
-          id: existing.id,
-          data: skuData,
+      if (existing) {
+        skuBulkOps.push({
+          updateOne: {
+            filter: { _id: existing._id },
+            update: { $set: cleanUndefined(skuSetFields) },
+          },
         });
         skusUpdated++;
       } else {
-        await payload.create({
-          collection: 'skus',
-          data: skuData,
+        const newSkuId = new ObjectId();
+        skuBulkOps.push({
+          updateOne: {
+            filter: { name: mmCode },
+            update: {
+              $set: cleanUndefined(skuSetFields),
+              $setOnInsert: {
+                createdAt: now,
+                __v: 0,
+              },
+            },
+            upsert: true,
+          },
         });
+        existingSkusMap.set(skuKey, { _id: newSkuId, name: mmCode });
         skusCreated++;
       }
     } catch (err: any) {
       warnings.push(`SKU Error for "${mmCode}": ${err.message}`);
     }
+  }
+
+  if (lightSourceCollection && lsBulkOps.length > 0) {
+    try {
+      await lightSourceCollection.bulkWrite(lsBulkOps, { ordered: false });
+    } catch (err: any) {
+      warnings.push(`Failed to sync specs to MongoDB light_source: ${err.message}`);
+    }
+  }
+  if (productBulkOps.length > 0) {
+    await productsCollection.bulkWrite(productBulkOps, { ordered: false });
+  }
+  if (skuBulkOps.length > 0) {
+    await skusCollection.bulkWrite(skuBulkOps, { ordered: false });
   }
 
   logs.push(`Light Source bulk import completed. Products (Created: ${productsCreated}, Updated: ${productsUpdated}), SKUs (Created: ${skusCreated}, Updated: ${skusUpdated}).`);
