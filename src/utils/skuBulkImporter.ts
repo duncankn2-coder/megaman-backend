@@ -234,10 +234,18 @@ export async function processSkuBulkImport(
   const parentProductsMap = new Map<string, string>(); // modelNumber -> ProductID
   const parentProductNamesMap = new Map<string, string>(); // productID -> originalName
   const productSpecsByIdMap = new Map<string, any>(); // productID -> specifications
+  const accessoryProductIds = new Set<string>(); // productIDs whose Column C (product_type) is Accessories
   const touchedFamilyIds = new Set<string>(); // families affected by this import (only these get re-synced)
   const diCheckedFamilies = new Set<string>(); // families already checked for a DI PDF in the ZIP
   let generalSpecs: any[] = [];
   const generalSpecsListMap = new Map<string, any[]>(); // modelKey -> list of generalSpecs rows (supports multi-colour variants)
+
+  // Check whether Column C (product_type) indicates an Accessory / Optional Part
+  const isAccessoryProductType = (val: any): boolean => {
+    if (!val) return false;
+    const clean = String(val).trim().toLowerCase();
+    return clean === 'accessories' || clean === 'accessory' || /^accessor(y|ies)\b/i.test(clean);
+  };
 
   // Extract color from General Data description or fitting_colour
   const extractGeneralColor = (specs: any): string => {
@@ -465,7 +473,9 @@ export async function processSkuBulkImport(
 
       const desc = idxDescription !== -1 ? String(row[idxDescription] || '').trim() : '';
       const familyName = idxFamily !== -1 ? String(row[idxFamily] || '').trim() : '';
-      const categoryName = idxCategory !== -1 ? String(row[idxCategory] || '').trim() : '';
+      const colCProductType = String(row[2] ?? '').trim();
+      const categoryName = colCProductType || (idxCategory !== -1 ? String(row[idxCategory] || '').trim() : '');
+      const isRowAccessory = isAccessoryProductType(colCProductType) || (idxCategory !== -1 && isAccessoryProductType(row[idxCategory]));
 
       logs.push(`Processing base product model "${modelNo}"...`);
 
@@ -626,6 +636,9 @@ export async function processSkuBulkImport(
           parentProductsMap.set(modelKey, prodIdStr);
           parentProductNamesMap.set(prodIdStr, modelNo);
           productSpecsByIdMap.set(prodIdStr, productSpecs || existing.specifications);
+          if (isRowAccessory || isAccessoryProductType(productSpecs?.product_type)) {
+            accessoryProductIds.add(prodIdStr);
+          }
           productsUpdated++;
         } else {
           const newProdId = new ObjectId();
@@ -649,6 +662,9 @@ export async function processSkuBulkImport(
           parentProductsMap.set(modelKey, prodIdStr);
           parentProductNamesMap.set(prodIdStr, modelNo);
           productSpecsByIdMap.set(prodIdStr, productSpecs);
+          if (isRowAccessory || isAccessoryProductType(productSpecs?.product_type)) {
+            accessoryProductIds.add(prodIdStr);
+          }
           existingProductsMap.set(modelKey, { _id: newProdId, id: prodIdStr, ...setFields });
           productsCreated++;
         }
@@ -964,22 +980,49 @@ export async function processSkuBulkImport(
       const famObjId = toObjectId(familyId);
       const [familyDoc, familyProducts] = await Promise.all([
         familiesCollection.findOne({ _id: famObjId }, { projection: { _id: 1, name: 1, products: 1, accessoryProducts: 1 } }),
-        productsCollection.find({ families: { $in: [famObjId, String(familyId)] } }, { projection: { _id: 1 } }).toArray(),
+        productsCollection.find(
+          { families: { $in: [famObjId, String(familyId)] } },
+          { projection: { _id: 1, 'specifications.product_type': 1, 'specifications.categories': 1 } }
+        ).toArray(),
       ]);
 
       if (!familyDoc) continue;
 
-      const accessoryIds = new Set(((familyDoc as any).accessoryProducts || []).map(toId));
-      const currentIds: string[] = ((familyDoc as any).products || []).map(toId);
-      const merged = new Set(currentIds);
+      const currentAccessoryIds: string[] = ((familyDoc as any).accessoryProducts || []).map(toId);
+      const currentProductIds: string[] = ((familyDoc as any).products || []).map(toId);
+
+      const mergedAccessories = new Set<string>(currentAccessoryIds);
       for (const p of familyProducts) {
         const pid = String(p._id);
-        // Keep accessories in their own table — never add them to the main products list
-        if (!accessoryIds.has(pid)) merged.add(pid);
+        const isAcc =
+          accessoryProductIds.has(pid) ||
+          isAccessoryProductType((p as any)?.specifications?.product_type) ||
+          isAccessoryProductType((p as any)?.specifications?.categories);
+        if (isAcc) {
+          mergedAccessories.add(pid);
+        }
       }
 
-      if (merged.size === currentIds.length) {
-        logs.push(`Family "${(familyDoc as any).name}" already up to date (${merged.size} products).`);
+      // Remove any accessory IDs from main products list so accessories only appear in "Accessories / Optional Parts"
+      const mergedProducts = new Set<string>(currentProductIds.filter(id => !mergedAccessories.has(id)));
+      for (const p of familyProducts) {
+        const pid = String(p._id);
+        if (!mergedAccessories.has(pid)) {
+          mergedProducts.add(pid);
+        }
+      }
+
+      const nextProductsArr = Array.from(mergedProducts);
+      const nextAccessoriesArr = Array.from(mergedAccessories);
+      const productsUnchanged =
+        nextProductsArr.length === currentProductIds.length &&
+        nextProductsArr.every((id, idx) => id === currentProductIds[idx]);
+      const accessoriesUnchanged =
+        nextAccessoriesArr.length === currentAccessoryIds.length &&
+        nextAccessoriesArr.every((id, idx) => id === currentAccessoryIds[idx]);
+
+      if (productsUnchanged && accessoriesUnchanged) {
+        logs.push(`Family "${(familyDoc as any).name}" already up to date (${mergedProducts.size} products, ${mergedAccessories.size} accessories).`);
         continue;
       }
 
@@ -987,12 +1030,13 @@ export async function processSkuBulkImport(
         { _id: famObjId },
         {
           $set: {
-            products: Array.from(merged).map(id => toObjectId(id)),
+            products: nextProductsArr.map(id => toObjectId(id)),
+            accessoryProducts: nextAccessoriesArr.map(id => toObjectId(id)),
             updatedAt: new Date(),
           },
         }
       );
-      logs.push(`Synchronized family "${(familyDoc as any).name}" with ${merged.size} products.`);
+      logs.push(`Synchronized family "${(familyDoc as any).name}" (${mergedProducts.size} products, ${mergedAccessories.size} accessories).`);
     } catch (err: any) {
       warnings.push(`Could not synchronize family "${familyId}" with products: ${err.message}`);
     }

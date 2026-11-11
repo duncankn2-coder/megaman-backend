@@ -139,8 +139,16 @@ export async function processJsonImport(
 
   const lumBulkOps: any[] = [];
   const productBulkOps: any[] = [];
+  const touchedFamilyIds = new Set<string>();
+  const accessoryProductIds = new Set<string>();
   const now = new Date();
   const seenModels = new Set<string>();
+
+  const isAccessoryProductType = (val: any): boolean => {
+    if (!val) return false;
+    const clean = String(val).trim().toLowerCase();
+    return clean === 'accessories' || clean === 'accessory' || /^accessor(y|ies)\b/i.test(clean);
+  };
 
   // Process each product item in the JSON
   for (let i = 0; i < items.length; i++) {
@@ -276,18 +284,24 @@ export async function processJsonImport(
       }
       if (finalFamilyId) {
         setFields.families = toObjectId(finalFamilyId);
+        touchedFamilyIds.add(String(finalFamilyId));
       }
 
       if (existing) {
+        const prodIdStr = String(existing._id || existing.id);
         productBulkOps.push({
           updateOne: {
-            filter: { _id: toObjectId(existing._id || existing.id) },
+            filter: { _id: toObjectId(prodIdStr) },
             update: { $set: cleanUndefined(setFields) },
           },
         });
+        if (isAccessoryProductType(item.product_type)) {
+          accessoryProductIds.add(prodIdStr);
+        }
         updatedCount++;
       } else {
         const newProdId = new ObjectId();
+        const prodIdStr = String(newProdId);
         productBulkOps.push({
           updateOne: {
             filter: { _id: newProdId },
@@ -304,7 +318,10 @@ export async function processJsonImport(
             upsert: true,
           },
         });
-        existingProductsMap.set(modelKey, { _id: newProdId, id: String(newProdId), ...setFields });
+        if (isAccessoryProductType(item.product_type)) {
+          accessoryProductIds.add(prodIdStr);
+        }
+        existingProductsMap.set(modelKey, { _id: newProdId, id: prodIdStr, ...setFields });
         createdCount++;
       }
     } catch (err: any) {
@@ -321,6 +338,58 @@ export async function processJsonImport(
   }
   if (productBulkOps.length > 0) {
     await productsCollection.bulkWrite(productBulkOps, { ordered: false });
+  }
+
+  const toId = (v: any): string => String(typeof v === 'object' && v !== null ? (v._id || v.id || v) : v);
+  for (const familyId of touchedFamilyIds) {
+    try {
+      const famObjId = toObjectId(familyId);
+      const [familyDoc, familyProducts] = await Promise.all([
+        familiesCollection.findOne({ _id: famObjId }, { projection: { _id: 1, name: 1, products: 1, accessoryProducts: 1 } }),
+        productsCollection.find(
+          { families: { $in: [famObjId, String(familyId)] } },
+          { projection: { _id: 1, 'specifications.product_type': 1, 'specifications.categories': 1 } }
+        ).toArray(),
+      ]);
+
+      if (!familyDoc) continue;
+
+      const currentAccessoryIds: string[] = ((familyDoc as any).accessoryProducts || []).map(toId);
+      const currentProductIds: string[] = ((familyDoc as any).products || []).map(toId);
+
+      const mergedAccessories = new Set<string>(currentAccessoryIds);
+      for (const p of familyProducts) {
+        const pid = String(p._id);
+        const isAcc =
+          accessoryProductIds.has(pid) ||
+          isAccessoryProductType((p as any)?.specifications?.product_type) ||
+          isAccessoryProductType((p as any)?.specifications?.categories);
+        if (isAcc) {
+          mergedAccessories.add(pid);
+        }
+      }
+
+      const mergedProducts = new Set<string>(currentProductIds.filter(id => !mergedAccessories.has(id)));
+      for (const p of familyProducts) {
+        const pid = String(p._id);
+        if (!mergedAccessories.has(pid)) {
+          mergedProducts.add(pid);
+        }
+      }
+
+      await familiesCollection.updateOne(
+        { _id: famObjId },
+        {
+          $set: {
+            products: Array.from(mergedProducts).map(id => toObjectId(id)),
+            accessoryProducts: Array.from(mergedAccessories).map(id => toObjectId(id)),
+            updatedAt: new Date(),
+          },
+        }
+      );
+    } catch (err: any) {
+      warnings.push(`Could not synchronize family "${familyId}" with products: ${err.message}`);
+    }
   }
 
   logs.push(`JSON import completed: ${createdCount} created, ${updatedCount} updated.`);
