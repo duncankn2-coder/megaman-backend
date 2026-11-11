@@ -22,6 +22,7 @@
     "@payloadcms/richtext-lexical": "3.31.0",
     "@payloadcms/storage-vercel-blob": "3.31.0",
     "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.1.0",
     "adm-zip": "^0.5.17",
     "cross-env": "^7.0.3",
     "graphql": "^16.8.1",
