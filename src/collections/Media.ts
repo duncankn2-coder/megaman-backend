@@ -4,7 +4,6 @@ export const Media: CollectionConfig = {
   slug: 'media',
   upload: {
     staticDir: 'public/media',
-    focalPoint: false,
     mimeTypes: [
       'image/*',
       'image/svg+xml',
@@ -17,16 +16,7 @@ export const Media: CollectionConfig = {
       'application/x-zip',
       'multipart/x-zip',
     ],
-    adminThumbnail: ({ doc }) => {
-      const mime = doc?.mimeType as string | undefined;
-      const filename = doc?.filename as string | undefined;
-      if (!filename || !mime || !mime.startsWith('image/')) return null;
-      const storeId = process.env.BLOB_READ_WRITE_TOKEN?.match(/^vercel_blob_rw_([a-z\d]+)_[a-z\d]+$/i)?.[1]?.toLowerCase();
-      if (storeId) {
-        return `https://${storeId}.public.blob.vercel-storage.com/${encodeURIComponent(filename)}`;
-      }
-      return (doc?.url as string) || `/api/media/file/${encodeURIComponent(filename)}`;
-    },
+    adminThumbnail: ({ doc }) => (doc?.mimeType === 'image/svg+xml' ? (doc.url as string) : null),
   },
   access: {
     read: () => true, // Allow anyone to read products
