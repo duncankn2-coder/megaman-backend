@@ -115,9 +115,9 @@ export default buildConfig({
             return data
           }
 
-          const fastHandler = async (req: any, args: any) => {
+          const fastHandler = async (req: any, args: any): Promise<any> => {
             const filename = args?.params?.filename
-            if (!filename) return null
+            if (!filename) return undefined
             const fileUrl = `${baseUrl}/${encodeURIComponent(filename)}`
 
             // Direct GET /api/media/file/:filename requests redirect straight to the Vercel Blob CDN
