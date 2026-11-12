@@ -40,6 +40,77 @@ export const Families: CollectionConfig = {
         return data;
       },
     ],
+    afterRead: [
+      async ({ doc }) => {
+        try {
+          if (Array.isArray(doc.products) && doc.products.length > 0) {
+            const validProducts = doc.products.filter((p: any) => p && typeof p === 'object');
+
+            // 1. If family has no media (or empty array), check if any products have images
+            if (!doc.media || (Array.isArray(doc.media) && doc.media.length === 0)) {
+              const productImages: any[] = [];
+              const seen = new Set<string>();
+              validProducts.forEach((p: any) => {
+                if (p.images) {
+                  const img = p.images;
+                  const key = typeof img === 'string' ? img : (img.id || img.url || img.filename);
+                  if (key && !seen.has(key)) {
+                    seen.add(key);
+                    productImages.push(img);
+                  }
+                }
+              });
+              if (productImages.length > 0) {
+                doc.media = productImages;
+              }
+            }
+
+            // 2. If family has no userManual, fallback to first product's userManual
+            if (!doc.userManual) {
+              const prodWithManual = validProducts.find((p: any) => p.userManual);
+              if (prodWithManual) {
+                doc.userManual = prodWithManual.userManual;
+              }
+            }
+
+            // 3. If family has no lineDrawing, fallback to first product's lineDrawing
+            if (!doc.lineDrawing) {
+              const prodWithLineDrawing = validProducts.find((p: any) => p.lineDrawing);
+              if (prodWithLineDrawing) {
+                doc.lineDrawing = prodWithLineDrawing.lineDrawing;
+              }
+            }
+
+            // 4. If family has no lightSpectrumGraph, fallback to first product's lightSpectrumGraph
+            if (!doc.lightSpectrumGraph) {
+              const prodWithSpectrum = validProducts.find((p: any) => p.lightSpectrumGraph);
+              if (prodWithSpectrum) {
+                doc.lightSpectrumGraph = prodWithSpectrum.lightSpectrumGraph;
+              }
+            }
+
+            // 5. If family has no photometryLdt, fallback to first product's photometryLdt
+            if (!doc.photometryLdt) {
+              const prodWithLdt = validProducts.find((p: any) => p.photometryLdt);
+              if (prodWithLdt) {
+                doc.photometryLdt = prodWithLdt.photometryLdt;
+              }
+            }
+
+            // 6. If family has no photometryIes, fallback to first product's photometryIes
+            if (!doc.photometryIes) {
+              const prodWithIes = validProducts.find((p: any) => p.photometryIes);
+              if (prodWithIes) {
+                doc.photometryIes = prodWithIes.photometryIes;
+              }
+            }
+          }
+        } catch (err) {
+          // ignore hook error
+        }
+        return doc;
+      },
+    ],
   },
   fields: [
     {
