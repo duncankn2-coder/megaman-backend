@@ -77,7 +77,9 @@ export default buildConfig({
       const basePlugin = vercelBlobStorage({
         enabled: !!token,
         collections: {
-          media: true,
+          media: {
+            disablePayloadAccessControl: true,
+          },
         },
         token,
         clientUploads: true,
@@ -99,6 +101,12 @@ export default buildConfig({
               } catch {
                 // ignore
               }
+            }
+
+            // Direct GET requests for media files (from browsers/visitors) redirect immediately to Vercel Blob CDN
+            if (baseUrl && rawFilename && !('clientUploadContext' in (args?.params || {}))) {
+              const cleanKey = encodeURIComponent(decodeURIComponent(rawFilename))
+              return Response.redirect(`${baseUrl}/${cleanKey}`, 307)
             }
 
             try {

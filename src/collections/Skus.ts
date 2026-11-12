@@ -24,11 +24,13 @@ export const Skus: CollectionConfig = {
       type: 'relationship',
       relationTo: 'products',
       required: true,
+      index: true,
       label: 'Base Product',
     },
     {
       name: 'modelNumber',
       type: 'text',
+      index: true,
       label: 'Model No (e.g. FPL71900v1-ex/ta+LD247038-C0900)',
     },
     {

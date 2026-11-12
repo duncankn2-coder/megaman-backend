@@ -59,6 +59,7 @@ export const Projects: CollectionConfig = {
       name: 'applicationType',
       type: 'select',
       required: true,
+      index: true,
       options: [
         { label: 'Hospitality', value: 'hospitality' },
         { label: 'Retail', value: 'retail' },

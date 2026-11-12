@@ -80,6 +80,7 @@ export const Families: CollectionConfig = {
       relationTo: 'categories',
       hasMany: true,
       required: true,
+      index: true,
     },
     {
       name: 'media',

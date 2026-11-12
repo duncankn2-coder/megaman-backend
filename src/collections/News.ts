@@ -36,6 +36,7 @@ export const News: CollectionConfig = {
       name: 'publishDate',
       type: 'date',
       required: true,
+      index: true,
       admin: {
         date: {
           pickerAppearance: 'dayOnly',

@@ -717,12 +717,14 @@ export const Products: CollectionConfig = {
       name: 'name',
       type: 'text',
       required: true,
+      index: true,
       label: 'Model Number',
     },
     {
       name: 'sites',
       type: 'select',
       hasMany: true,
+      index: true,
       label: 'Display on Sites',
       required: true,
       defaultValue: ['international', 'hk', 'uk'],
@@ -755,6 +757,7 @@ export const Products: CollectionConfig = {
       name: 'families', // New field for product families
       type: 'relationship',
       relationTo: 'families',
+      index: true,
       hasMany: false, // Typically one family per product, but adjust if needed
       required: false, // Optional, depending on your needs
     },
