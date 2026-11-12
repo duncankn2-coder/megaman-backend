@@ -43,6 +43,28 @@ export const Media: CollectionConfig = {
           data.type = 'document';
         }
 
+        if (mimeType && mimeType.startsWith('image/') && data && !data.type) {
+          data.type = 'image';
+        }
+
+        if (data && !data.alt) {
+          const rawFilename =
+            (req as any)?.file?.name ||
+            (req as any)?.file?.filename ||
+            data?.filename ||
+            '';
+          let cleanedName = 'Media item';
+          if (rawFilename) {
+            try {
+              cleanedName = decodeURIComponent(rawFilename);
+            } catch {
+              cleanedName = rawFilename;
+            }
+            cleanedName = cleanedName.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ').trim();
+          }
+          data.alt = cleanedName || 'Media item';
+        }
+
         return data;
       },
     ],
@@ -51,7 +73,10 @@ export const Media: CollectionConfig = {
     {
       name: 'alt',
       type: 'text',
-      required: true,
+      required: false,
+      admin: {
+        description: 'Descriptive alt text. Auto-generated from filename if left blank.',
+      },
     },
     {
       name: 'description',
