@@ -1,4 +1,5 @@
 import { CollectionConfig } from 'payload';
+import { revalidateFrontend } from '../utils/revalidateFrontend';
 
 // Projects Collection
 export const Projects: CollectionConfig = {
@@ -22,6 +23,24 @@ export const Projects: CollectionConfig = {
             .replace(/(^-|-$)+/g, '');
         }
         return data;
+      },
+    ],
+    afterChange: [
+      async ({ doc }) => {
+        await revalidateFrontend([
+          '/',
+          '/projects',
+          ...(doc?.slug ? [`/projects/${doc.slug}`] : []),
+        ]);
+      },
+    ],
+    afterDelete: [
+      async ({ doc }) => {
+        await revalidateFrontend([
+          '/',
+          '/projects',
+          ...(doc?.slug ? [`/projects/${doc.slug}`] : []),
+        ]);
       },
     ],
   },

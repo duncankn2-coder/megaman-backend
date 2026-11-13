@@ -1,6 +1,7 @@
 import { CollectionConfig } from 'payload';
 import { fetchSpecifications } from '../utils/fetchSpecifications';
 import { bulkImportHtml } from '../utils/bulkImportHtml';
+import { revalidateFrontend } from '../utils/revalidateFrontend';
 
 // Products Collection
 export const Products: CollectionConfig = {
@@ -589,6 +590,28 @@ export const Products: CollectionConfig = {
         return data;
       },
     ],
+    afterChange: [
+      async ({ doc }) => {
+        const paths = ['/', '/products', '/families/[id]'];
+        if (doc?.id) {
+          paths.push(
+            `/products/${doc.id}/datasheet`,
+            `/products/${doc.id}/eprel-light-source`,
+            `/products/${doc.id}/control-gear`,
+            `/products/${doc.id}/containing-product`,
+          );
+        }
+        const fam = doc?.families;
+        if (fam && typeof fam === 'object') {
+          if (fam.slug) paths.push(`/families/${fam.slug}`);
+          if (fam.id) paths.push(`/families/${fam.id}`);
+        } else if (typeof fam === 'string' && fam) {
+          paths.push(`/families/${fam}`);
+        }
+        await revalidateFrontend(paths);
+        return doc;
+      },
+    ],
     afterDelete: [
       async ({ req, id }) => {
         // 1. Delete all SKUs referencing this product
@@ -658,6 +681,17 @@ export const Products: CollectionConfig = {
         } catch (error) {
           console.error(`Error removing product ID ${id} from family relationships:`, error);
         }
+        await revalidateFrontend([
+          '/',
+          '/products',
+          '/families/[id]',
+          ...(id ? [
+            `/products/${id}/datasheet`,
+            `/products/${id}/eprel-light-source`,
+            `/products/${id}/control-gear`,
+            `/products/${id}/containing-product`,
+          ] : []),
+        ]);
       },
     ],
     afterRead: [

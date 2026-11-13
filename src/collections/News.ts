@@ -1,4 +1,5 @@
 import { CollectionConfig } from 'payload';
+import { createRevalidateHooks } from '../utils/revalidateFrontend';
 
 export const News: CollectionConfig = {
   slug: 'news',
@@ -12,6 +13,11 @@ export const News: CollectionConfig = {
     update: ({ req }) => !!req.user, // Only authenticated users can update
     delete: ({ req }) => !!req.user, // Only authenticated users can delete
   },
+  hooks: createRevalidateHooks((doc) => [
+    '/',
+    '/company/news-and-press',
+    ...(doc?.id ? [`/company/news-and-press/${doc.id}`] : []),
+  ]),
   fields: [
     {
       name: 'title',

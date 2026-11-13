@@ -1,4 +1,5 @@
 import { GlobalConfig } from 'payload';
+import { revalidateFrontend } from '../utils/revalidateFrontend';
 import {
   HeroBlock,
   CategoriesGridBlock,
@@ -14,6 +15,13 @@ export const HomePage: GlobalConfig = {
   access: {
     read: () => true, // Anyone can read
     update: ({ req }) => !!req.user, // Only authenticated users can edit
+  },
+  hooks: {
+    afterChange: [
+      async () => {
+        await revalidateFrontend(['/']);
+      },
+    ],
   },
   fields: [
     {

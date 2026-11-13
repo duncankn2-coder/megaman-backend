@@ -1,4 +1,5 @@
 import { CollectionConfig } from 'payload'
+import { createRevalidateHooks } from '../utils/revalidateFrontend'
 
 export const Symbols: CollectionConfig = {
   slug: 'symbols',
@@ -11,6 +12,7 @@ export const Symbols: CollectionConfig = {
     update: ({ req }) => !!req.user, // Only authenticated users can update
     delete: ({ req }) => !!req.user, // Only authenticated users can delete
   },
+  hooks: createRevalidateHooks(() => ['/families/[id]', '/products']),
   fields: [
     {
       name: 'name',

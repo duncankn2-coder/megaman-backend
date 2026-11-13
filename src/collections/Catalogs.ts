@@ -1,4 +1,5 @@
 import { CollectionConfig } from 'payload'
+import { createRevalidateHooks } from '../utils/revalidateFrontend'
 
 export const Catalogs: CollectionConfig = {
   slug: 'catalogs',
@@ -11,6 +12,7 @@ export const Catalogs: CollectionConfig = {
     update: ({ req }) => !!req.user, // Only authenticated users can update
     delete: ({ req }) => !!req.user, // Only authenticated users can delete
   },
+  hooks: createRevalidateHooks(() => ['/resources/downloads']),
   fields: [
     {
       name: 'title',

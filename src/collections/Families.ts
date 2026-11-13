@@ -1,4 +1,5 @@
 import { CollectionConfig } from 'payload'
+import { revalidateFrontend } from '../utils/revalidateFrontend'
 import { EditorialBlock, HighlightProductsBlock, InspirationBlock, ScrollVideoBlock } from '../blocks/layoutBlocks'
 import {
   DATASHEET_PARAMETER_OPTIONS,
@@ -38,6 +39,24 @@ export const Families: CollectionConfig = {
             .replace(/(^-|-$)+/g, '');
         }
         return data;
+      },
+    ],
+    afterChange: [
+      async ({ doc }) => {
+        const paths = ['/', '/products', '/families/[id]'];
+        if (doc?.slug) paths.push(`/families/${doc.slug}`);
+        if (doc?.id) paths.push(`/families/${doc.id}`);
+        await revalidateFrontend(paths);
+        return doc;
+      },
+    ],
+    afterDelete: [
+      async ({ doc }) => {
+        const paths = ['/', '/products', '/families/[id]'];
+        if (doc?.slug) paths.push(`/families/${doc.slug}`);
+        if (doc?.id) paths.push(`/families/${doc.id}`);
+        await revalidateFrontend(paths);
+        return doc;
       },
     ],
   },

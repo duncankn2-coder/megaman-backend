@@ -1,4 +1,5 @@
 import { CollectionConfig } from 'payload';
+import { revalidateFrontend } from '../utils/revalidateFrontend';
 
 function getYouTubeId(url: string): string | null {
   if (!url) return null;
@@ -34,6 +35,16 @@ export const Videos: CollectionConfig = {
           }
         }
         return data;
+      },
+    ],
+    afterChange: [
+      async () => {
+        await revalidateFrontend(['/resources/videos']);
+      },
+    ],
+    afterDelete: [
+      async () => {
+        await revalidateFrontend(['/resources/videos']);
       },
     ],
   },

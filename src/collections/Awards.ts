@@ -1,4 +1,5 @@
 import { CollectionConfig } from 'payload';
+import { createRevalidateHooks } from '../utils/revalidateFrontend';
 
 export const Awards: CollectionConfig = {
   slug: 'awards',
@@ -12,6 +13,7 @@ export const Awards: CollectionConfig = {
     update: ({ req }) => !!req.user, // Only authenticated users can update
     delete: ({ req }) => !!req.user, // Only authenticated users can delete
   },
+  hooks: createRevalidateHooks(() => ['/company/awards']),
   fields: [
     {
       name: 'title',

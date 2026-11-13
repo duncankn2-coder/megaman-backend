@@ -43,14 +43,10 @@ const nextConfig = {
         ],
       },
       {
-        // Cache public API responses on Vercel's global Edge CDN for non-logged-in requests
+        // Always serve fresh API responses so on-demand frontend ISR revalidation gets updated CMS data immediately
         source: '/api/:path(families.*|products.*|globals/home-page.*|categories.*|news.*|awards.*|projects.*|catalogs.*|videos.*)',
-        missing: [
-          { type: 'header', key: 'cookie' },
-          { type: 'header', key: 'authorization' },
-        ],
         headers: [
-          { key: 'Cache-Control', value: 'public, s-maxage=300, stale-while-revalidate=600' },
+          { key: 'Cache-Control', value: 'no-store, must-revalidate' },
         ],
       },
       {
