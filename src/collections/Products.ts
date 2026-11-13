@@ -671,15 +671,28 @@ export const Products: CollectionConfig = {
                 doc.techDocLightSource = famDi;
               }
             }
-            // Auto-default product image to the family's first product shot if not set
-            if (!doc.images && Array.isArray(fam.media) && fam.media.length > 0) {
+            // Auto-default product image to the family's first product shot if not set or if set to placeholder.png
+            const isPlaceholderImg = (m: any) => {
+              if (!m) return true;
+              if (typeof m === 'string') {
+                const lower = m.trim().toLowerCase();
+                return !lower || lower === '/placeholder.png' || lower.endsWith('/placeholder.png') || lower === 'placeholder.png';
+              }
+              if (typeof m === 'object') {
+                const fname = String(m.filename || '').trim().toLowerCase();
+                const url = String(m.url || '').trim().toLowerCase();
+                return fname === 'placeholder.png' || url === '/placeholder.png' || url.endsWith('/placeholder.png');
+              }
+              return false;
+            };
+            if (isPlaceholderImg(doc.images) && Array.isArray(fam.media) && fam.media.length > 0) {
               const firstShot = fam.media.find((m: any) => {
                 if (!m) return false;
                 if (m.type === 'video') return false;
                 if (m.mimeType && typeof m.mimeType === 'string' && !m.mimeType.startsWith('image/')) return false;
-                return true;
+                return !isPlaceholderImg(m);
               }) || fam.media[0];
-              if (firstShot) {
+              if (firstShot && !isPlaceholderImg(firstShot)) {
                 doc.images = firstShot;
               }
             }
