@@ -734,13 +734,19 @@ export const Products: CollectionConfig = {
             if (!doc.lineDrawing && fam.lineDrawing) {
               doc.lineDrawing = fam.lineDrawing;
             }
-            // Auto-default light spectrum graph to family's default spectrum image if not set
-            const famSpectrum = fam.lightSpectrumGraph || fam.spectrumImage;
-            if (!doc.lightSpectrumGraph && famSpectrum) {
-              doc.lightSpectrumGraph = famSpectrum;
-            }
-            if ((!doc.lightSpectrumGraphs || doc.lightSpectrumGraphs.length === 0) && Array.isArray(fam.lightSpectrumGraphs) && fam.lightSpectrumGraphs.length > 0) {
-              doc.lightSpectrumGraphs = fam.lightSpectrumGraphs;
+            // Auto-default light spectrum graph(s) to family's default only if the product has no spectrum graph set
+            const hasProductSpectrum = Boolean(
+              doc.lightSpectrumGraph ||
+              (Array.isArray(doc.lightSpectrumGraphs) && doc.lightSpectrumGraphs.length > 0)
+            );
+            if (!hasProductSpectrum) {
+              const famSpectrum = fam.lightSpectrumGraph || fam.spectrumImage;
+              if (famSpectrum) {
+                doc.lightSpectrumGraph = famSpectrum;
+              }
+              if (Array.isArray(fam.lightSpectrumGraphs) && fam.lightSpectrumGraphs.length > 0) {
+                doc.lightSpectrumGraphs = fam.lightSpectrumGraphs;
+              }
             }
             // Auto-default photometry LDT and IES to family's default if not set
             const famLdt = fam.photometryLdt || (fam as any).photometryLdtZip;
