@@ -1,9 +1,12 @@
 import { MongoClient } from 'mongodb';
 
-const uri = process.env.DATABASE_URI || process.env.MONGODB_URI || 'mongodb+srv://duncankwan:81nacnuD@cluster0.3jkccqs.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+const uri = process.env.DATABASE_URI || process.env.MONGODB_URI;
 let client: MongoClient | null = null;
 
 export async function getMongoClient() {
+  if (!uri) {
+    throw new Error('DATABASE_URI or MONGODB_URI environment variable is required');
+  }
   if (!client) {
     client = new MongoClient(uri);
     await client.connect();

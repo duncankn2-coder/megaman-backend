@@ -11,7 +11,11 @@ export async function revalidateFrontend(
     process.env.NEXT_PUBLIC_FRONTEND_URL ||
     'https://megaman-frontend.vercel.app';
   const frontendUrl = rawUrl.replace(/\/+$/, '');
-  const secret = process.env.REVALIDATE_SECRET || 'megaman-revalidate-2026';
+  const secret = process.env.REVALIDATE_SECRET;
+  if (!secret) {
+    console.warn('[revalidateFrontend] REVALIDATE_SECRET is not set; skipping frontend revalidation.');
+    return;
+  }
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 5000);
@@ -23,7 +27,7 @@ export async function revalidateFrontend(
         'Content-Type': 'application/json',
         'x-revalidate-secret': secret,
       },
-      body: JSON.stringify({ secret, paths, revalidateAll }),
+      body: JSON.stringify({ paths, revalidateAll }),
       signal: controller.signal,
     });
 
