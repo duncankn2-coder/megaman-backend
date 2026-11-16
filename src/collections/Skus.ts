@@ -5,6 +5,23 @@ export const Skus: CollectionConfig = {
   slug: 'skus',
   admin: {
     useAsTitle: 'name',
+    listSearchableFields: [
+      'name',
+      'modelNumber',
+      'colour',
+      'specialFeatures',
+      'wattage',
+      'lampBase',
+      'colourTemperature',
+      'voltage',
+      'connector',
+      'ip',
+      'eanBarcode',
+      'innerBoxItf',
+      'outerBoxItf',
+      'packingMethod',
+      'remark',
+    ],
   },
   access: {
     read: () => true, // Allow anyone to read SKUs
