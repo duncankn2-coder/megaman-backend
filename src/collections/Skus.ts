@@ -99,6 +99,16 @@ export const Skus: CollectionConfig = {
       type: 'textarea',
     },
     {
+      name: 'images',
+      type: 'upload',
+      relationTo: 'media',
+      required: false,
+      label: 'Product Shot (SKU Image)',
+      admin: {
+        description: 'Optional SKU-level product shot (e.g. for different lamp bases sharing a model number). If empty, falls back to the product model image and then the first family photo.',
+      },
+    },
+    {
       name: 'userManual',
       type: 'upload',
       relationTo: 'media',
