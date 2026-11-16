@@ -1,5 +1,9 @@
 import { getMongoClient } from './mongoClient';
 
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function getModelPrefix(model: string): string {
   if (!model) return '';
   const base = model.replace(/v\d+/gi, '');
@@ -30,7 +34,7 @@ export async function fetchSpecifications(modelNumber: string, mmCode?: string) 
       // Search in light_source by mm_code (regex lookup, e.g. matching MM11760 in 711760/MM11760)
       const lightSourceCollection = db.collection('light_source');
       let specDoc = await lightSourceCollection.findOne({
-        mm_code: { $regex: new RegExp(cleanMm, 'i') }
+        mm_code: { $regex: new RegExp(escapeRegex(cleanMm), 'i') }
       });
       if (specDoc) {
         const { _id, __v, ...specs } = specDoc;
@@ -79,9 +83,10 @@ export async function fetchSpecifications(modelNumber: string, mmCode?: string) 
           const cleanTarget = cleanModel(modelNumber);
 
           // Search luminaire candidates
+          const safePrefix = escapeRegex(prefix);
           const lumCandidates = await luminaireCollection.find({
-            customer_model_no_new: { $regex: new RegExp('^' + prefix, 'i') }
-          }).toArray();
+            customer_model_no_new: { $regex: new RegExp('^' + safePrefix, 'i') }
+          }).limit(500).toArray();
 
           specDoc = lumCandidates.find(c => cleanModel(c.customer_model_no_new) === cleanTarget) || null;
 
@@ -90,10 +95,10 @@ export async function fetchSpecifications(modelNumber: string, mmCode?: string) 
             const lightSourceCollection = db.collection('light_source');
             const lsCandidates = await lightSourceCollection.find({
               $or: [
-                { new_erp_model_no: { $regex: new RegExp('^' + prefix, 'i') } },
-                { yk_model_no: { $regex: new RegExp('^' + prefix, 'i') } }
+                { new_erp_model_no: { $regex: new RegExp('^' + safePrefix, 'i') } },
+                { yk_model_no: { $regex: new RegExp('^' + safePrefix, 'i') } }
               ]
-            }).toArray();
+            }).limit(500).toArray();
 
             specDoc = lsCandidates.find(c =>
               cleanModel(c.new_erp_model_no) === cleanTarget ||

@@ -2,6 +2,7 @@ import { Payload } from 'payload';
 import * as xlsx from 'xlsx';
 import AdmZip from 'adm-zip';
 import path from 'path';
+import { revalidateFrontend } from './revalidateFrontend';
 
 export interface ImportResult {
   success: boolean;
@@ -351,6 +352,7 @@ export async function processBulkImport(
           logs.push(`Category "${cName}" not found. Creating dynamically...`);
           const newCat = await payload.create({
             collection: 'categories',
+            context: { skipRevalidate: true },
             data: {
               name: cName,
             },
@@ -413,6 +415,7 @@ export async function processBulkImport(
           await payload.update({
             collection: 'families',
             id: finalFamilyId,
+            context: { skipRevalidate: true },
             data: updateFamData,
           });
         } else {
@@ -430,6 +433,7 @@ export async function processBulkImport(
 
           const newFam = await payload.create({
             collection: 'families',
+            context: { skipRevalidate: true },
             data: newFamData,
           });
           finalFamilyId = newFam.id;
@@ -501,6 +505,7 @@ export async function processBulkImport(
         await payload.update({
           collection: 'products',
           id: prevDoc.id,
+          context: { skipRevalidate: true },
           data: productData,
         });
         
@@ -511,6 +516,7 @@ export async function processBulkImport(
         
         await payload.create({
           collection: 'products',
+          context: { skipRevalidate: true },
           data: productData,
         });
         
@@ -520,6 +526,10 @@ export async function processBulkImport(
     } catch (err: any) {
       warnings.push(`Row ${rowNum} (${modelNumber}): Failed to create/update Product. Error: ${err.message}`);
     }
+  }
+
+  if (createdCount > 0 || updatedCount > 0) {
+    await revalidateFrontend(['/', '/products', '/families/[id]']);
   }
 
   logs.push(`Bulk import completed: ${createdCount} created, ${updatedCount} updated.`);

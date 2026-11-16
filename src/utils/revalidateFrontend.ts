@@ -51,14 +51,18 @@ export function createRevalidateHooks(
 ) {
   return {
     afterChange: [
-      async ({ doc }: { doc: any }) => {
-        await revalidateFrontend(getPaths(doc), revalidateAll);
+      async ({ doc, req }: { doc: any; req?: any }) => {
+        if (!req?.context?.skipRevalidate) {
+          await revalidateFrontend(getPaths(doc), revalidateAll);
+        }
         return doc;
       },
     ],
     afterDelete: [
-      async ({ doc }: { doc: any }) => {
-        await revalidateFrontend(getPaths(doc), revalidateAll);
+      async ({ doc, req }: { doc: any; req?: any }) => {
+        if (!req?.context?.skipRevalidate) {
+          await revalidateFrontend(getPaths(doc), revalidateAll);
+        }
         return doc;
       },
     ],

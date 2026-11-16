@@ -42,7 +42,8 @@ export const Families: CollectionConfig = {
       },
     ],
     afterChange: [
-      async ({ doc }) => {
+      async ({ doc, req }) => {
+        if (req?.context?.skipRevalidate) return doc;
         const paths = ['/', '/products', '/families/[id]'];
         if (doc?.slug) paths.push(`/families/${doc.slug}`);
         if (doc?.id) paths.push(`/families/${doc.id}`);
@@ -51,7 +52,8 @@ export const Families: CollectionConfig = {
       },
     ],
     afterDelete: [
-      async ({ doc }) => {
+      async ({ doc, req }) => {
+        if (req?.context?.skipRevalidate) return doc;
         const paths = ['/', '/products', '/families/[id]'];
         if (doc?.slug) paths.push(`/families/${doc.slug}`);
         if (doc?.id) paths.push(`/families/${doc.id}`);

@@ -28,15 +28,35 @@ export const Media: CollectionConfig = {
     beforeValidate: [
       ({ data, req }) => {
         const MAX_PDF_SIZE = 15 * 1024 * 1024; // 15MB
+        const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+        const MAX_SVG_SIZE = 2 * 1024 * 1024; // 2MB
+        const MAX_DOC_SIZE = 15 * 1024 * 1024; // 15MB
         const file = (req as any)?.file;
         const mimeType = file?.mimetype || data?.mimeType;
         const fileSize = file?.size || data?.filesize;
 
-        if (mimeType === 'application/pdf' && fileSize && fileSize > MAX_PDF_SIZE) {
+        if (fileSize) {
           const sizeMB = (fileSize / (1024 * 1024)).toFixed(1);
-          throw new Error(
-            `The uploaded PDF is ${sizeMB}MB, which exceeds the 15MB limit. Please upload a PDF smaller than 15MB.`
-          );
+          if (mimeType === 'application/pdf' && fileSize > MAX_PDF_SIZE) {
+            throw new Error(
+              `The uploaded PDF is ${sizeMB}MB, which exceeds the 15MB limit. Please upload a PDF smaller than 15MB.`
+            );
+          }
+          if (mimeType === 'image/svg+xml' && fileSize > MAX_SVG_SIZE) {
+            throw new Error(
+              `The uploaded SVG is ${sizeMB}MB, which exceeds the 2MB limit.`
+            );
+          }
+          if (mimeType && mimeType.startsWith('image/') && mimeType !== 'image/svg+xml' && fileSize > MAX_IMAGE_SIZE) {
+            throw new Error(
+              `The uploaded image is ${sizeMB}MB, which exceeds the 10MB limit.`
+            );
+          }
+          if (mimeType && !mimeType.startsWith('image/') && !mimeType.startsWith('video/') && mimeType !== 'application/pdf' && fileSize > MAX_DOC_SIZE) {
+            throw new Error(
+              `The uploaded file is ${sizeMB}MB, which exceeds the 15MB limit.`
+            );
+          }
         }
 
         if (mimeType === 'application/pdf' && data && !data.type) {

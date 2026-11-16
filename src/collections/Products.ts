@@ -465,7 +465,7 @@ export const Products: CollectionConfig = {
             const pagePath = type === 'datasheet'
               ? 'datasheet'
               : (type === 'control-gear' ? 'control-gear' : (type === 'containing-product' ? 'containing-product' : 'eprel-light-source'));
-            return Response.redirect(`${frontendUrl}/products/${id}/${pagePath}`, 302);
+            return Response.redirect(`${frontendUrl}/products/${encodeURIComponent(String(id))}/${pagePath}`, 302);
           }
 
           const { getTechnicalDocumentFilename } = await import('../utils/eprelXmlGenerator');
@@ -591,7 +591,8 @@ export const Products: CollectionConfig = {
       },
     ],
     afterChange: [
-      async ({ doc }) => {
+      async ({ doc, req }) => {
+        if (req?.context?.skipRevalidate) return doc;
         const paths = ['/', '/products', '/families/[id]'];
         if (doc?.id) {
           paths.push(
@@ -633,6 +634,7 @@ export const Products: CollectionConfig = {
         try {
           const families = await req.payload.find({
             collection: 'families',
+            limit: 0,
             where: {
               products: {
                 equals: id,
@@ -640,6 +642,7 @@ export const Products: CollectionConfig = {
             },
           });
 
+          const affectedFamilyPaths: string[] = [];
           for (const family of families.docs) {
             const updatedProducts = (family.products || [])
               .map((p: any) => (typeof p === 'object' && p !== null) ? p.id : p)
@@ -648,15 +651,19 @@ export const Products: CollectionConfig = {
             await req.payload.update({
               collection: 'families',
               id: family.id,
+              context: { skipRevalidate: true },
               data: {
                 products: updatedProducts,
               },
             });
+            if ((family as any).slug) affectedFamilyPaths.push(`/families/${(family as any).slug}`);
+            if (family.id) affectedFamilyPaths.push(`/families/${family.id}`);
             console.log(`Removed product ID ${id} from family: ${family.id}`);
           }
 
           const familiesWithAccessory = await req.payload.find({
             collection: 'families',
+            limit: 0,
             where: {
               accessoryProducts: {
                 equals: id,
@@ -672,11 +679,17 @@ export const Products: CollectionConfig = {
             await req.payload.update({
               collection: 'families',
               id: family.id,
+              context: { skipRevalidate: true },
               data: {
                 accessoryProducts: updatedAccessoryProducts,
               } as any,
             });
+            if ((family as any).slug) affectedFamilyPaths.push(`/families/${(family as any).slug}`);
+            if (family.id) affectedFamilyPaths.push(`/families/${family.id}`);
             console.log(`Removed accessory product ID ${id} from family: ${family.id}`);
+          }
+          if (affectedFamilyPaths.length > 0) {
+            await revalidateFrontend(affectedFamilyPaths);
           }
         } catch (error) {
           console.error(`Error removing product ID ${id} from family relationships:`, error);
@@ -759,7 +772,7 @@ export const Products: CollectionConfig = {
             }
           }
         } catch (err) {
-          // ignore error during hook execution
+          console.warn('[Products.afterRead] Error applying family fallbacks:', err);
         }
         return doc;
       },
