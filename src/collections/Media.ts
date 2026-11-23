@@ -88,6 +88,14 @@ export const Media: CollectionConfig = {
         return data;
       },
     ],
+    afterRead: [
+      ({ doc }) => {
+        if (doc && typeof doc.url === 'string' && doc.url.includes('%25')) {
+          doc.url = doc.url.replace(/%25([0-9A-Fa-f]{2})/g, '%$1');
+        }
+        return doc;
+      },
+    ],
   },
   fields: [
     {
