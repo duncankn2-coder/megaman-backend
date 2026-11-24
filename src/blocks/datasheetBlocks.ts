@@ -20,6 +20,7 @@ export const DATASHEET_PARAMETER_OPTIONS = [
   // Electrical & Performance
   { label: 'Power (W)', value: 'wattage' },
   { label: 'Luminous Flux (lm)', value: 'luminousFlux' },
+  { label: 'Useful Luminous Flux (lm)', value: 'usefulLuminousFlux' },
   { label: 'CCT (K)', value: 'colourTemperature' },
   { label: 'CRI (Ra)', value: 'cri' },
   { label: 'Efficacy (lm/W)', value: 'efficacy' },
