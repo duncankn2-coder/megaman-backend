@@ -374,11 +374,38 @@ export const Families: CollectionConfig = {
           label: 'Enable Family Datasheet',
           defaultValue: false,
           admin: {
-            description: 'Enable or disable custom multi-page datasheet configuration for this family. Defaults to disabled.',
+            description: 'Enable or disable the Family Datasheet button on the family page.',
+          },
+        },
+        {
+          name: 'mode',
+          type: 'radio',
+          label: 'Family Datasheet Mode',
+          defaultValue: 'editor',
+          options: [
+            { label: 'Edit Family Datasheet (Custom Layout Builder)', value: 'editor' },
+            { label: 'Upload Family Datasheet Directly (PDF)', value: 'upload' },
+          ],
+          admin: {
+            layout: 'horizontal',
+            description: 'Choose whether to build the family datasheet using the editor below or upload a ready-made PDF directly.',
+          },
+        },
+        {
+          name: 'uploadedPdf',
+          type: 'upload',
+          relationTo: 'media',
+          label: 'Upload Family Datasheet (PDF)',
+          admin: {
+            condition: (_, siblingData) => siblingData?.mode === 'upload',
+            description: 'Upload a PDF file for visitors to download directly from the Family Datasheet button.',
           },
         },
         {
           type: 'row',
+          admin: {
+            condition: (_, siblingData) => siblingData?.mode !== 'upload',
+          },
           fields: [
             {
               name: 'title',
@@ -406,6 +433,7 @@ export const Families: CollectionConfig = {
           relationTo: 'media',
           label: 'Datasheet Hero / Header Image (Optional)',
           admin: {
+            condition: (_, siblingData) => siblingData?.mode !== 'upload',
             description: 'Main product / application image displayed on the cover or header of the datasheet.',
           },
         },
@@ -418,6 +446,7 @@ export const Families: CollectionConfig = {
             plural: 'Sections',
           },
           admin: {
+            condition: (_, siblingData) => siblingData?.mode !== 'upload',
             description: 'Add specification tables, custom Word editor content, drawings, photometrics, or page breaks freely in any order. Drag to reorder sections.',
             initCollapsed: false,
           },
@@ -441,6 +470,7 @@ export const Families: CollectionConfig = {
             plural: 'Pages',
           },
           admin: {
+            condition: (_, siblingData) => siblingData?.mode !== 'upload',
             description: 'Older multi-page layout. The unified "Datasheet Sections" field above is recommended.',
             initCollapsed: true,
           },
