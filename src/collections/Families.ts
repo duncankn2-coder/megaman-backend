@@ -91,6 +91,23 @@ export const Families: CollectionConfig = {
       },
     },
     {
+      name: 'sites',
+      type: 'select',
+      hasMany: true,
+      index: true,
+      label: 'Display on Sites',
+      defaultValue: ['international', 'hk', 'uk'],
+      options: [
+        { label: 'International Website (megaman.cc)', value: 'international' },
+        { label: 'Hong Kong Website (hk.megaman.cc)', value: 'hk' },
+        { label: 'United Kingdom Website (uk.megaman.cc)', value: 'uk' },
+      ],
+      admin: {
+        position: 'sidebar',
+        description: 'Select which site(s) this family should be displayed on.',
+      },
+    },
+    {
       name: 'description',
       type: 'textarea',
       required: true,
