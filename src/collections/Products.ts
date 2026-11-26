@@ -793,7 +793,7 @@ export const Products: CollectionConfig = {
       index: true,
       label: 'Display on Sites',
       required: true,
-      defaultValue: ['international', 'hk', 'uk'],
+      defaultValue: ['international', 'uk'],
       options: [
         { label: 'International Website (megaman.cc)', value: 'international' },
         { label: 'Hong Kong Website (hk.megaman.cc)', value: 'hk' },

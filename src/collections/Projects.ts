@@ -71,7 +71,7 @@ export const Projects: CollectionConfig = {
       hasMany: true,
       index: true,
       label: 'Display on Sites',
-      defaultValue: ['international', 'hk', 'uk'],
+      defaultValue: ['international', 'uk'],
       options: [
         { label: 'International Website (megaman.cc)', value: 'international' },
         { label: 'Hong Kong Website (hk.megaman.cc)', value: 'hk' },

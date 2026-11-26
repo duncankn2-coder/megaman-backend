@@ -649,7 +649,7 @@ export async function processSkuBulkImport(
               update: {
                 $set: cleanUndefined({
                   ...setFields,
-                  sites: ['international', 'hk', 'uk'],
+                  sites: ['international', 'uk'],
                 }),
                 $setOnInsert: {
                   createdAt: now,

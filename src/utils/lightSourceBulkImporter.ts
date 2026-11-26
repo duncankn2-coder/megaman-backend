@@ -471,7 +471,7 @@ export async function processLightSourceBulkImport(
             update: {
               $set: cleanUndefined({
                 ...setFields,
-                sites: ['international', 'hk', 'uk'],
+                sites: ['international', 'uk'],
               }),
               $setOnInsert: {
                 createdAt: now,
