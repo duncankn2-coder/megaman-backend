@@ -43,6 +43,10 @@ export default buildConfig({
   cors: [
     'http://localhost:3001',
     'https://megaman-frontend.vercel.app',
+    'https://megaman.cc',
+    'https://www.megaman.cc',
+    'https://hk.megaman.cc',
+    'https://uk.megaman.cc',
     'https://megamanuk.com',
     'https://www.megamanuk.com',
     process.env.PAYLOAD_PUBLIC_FRONTEND_URL || '',

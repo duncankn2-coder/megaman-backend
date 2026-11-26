@@ -67,7 +67,7 @@ export const HomePage: GlobalConfig = {
         },
         {
           name: 'uk',
-          label: 'United Kingdom Site (megamanuk.com)',
+          label: 'United Kingdom Site (uk.megaman.cc)',
           fields: [
             {
               name: 'layout',

@@ -797,7 +797,7 @@ export const Products: CollectionConfig = {
       options: [
         { label: 'International Website (megaman.cc)', value: 'international' },
         { label: 'Hong Kong Website (hk.megaman.cc)', value: 'hk' },
-        { label: 'United Kingdom Website (megamanuk.com)', value: 'uk' },
+        { label: 'United Kingdom Website (uk.megaman.cc)', value: 'uk' },
       ],
       admin: {
         position: 'sidebar',
