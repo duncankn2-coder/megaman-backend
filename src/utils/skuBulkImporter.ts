@@ -34,8 +34,7 @@ function normalizeModelNumber(model: string): string {
   if (!model) return '';
   return model
     .toLowerCase()
-    .replace(/\s+/g, '')
-    .replace(/v\d+/g, 'v');
+    .replace(/\s+/g, '');
 }
 
 function cleanModel(model: string): string {
@@ -563,6 +562,7 @@ export async function processSkuBulkImport(
               name: familyName,
               slug: famSlug,
               priority: 0,
+              sites: ['international', 'uk'],
               description: `A collection of premium Megaman ${familyName} products.`,
               media: familyImageId ? [toObjectId(familyImageId)] : [],
               categories: categoryIds.map(id => toObjectId(id)),
@@ -950,6 +950,7 @@ export async function processSkuBulkImport(
               update: {
                 $set: cleanUndefined(skuSetFields),
                 $setOnInsert: {
+                  _id: newSkuId,
                   createdAt: now,
                   __v: 0,
                 },
@@ -966,7 +967,7 @@ export async function processSkuBulkImport(
     }
 
     if (skuBulkOps.length > 0) {
-      await skusCollection.bulkWrite(skuBulkOps, { ordered: false });
+      await skusCollection.bulkWrite(skuBulkOps, { ordered: true });
     }
   } else {
     logs.push('No SKU MM Code spreadsheet provided. SKU variant import phase will be skipped.');

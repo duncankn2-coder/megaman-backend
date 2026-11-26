@@ -5,6 +5,7 @@ import path from 'path';
 import { ObjectId } from 'mongodb';
 import { getMongoClient } from './mongoClient';
 import { cleanValue } from './xlsxToJsonConverter';
+import { revalidateFrontend } from './revalidateFrontend';
 
 function toObjectId(id: any): ObjectId {
   if (id instanceof ObjectId) return id;
@@ -26,8 +27,13 @@ function normalizeModelNumber(model: string): string {
   if (!model) return '';
   return model
     .toLowerCase()
-    .replace(/\s+/g, '')
-    .replace(/v\d+/g, 'v');
+    .replace(/\s+/g, '');
+}
+
+function isBlankOrPlaceholder(val: string): boolean {
+  if (!val) return true;
+  const lower = val.toLowerCase();
+  return lower === 'n/a' || lower === 'undefined' || /^[-–—]+$/.test(val);
 }
 
 function cleanHeaderToKey(header: string): string {
@@ -254,8 +260,9 @@ export async function processLightSourceBulkImport(
   const familiesCollection = payloadDb.collection('families');
   const categoriesCollection = payloadDb.collection('categories');
 
-  const parentProductsMap = new Map<string, string>(); // modelNumber -> ProductID
+  const parentProductsMap = new Map<string, string>(); // exact lowercased modelNumber -> ProductID
   const parentProductNamesMap = new Map<string, string>(); // productID -> originalName
+  const touchedFamilyIds = new Set<string>();
 
   // Pre-fetch categories, families, products, and SKUs in parallel
   const categoryCache = new Map<string, string>();
@@ -267,7 +274,7 @@ export async function processLightSourceBulkImport(
     const [existingCats, existingFams, existingProds, existingSkus] = await Promise.all([
       categoriesCollection.find({}, { projection: { _id: 1, name: 1 } }).toArray(),
       familiesCollection.find({}, { projection: { _id: 1, name: 1, dismantleInstructionPdf: 1 } }).toArray(),
-      productsCollection.find({}, { projection: { _id: 1, name: 1, images: 1 } }).toArray(),
+      productsCollection.find({}, { projection: { _id: 1, name: 1, images: 1, families: 1 } }).toArray(),
       skusCollection.find({}, { projection: { _id: 1, name: 1 } }).toArray(),
     ]);
     existingCats.forEach((c: any) => {
@@ -298,12 +305,24 @@ export async function processLightSourceBulkImport(
 
     const modelNo = String(row[idxModelNo] || '').trim();
     const mmCodeRaw = String(row[idxMmCode] || '').trim();
-    if (!modelNo || modelNo.toLowerCase() === 'n/a' || modelNo === 'undefined') continue;
-    if (!mmCodeRaw || mmCodeRaw.toLowerCase() === 'n/a' || mmCodeRaw === 'undefined') continue;
+    if (isBlankOrPlaceholder(modelNo)) {
+      logs.push(`Skipping row ${i + 1}: missing or placeholder New ErP Model No. ("${modelNo}").`);
+      continue;
+    }
+    if (isBlankOrPlaceholder(mmCodeRaw)) {
+      logs.push(`Skipping row ${i + 1}: missing or placeholder MM Code ("${mmCodeRaw}") for model "${modelNo}".`);
+      continue;
+    }
 
-    // Use normalized model number for mapping, but original for CMS title
+    const mmCode = mmCodeRaw.includes('/') ? mmCodeRaw.split('/').pop()!.trim() : mmCodeRaw;
+    if (isBlankOrPlaceholder(mmCode)) {
+      logs.push(`Skipping row ${i + 1}: extracted MM Code "${mmCode}" is blank or placeholder for model "${modelNo}".`);
+      continue;
+    }
+
+    // Use exact case-insensitive model key (preserving versions such as v03 vs v13) for product mapping
+    const modelKey = modelNo.toLowerCase().trim();
     const normalizedModel = normalizeModelNumber(modelNo);
-    const mmCode = (mmCodeRaw && /^\d{6}\//.test(mmCodeRaw)) ? mmCodeRaw.substring(7) : mmCodeRaw;
 
     logs.push(`Processing row ${i + 1}: MM Code "${mmCode}" for model "${modelNo}"...`);
 
@@ -314,12 +333,8 @@ export async function processLightSourceBulkImport(
       if (!key) continue;
       specRecord[key] = cleanValue(row[colIdx], key);
     }
-    if (specRecord['mm_code']) {
-      const val = String(specRecord['mm_code']).trim();
-      if (/^\d{6}\//.test(val)) {
-        specRecord['mm_code'] = val.substring(7);
-      }
-    }
+    specRecord['mm_code'] = mmCode;
+    specRecord['new_erp_model_no'] = modelNo;
 
     if (lightSourceCollection) {
       lsBulkOps.push({
@@ -412,6 +427,7 @@ export async function processLightSourceBulkImport(
             name: familyName,
             slug: famSlug,
             priority: 0,
+            sites: ['international', 'uk'],
             description: `A collection of premium Megaman ${familyName} light sources.`,
             media: familyImageId ? [toObjectId(familyImageId)] : [],
             categories: categoryIds.map(id => toObjectId(id)),
@@ -431,10 +447,9 @@ export async function processLightSourceBulkImport(
       }
     }
 
-    // Resolve Parent Product
-    let parentProductId = parentProductsMap.get(normalizedModel);
+    // Resolve Parent Product (exact case-insensitive model match so versioned models stay distinct)
+    let parentProductId = parentProductsMap.get(modelKey);
     if (!parentProductId) {
-      const modelKey = modelNo.toLowerCase().trim();
       const existing = existingProductsMap.get(modelKey);
 
       const desc = idxDescription !== -1 ? String(row[idxDescription] || '').trim() : '';
@@ -449,8 +464,15 @@ export async function processLightSourceBulkImport(
       } else if (!existing?.images && placeholderImageId) {
         setFields.images = toObjectId(placeholderImageId);
       }
-      if (familyId) {
+      if (!existing?.families && familyId) {
         setFields.families = toObjectId(familyId);
+      }
+
+      const effectiveFamilyId = existing?.families
+        ? String(typeof existing.families === 'object' ? (existing.families._id || existing.families.id || existing.families) : existing.families)
+        : familyId;
+      if (effectiveFamilyId) {
+        touchedFamilyIds.add(effectiveFamilyId);
       }
 
       if (existing) {
@@ -484,7 +506,7 @@ export async function processLightSourceBulkImport(
         existingProductsMap.set(modelKey, { _id: newProdId, id: parentProductId, ...setFields });
         productsCreated++;
       }
-      parentProductsMap.set(normalizedModel, parentProductId);
+      parentProductsMap.set(modelKey, parentProductId);
       parentProductNamesMap.set(parentProductId, modelNo);
     }
 
@@ -536,6 +558,7 @@ export async function processLightSourceBulkImport(
             update: {
               $set: cleanUndefined(skuSetFields),
               $setOnInsert: {
+                _id: newSkuId,
                 createdAt: now,
                 __v: 0,
               },
@@ -559,10 +582,57 @@ export async function processLightSourceBulkImport(
     }
   }
   if (productBulkOps.length > 0) {
-    await productsCollection.bulkWrite(productBulkOps, { ordered: false });
+    await productsCollection.bulkWrite(productBulkOps, { ordered: true });
   }
   if (skuBulkOps.length > 0) {
-    await skusCollection.bulkWrite(skuBulkOps, { ordered: false });
+    await skusCollection.bulkWrite(skuBulkOps, { ordered: true });
+  }
+
+  // Synchronize family-to-product relationships for touched families
+  if (touchedFamilyIds.size > 0) {
+    const toIdStr = (v: any): string => String(typeof v === 'object' && v !== null ? (v._id || v.id || v) : v);
+    for (const famIdStr of touchedFamilyIds) {
+      try {
+        const famObjId = toObjectId(famIdStr);
+        const [famDoc, famProducts] = await Promise.all([
+          familiesCollection.findOne({ _id: famObjId }, { projection: { _id: 1, name: 1, products: 1 } }),
+          productsCollection.find({ families: { $in: [famObjId, famIdStr] } }, { projection: { _id: 1 } }).toArray(),
+        ]);
+        if (!famDoc) continue;
+
+        const currentIds: string[] = ((famDoc as any).products || []).map(toIdStr);
+        const merged = new Set<string>(currentIds);
+        for (const p of famProducts) {
+          merged.add(String(p._id));
+        }
+
+        const nextArr = Array.from(merged);
+        const unchanged =
+          nextArr.length === currentIds.length &&
+          nextArr.every((id, idx) => id === currentIds[idx]);
+
+        if (!unchanged) {
+          await familiesCollection.updateOne(
+            { _id: famObjId },
+            {
+              $set: {
+                products: nextArr.map(id => toObjectId(id)),
+                updatedAt: new Date(),
+              },
+            }
+          );
+          logs.push(`Synchronized family "${(famDoc as any).name}" (${nextArr.length} products).`);
+        }
+      } catch (err: any) {
+        warnings.push(`Could not synchronize family "${famIdStr}": ${err.message}`);
+      }
+    }
+  }
+
+  try {
+    await revalidateFrontend(['/', '/products'], true);
+  } catch {
+    // Non-fatal
   }
 
   logs.push(`Light Source bulk import completed. Products (Created: ${productsCreated}, Updated: ${productsUpdated}), SKUs (Created: ${skusCreated}, Updated: ${skusUpdated}).`);
