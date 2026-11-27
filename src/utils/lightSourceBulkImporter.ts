@@ -36,6 +36,24 @@ function isBlankOrPlaceholder(val: string): boolean {
   return lower === 'n/a' || lower === 'undefined' || /^[-–—]+$/.test(val);
 }
 
+function isPlaceholderSkuName(val?: string | null): boolean {
+  if (!val) return false;
+  const trimmed = String(val).trim();
+  return /^tbd:/i.test(trimmed) || /^[-–—]+$/.test(trimmed);
+}
+
+function makeVariantCompositeKey(
+  mNo?: string | null,
+  base?: string | null,
+  cct?: string | null,
+  col?: string | null,
+  watt?: string | null
+): string {
+  return [mNo, base, cct, col, watt]
+    .map(v => String(v || '').toLowerCase().trim())
+    .join('|');
+}
+
 function cleanHeaderToKey(header: string): string {
   if (!header) return '';
   return header
@@ -269,13 +287,16 @@ export async function processLightSourceBulkImport(
   const familyCache = new Map<string, any>();
   const existingProductsMap = new Map<string, any>();
   const existingSkusMap = new Map<string, any>();
+  const existingSkusByProductCodeMap = new Map<string, any>();
+  const existingPlaceholderByVariantMap = new Map<string, any>();
+  const usedSkuNamesInRun = new Set<string>();
 
   try {
     const [existingCats, existingFams, existingProds, existingSkus] = await Promise.all([
       categoriesCollection.find({}, { projection: { _id: 1, name: 1 } }).toArray(),
       familiesCollection.find({}, { projection: { _id: 1, name: 1, dismantleInstructionPdf: 1 } }).toArray(),
       productsCollection.find({}, { projection: { _id: 1, name: 1, images: 1, families: 1 } }).toArray(),
-      skusCollection.find({}, { projection: { _id: 1, name: 1 } }).toArray(),
+      skusCollection.find({}, { projection: { _id: 1, name: 1, specialFeatures: 1, modelNumber: 1, lampBase: 1, colourTemperature: 1, colour: 1, wattage: 1 } }).toArray(),
     ]);
     existingCats.forEach((c: any) => {
       if (c.name) categoryCache.set(String(c.name).toLowerCase().trim(), String(c._id));
@@ -287,7 +308,23 @@ export async function processLightSourceBulkImport(
       if (p.name) existingProductsMap.set(String(p.name).toLowerCase().trim(), { ...p, id: String(p._id) });
     });
     existingSkus.forEach((s: any) => {
-      if (s.name) existingSkusMap.set(String(s.name).toLowerCase().trim(), s);
+      if (s.name) {
+        const skuNameKey = String(s.name).toLowerCase().trim();
+        existingSkusMap.set(skuNameKey, s);
+        if (isPlaceholderSkuName(s.name)) {
+          const vKey = makeVariantCompositeKey(s.modelNumber, s.lampBase, s.colourTemperature, s.colour, s.wattage);
+          if (vKey && !existingPlaceholderByVariantMap.has(vKey)) {
+            existingPlaceholderByVariantMap.set(vKey, s);
+          }
+        }
+      }
+      const spFeat = String(s.specialFeatures || '').trim();
+      if (!isBlankOrPlaceholder(spFeat)) {
+        const pcKey = spFeat.toLowerCase();
+        if (!existingSkusByProductCodeMap.has(pcKey)) {
+          existingSkusByProductCodeMap.set(pcKey, s);
+        }
+      }
     });
   } catch (e: any) {
     warnings.push(`Pre-fetch cache warning: ${e.message}`);
@@ -309,22 +346,80 @@ export async function processLightSourceBulkImport(
       logs.push(`Skipping row ${i + 1}: missing or placeholder New ErP Model No. ("${modelNo}").`);
       continue;
     }
-    if (isBlankOrPlaceholder(mmCodeRaw)) {
-      logs.push(`Skipping row ${i + 1}: missing or placeholder MM Code ("${mmCodeRaw}") for model "${modelNo}".`);
-      continue;
-    }
 
-    const mmCode = mmCodeRaw.includes('/') ? mmCodeRaw.split('/').pop()!.trim() : mmCodeRaw;
-    if (isBlankOrPlaceholder(mmCode)) {
-      logs.push(`Skipping row ${i + 1}: extracted MM Code "${mmCode}" is blank or placeholder for model "${modelNo}".`);
-      continue;
-    }
+    const productCode = idxProductCode !== -1 ? String(row[idxProductCode] || '').trim() : '';
+    const colour = idxColour !== -1 ? String(row[idxColour] || '').trim() : '';
+    const wattage = idxWattage !== -1 ? String(row[idxWattage] || '').trim() : '';
+    const lampBase = idxLampBase !== -1 ? String(row[idxLampBase] || '').trim() : '';
+    const colourTemp = idxColourTemp !== -1 ? String(row[idxColourTemp] || '').trim() : '';
+    const voltage = idxVoltage !== -1 ? String(row[idxVoltage] || '').trim() : '';
 
     // Use exact case-insensitive model key (preserving versions such as v03 vs v13) for product mapping
     const modelKey = modelNo.toLowerCase().trim();
     const normalizedModel = normalizeModelNumber(modelNo);
 
-    logs.push(`Processing row ${i + 1}: MM Code "${mmCode}" for model "${modelNo}"...`);
+    const extractedMmCode = mmCodeRaw.includes('/') ? mmCodeRaw.split('/').pop()!.trim() : mmCodeRaw;
+    const hasRealMmCode = !isBlankOrPlaceholder(mmCodeRaw) && !isBlankOrPlaceholder(extractedMmCode);
+    const productCodeKey = !isBlankOrPlaceholder(productCode) ? productCode.toLowerCase().trim() : '';
+    const variantCompositeKey = makeVariantCompositeKey(modelKey, lampBase, colourTemp, colour, wattage);
+
+    let existingSku: any = null;
+    let mmCode = '';
+
+    if (hasRealMmCode) {
+      mmCode = extractedMmCode;
+      existingSku = existingSkusMap.get(mmCode.toLowerCase().trim()) || null;
+      if (!existingSku && productCodeKey) {
+        const pcCand = existingSkusByProductCodeMap.get(productCodeKey);
+        if (pcCand && isPlaceholderSkuName(pcCand.name) && !usedSkuNamesInRun.has(String(pcCand.name).toLowerCase().trim())) {
+          existingSku = pcCand;
+        }
+      }
+      if (!existingSku) {
+        const varCand = existingPlaceholderByVariantMap.get(variantCompositeKey);
+        if (varCand && !usedSkuNamesInRun.has(String(varCand.name).toLowerCase().trim())) {
+          existingSku = varCand;
+        }
+      }
+      if (existingSku && isPlaceholderSkuName(existingSku.name)) {
+        logs.push(`Row ${i + 1}: Upgrading placeholder SKU "${existingSku.name}" -> "${mmCode}" for model "${modelNo}".`);
+      }
+    } else {
+      const pcCand = productCodeKey ? existingSkusByProductCodeMap.get(productCodeKey) : undefined;
+      if (pcCand && !usedSkuNamesInRun.has(String(pcCand.name).toLowerCase().trim())) {
+        existingSku = pcCand;
+        mmCode = String(pcCand.name).trim();
+        if (!isPlaceholderSkuName(mmCode)) {
+          logs.push(`Row ${i + 1}: missing MM Code in sheet for model "${modelNo}" — preserving existing MM Code "${mmCode}".`);
+        }
+      } else {
+        const varCand = existingPlaceholderByVariantMap.get(variantCompositeKey);
+        if (varCand && !usedSkuNamesInRun.has(String(varCand.name).toLowerCase().trim())) {
+          existingSku = varCand;
+          mmCode = String(varCand.name).trim();
+        } else {
+          const basePart = !isBlankOrPlaceholder(productCode)
+            ? productCode
+            : [modelNo, lampBase, colourTemp, colour, wattage].filter(Boolean).join('-');
+          const baseCandidate = `TBD:${basePart || modelNo}`;
+          let candidate = baseCandidate;
+          if (usedSkuNamesInRun.has(candidate.toLowerCase()) || existingSkusMap.has(candidate.toLowerCase())) {
+            candidate = `${baseCandidate}#${i + 1}`;
+            let suffix = 2;
+            while (usedSkuNamesInRun.has(candidate.toLowerCase()) || existingSkusMap.has(candidate.toLowerCase())) {
+              candidate = `${baseCandidate}#${i + 1}-${suffix++}`;
+            }
+          }
+          mmCode = candidate;
+          logs.push(`Row ${i + 1}: missing MM Code for model "${modelNo}" — saving with temporary SKU ID "${mmCode}" (can be updated later).`);
+        }
+      }
+    }
+
+    usedSkuNamesInRun.add(mmCode.toLowerCase().trim());
+    const effectiveRealMmCode = !isPlaceholderSkuName(mmCode) ? mmCode : '';
+
+    logs.push(`Processing row ${i + 1}: SKU "${mmCode}" for model "${modelNo}"...`);
 
     // Clean all row values into a spec record
     const specRecord: Record<string, any> = {};
@@ -333,13 +428,18 @@ export async function processLightSourceBulkImport(
       if (!key) continue;
       specRecord[key] = cleanValue(row[colIdx], key);
     }
-    specRecord['mm_code'] = mmCode;
+    specRecord['mm_code'] = effectiveRealMmCode;
     specRecord['new_erp_model_no'] = modelNo;
 
     if (lightSourceCollection) {
+      const lsFilter = effectiveRealMmCode
+        ? { mm_code: effectiveRealMmCode }
+        : productCode
+          ? { product_code: productCode }
+          : { new_erp_model_no: modelNo, correlated_colour_temperature: specRecord['correlated_colour_temperature'] ?? '' };
       lsBulkOps.push({
         updateOne: {
-          filter: { mm_code: mmCode },
+          filter: lsFilter,
           update: { $set: specRecord },
           upsert: true,
         },
@@ -371,7 +471,7 @@ export async function processLightSourceBulkImport(
     }
 
     // Resolve Image from ZIP
-    const cleanMmForLookup = mmCode.replace(/\//g, '-').replace(/\s+/g, '');
+    const cleanMmForLookup = effectiveRealMmCode ? effectiveRealMmCode.replace(/\//g, '-').replace(/\s+/g, '') : '';
     let imageId: string | null = null;
     if (filesMap.size > 0) {
       const normalizedModels = [
@@ -384,7 +484,9 @@ export async function processLightSourceBulkImport(
       for (const m of normalizedModels) {
         imageFallbacks.push(`${m}.png`, `${m}.jpg`, `${m}.jpeg`);
       }
-      imageFallbacks.unshift(`${cleanMmForLookup}.png`, `${cleanMmForLookup}.jpg`, `${cleanMmForLookup}.jpeg`);
+      if (cleanMmForLookup) {
+        imageFallbacks.unshift(`${cleanMmForLookup}.png`, `${cleanMmForLookup}.jpg`, `${cleanMmForLookup}.jpeg`);
+      }
       imageId = await uploadAssetFromZip(undefined, imageFallbacks, `Image for ${modelNo}`, 'image');
     }
 
@@ -511,19 +613,13 @@ export async function processLightSourceBulkImport(
     }
 
     // Create or Update SKU variant
-    const productCode = idxProductCode !== -1 ? String(row[idxProductCode] || '').trim() : '';
-    const colour = idxColour !== -1 ? String(row[idxColour] || '').trim() : '';
-    const wattage = idxWattage !== -1 ? String(row[idxWattage] || '').trim() : '';
-    const lampBase = idxLampBase !== -1 ? String(row[idxLampBase] || '').trim() : '';
-    const colourTemp = idxColourTemp !== -1 ? String(row[idxColourTemp] || '').trim() : '';
-    const voltage = idxVoltage !== -1 ? String(row[idxVoltage] || '').trim() : '';
-
-    const ldtId = filesMap.size > 0 ? await uploadAssetFromZip(undefined, [`${cleanMmForLookup}.ldt`, `${normalizedModel}.ldt`], `LDT Photometrics for ${mmCode}`, 'document') : null;
-    const iesId = filesMap.size > 0 ? await uploadAssetFromZip(undefined, [`${cleanMmForLookup}.ies`, `${normalizedModel}.ies`], `IES Photometrics for ${mmCode}`, 'document') : null;
+    const ldtFallbacks = cleanMmForLookup ? [`${cleanMmForLookup}.ldt`, `${normalizedModel}.ldt`] : [`${normalizedModel}.ldt`];
+    const iesFallbacks = cleanMmForLookup ? [`${cleanMmForLookup}.ies`, `${normalizedModel}.ies`] : [`${normalizedModel}.ies`];
+    const ldtId = filesMap.size > 0 ? await uploadAssetFromZip(undefined, ldtFallbacks, `LDT Photometrics for ${mmCode}`, 'document') : null;
+    const iesId = filesMap.size > 0 ? await uploadAssetFromZip(undefined, iesFallbacks, `IES Photometrics for ${mmCode}`, 'document') : null;
 
     try {
       const skuKey = mmCode.toLowerCase().trim();
-      const existing = existingSkusMap.get(skuKey);
 
       const skuSetFields: Record<string, any> = {
         name: mmCode,
@@ -542,13 +638,34 @@ export async function processLightSourceBulkImport(
       if (ldtId) skuSetFields.photometryLdt = toObjectId(ldtId);
       if (iesId) skuSetFields.photometryIes = toObjectId(iesId);
 
-      if (existing) {
+      if (existingSku) {
+        const prevName = String(existingSku.name || '').trim();
+        const prevKey = prevName.toLowerCase();
         skuBulkOps.push({
           updateOne: {
-            filter: { _id: existing._id },
+            filter: { _id: existingSku._id },
             update: { $set: cleanUndefined(skuSetFields) },
           },
         });
+        if (prevKey && prevKey !== skuKey) {
+          existingSkusMap.delete(prevKey);
+          existingPlaceholderByVariantMap.delete(variantCompositeKey);
+        }
+        const updatedCachedSku = {
+          ...existingSku,
+          name: mmCode,
+          specialFeatures: productCode || existingSku.specialFeatures,
+          modelNumber: modelNo,
+          lampBase: lampBase || existingSku.lampBase,
+          colourTemperature: colourTemp || existingSku.colourTemperature,
+          colour: colour || existingSku.colour,
+          wattage: wattage || existingSku.wattage,
+        };
+        existingSkusMap.set(skuKey, updatedCachedSku);
+        if (productCodeKey) existingSkusByProductCodeMap.set(productCodeKey, updatedCachedSku);
+        if (isPlaceholderSkuName(mmCode)) {
+          existingPlaceholderByVariantMap.set(variantCompositeKey, updatedCachedSku);
+        }
         skusUpdated++;
       } else {
         const newSkuId = new ObjectId();
@@ -566,7 +683,21 @@ export async function processLightSourceBulkImport(
             upsert: true,
           },
         });
-        existingSkusMap.set(skuKey, { _id: newSkuId, name: mmCode });
+        const newCachedSku = {
+          _id: newSkuId,
+          name: mmCode,
+          specialFeatures: productCode || undefined,
+          modelNumber: modelNo,
+          lampBase: lampBase || undefined,
+          colourTemperature: colourTemp || undefined,
+          colour: colour || undefined,
+          wattage: wattage || undefined,
+        };
+        existingSkusMap.set(skuKey, newCachedSku);
+        if (productCodeKey) existingSkusByProductCodeMap.set(productCodeKey, newCachedSku);
+        if (isPlaceholderSkuName(mmCode)) {
+          existingPlaceholderByVariantMap.set(variantCompositeKey, newCachedSku);
+        }
         skusCreated++;
       }
     } catch (err: any) {
